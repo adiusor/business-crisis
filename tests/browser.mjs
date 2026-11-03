@@ -20,7 +20,7 @@ async function checkTypography(page,where){
  });
  assert.ok(x.overflow<=1,where+" horizontal overflow: "+x.overflow);assertions++;
  assert.ok(x.titleOverflow<=2,where+" title clipping: "+x.titleOverflow);assertions++;
- assert.ok(x.left>=-2&&x.right<=x.viewport+2,where+" heading outside viewport");assertions++;
+ assert.ok(x.left>=-2&&x.right<=x.viewport+2,where+" heading outside viewport: "+JSON.stringify(x));assertions++;
  assert.ok(!x.font.includes("Impact"),where+" still uses Impact");assertions++;
  assert.ok(x.labelSize>=12,where+" eyebrow smaller than 12px");assertions++;
 }

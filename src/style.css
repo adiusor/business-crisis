@@ -89,3 +89,6 @@ body{font-family:var(--body);line-height:1.62;font-kerning:normal;text-rendering
  .copy,.small,.mini,.risk-note,.adviser .bio small{color:#f0f4f2}
  .plan,.adviser,.rank,.case-file{border-color:#d6e0df}
 }
+
+/* Prevent the lobby grid from retaining its desktop minimum width on phones. */
+@media(max-width:800px){.lobby-layout{grid-template-columns:minmax(0,1fr)}.lobby-layout>*,.roster-board,.board-head{min-width:0}.board-head{flex-wrap:wrap}.board-head strong{overflow-wrap:anywhere}}
