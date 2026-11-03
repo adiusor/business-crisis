@@ -1,0 +1,20 @@
+name: Renewal championship gate
+on:
+  push:
+    branches: [fix/renewal-championship-gate]
+  pull_request:
+    paths: [index.html, "tests/championship.test.cjs", ".github/workflows/renewal-gate.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify production script and seven championship scenarios
+        run: node tests/championship.test.cjs
