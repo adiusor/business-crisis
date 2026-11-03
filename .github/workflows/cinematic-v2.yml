@@ -21,6 +21,12 @@ jobs:
           cp index.html /tmp/index-before.html
           node scripts/build.cjs
           cmp index.html /tmp/index-before.html
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/content.js
+          node --check src/rules.js
+          node --check src/art.js
+          node --check src/app.js
       - name: Test economic engine and 1200 seeded sessions
         run: node tests/rules.test.cjs
       - name: Install browser runner
