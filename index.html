@@ -37,6 +37,68 @@
 @media(max-width:800px){.allocation-board{grid-template-columns:1fr}.timeline-event{min-height:175px;padding:15px}.timeline-event strong{font-size:45px}.allocation-routes{grid-template-columns:1fr}.allocation-route{min-height:95px}}
 @media(max-width:540px){.timeline-grid{grid-template-columns:1fr;gap:10px}.timeline-event{min-height:95px;transform:none!important;flex-direction:row;align-items:center}.timeline-event strong{font-size:40px}.timeline-event span:last-child{font-size:20px}.timeline-sequence{gap:5px}.sequence-mark{display:block;padding:8px}.sequence-mark b{font-size:27px}.allocation-board>div{padding:16px}.allocation-amounts button{min-width:70px;font-size:23px}}
 
+/* Typography and legibility v2.1: offline-only system fonts, no Impact dependency. */
+:root{
+ --display:"Arial Narrow","Aptos Narrow","Liberation Sans Narrow","Helvetica Neue",Arial,system-ui,sans-serif;
+ --body:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+ --muted:#c5d0d4
+}
+body{font-family:var(--body);line-height:1.62;font-kerning:normal;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.display,.display-sm,.winner-name,.turn-name{font-family:var(--display);font-weight:900;line-height:1.04;letter-spacing:-.035em;text-wrap:balance;overflow-wrap:anywhere}
+.display{font-size:clamp(62px,9vw,142px);line-height:1}
+.display-sm{font-size:clamp(52px,6.8vw,98px);line-height:1.06}
+.winner-name{font-size:clamp(52px,10.6vw,146px);line-height:1.05;max-width:100%}
+.turn-name{font-size:clamp(52px,8vw,114px);line-height:1.05}
+.turn-index{line-height:1}
+.eyebrow{font-size:12px;line-height:1.55;letter-spacing:.12em}
+.small,.mini,.risk-note{font-size:13px;line-height:1.6;letter-spacing:.035em}
+.copy{font-size:16px;line-height:1.72}
+.plan .desc{font-size:15px;line-height:1.65}
+.plan .tag,.plan .trade,.adviser .bio small,.adviser .sealed,.adviser .check,.artifact .type,.artifact .time,.artifact .reviewed,.roster-row label span,.memo-meta,.case-id,.newspaper .mast,.newspaper .byline,.mark small,.roundup-row .cash small,.consult-count span{font-size:12px;letter-spacing:.075em;line-height:1.5}
+.adviser .bio strong,.plan h3,.rank h3,.artifact .name,.roster-row input,.case-file summary,.newspaper h2,.ledger-line span{overflow-wrap:anywhere}
+.adviser .bio{min-height:112px}
+.adviser .bio small{margin-top:9px}
+.intel-file blockquote,.teleprompter blockquote{line-height:1.6}
+.btn{min-height:48px;line-height:1.3}
+.footline{font-size:12px;line-height:1.55;letter-spacing:.055em}
+.footline span+span:before{margin-right:14px}
+.view h1:focus{outline:none}
+.ledger-line span{min-width:0}
+@media(max-width:800px){
+ .intro .lead,.brief-intro .lead{font-size:clamp(18px,3.1vw,22px)}
+ .winner-name{font-size:clamp(48px,10vw,85px)}
+ .turn-index{font-size:clamp(95px,15vw,150px)}
+ .adviser .bio{min-height:105px}
+}
+@media(max-width:540px){
+ .display{font-size:clamp(48px,15.1vw,79px);line-height:1.03}
+ .display-sm{font-size:clamp(40px,11.4vw,62px);line-height:1.09}
+ .winner-name{font-size:clamp(40px,10.7vw,63px);line-height:1.08}
+ .turn-name{font-size:clamp(42px,11vw,65px);line-height:1.08}
+ .lead{font-size:18px;line-height:1.55}
+ .copy{font-size:16px;line-height:1.65}
+ .eyebrow{font-size:12px;letter-spacing:.09em}
+ .small,.mini,.risk-note{font-size:13px}
+ .adviser .bio{min-height:112px}
+ .adviser .bio strong{font-size:clamp(20px,6vw,24px);line-height:1.08}
+ .adviser .bio small{font-size:12px;line-height:1.4}
+ .adviser .sealed,.adviser .check{font-size:11px}
+ .plan h3{font-size:clamp(30px,9vw,39px);line-height:1.08}
+ .artifact .name{font-size:clamp(23px,7vw,30px);line-height:1.1}
+ .newspaper h2{font-size:clamp(38px,11vw,55px);line-height:1.05}
+ .rank h3{font-size:clamp(21px,6.2vw,28px);line-height:1.1}
+ .rank .outcome{font-size:12px;letter-spacing:.045em;line-height:1.45;overflow-wrap:anywhere}
+ .overlay-sheet h2{font-size:clamp(35px,10vw,55px);line-height:1.08}
+ .timeline-sequence{flex-wrap:wrap;gap:8px}
+ .sequence-mark{min-width:0;flex:1 1 85px;gap:7px}
+ .ledger-line b{white-space:normal;text-align:right}
+ .footline{font-size:12px;letter-spacing:.02em}
+}
+@media(prefers-contrast:more){
+ .copy,.small,.mini,.risk-note,.adviser .bio small{color:#f0f4f2}
+ .plan,.adviser,.rank,.case-file{border-color:#d6e0df}
+}
+
 </style>
 </head>
 <body>
@@ -426,6 +488,7 @@ const C=g.BCContent,R=g.BCRules,A=g.BCArt,KEY="business-crisis-cinematic-v2";
 const root=document.getElementById("app");
 function fresh(){return {phase:"intro",teamCount:2,names:["TEAM ALPHA","TEAM BRAVO","TEAM CHARLIE","TEAM DELTA"],teams:[],round:0,teamIndex:0,viewed:[],opened:null,selected:[],plan:null,signal:null,allocation:{amount:0,route:null},timeline:[],timelineSolved:false,variant:0,seed:"",sound:false};}
 let s=fresh();
+let lastRenderedPhase=null;
 try{const saved=JSON.parse(localStorage.getItem(KEY)||"null");if(saved&&Array.isArray(saved.teams)&&typeof saved.phase==="string"&&saved.round>=0&&saved.round<=6&&saved.teams.length<=4&&saved.teamCount>=2&&saved.teamCount<=4){s=Object.assign(fresh(),saved);s.opened=null;}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
 function esc(v){return String(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -505,10 +568,22 @@ return '<section><div class="verdict-hero"><div class="eyebrow">17:45 / FINAL BO
 }
 function render(){
 const p=s.phase;const view={intro:intro,lobby:lobby,brief:brief,evidence:evidence,reconstruct:reconstruct,handoff:handoff,advisers:advisers,intel:intel,decision:decision,allocation:allocation,signal:signal,fallout:fallout,roundup:roundup,verdict:verdict}[p]||intro;
-root.innerHTML='<div class="scene-wrap">'+A.scene(sceneName())+'</div><div class="veil"></div><div class="grain"></div><div class="edge-light"></div><header class="hud"><div class="mark">'+A.insignia()+'<span>BUSINESS CRISIS<small>THE 09:17 INCIDENT</small></span></div><div class="hud-right"><span class="case-id">CASE 0917 / '+(s.teams.length?"EP "+ep().number+" / "+esc(p.toUpperCase()):"PROTOTYPE V2")+'</span><button type="button" class="icon-button" data-action="sound" aria-label="'+(s.sound?"Mute sound":"Enable sound")+'" title="'+(s.sound?"Mute sound":"Enable sound")+'">'+(s.sound?"♪":"♫")+'</button></div></header><main class="view enter" id="view">'+view()+'</main>';
+const animate=p!==lastRenderedPhase;
+root.innerHTML='<div class="scene-wrap">'+A.scene(sceneName())+'</div><div class="veil"></div><div class="grain"></div><div class="edge-light"></div><header class="hud"><div class="mark">'+A.insignia()+'<span>BUSINESS CRISIS<small>THE 09:17 INCIDENT</small></span></div><div class="hud-right"><span class="case-id">CASE 0917 / '+(s.teams.length?"EP "+ep().number+" / "+esc(p.toUpperCase()):"PROTOTYPE V2")+'</span><button type="button" class="icon-button" data-action="sound" aria-label="'+(s.sound?"Mute sound":"Enable sound")+'" title="'+(s.sound?"Mute sound":"Enable sound")+'">'+(s.sound?"♪":"♫")+'</button></div></header><main class="view '+(animate?"enter":"")+'" id="view">'+view()+'</main>';
+lastRenderedPhase=p;
 save();
 }
-function phase(p){s.phase=p;s.opened=null;render();window.scrollTo(0,0);}
+function phase(p){
+ s.phase=p;s.opened=null;render();window.scrollTo(0,0);
+ const h=root.querySelector(".view h1");
+ if(h){h.setAttribute("tabindex","-1");h.focus({preventScroll:true});}
+}
+function closeExhibit(){
+ const index=s.opened;if(index===null)return;
+ s.opened=null;render();
+ const opener=root.querySelector('[data-action="open-evidence"][data-index="'+index+'"]');
+ if(opener)opener.focus({preventScroll:true});
+}
 function playSound(){if(!s.sound)return;try{const AC=g.AudioContext||g.webkitAudioContext;if(!AC)return;const ctx=new AC(),o=ctx.createOscillator(),gain=ctx.createGain();o.type="sine";o.frequency.setValueAtTime(440,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(310,ctx.currentTime+.12);gain.gain.setValueAtTime(.022,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(gain);gain.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16);o.onended=function(){ctx.close();};}catch(e){}}
 function act(action,index){
 if(action==="sound"){s.sound=!s.sound;render();return;}
@@ -518,7 +593,7 @@ if(action==="count-up"||action==="count-down"){s.teamCount=R.clamp(s.teamCount+(
 if(action==="begin"){const names=s.names.slice(0,s.teamCount).map(x=>String(x||"").trim());if(names.some(n=>!n||n.length>32)||new Set(names.map(n=>n.toLowerCase())).size!==names.length){alert("Enter a unique name for each team (1–32 characters).");return;}s.teams=names.map((n,i)=>R.createTeam(i,n));s.seed="BC-"+Date.now().toString(36);s.variant=R.seedVariant(s.seed);s.round=0;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;s.allocation={amount:0,route:null};phase("brief");return;}
 if(action==="evidence"){s.viewed=[];phase("evidence");return;}
 if(action==="open-evidence"){if(!Number.isInteger(index)||index<0||index>2)return;s.opened=index;if(!s.viewed.includes(index))s.viewed.push(index);render();const close=root.querySelector('[data-action="close-evidence"]');if(close)close.focus();return;}
-if(action==="close-evidence"){s.opened=null;render();return;}
+if(action==="close-evidence"){closeExhibit();return;}
 if(action==="reconstruct"&&s.viewed.length===3&&s.round===0){s.timeline=[];s.timelineSolved=false;phase("reconstruct");return;}
 if(action==="timeline-pick"&&s.phase==="reconstruct"){if(!s.timeline.includes(index)&&s.timeline.length<3){s.timeline.push(index);if(s.timeline.length===3)s.timelineSolved=s.timeline.join(",")==="1,0,2";render();}return;}
 if(action==="timeline-reset"){s.timeline=[];s.timelineSolved=false;render();return;}
@@ -538,9 +613,30 @@ if(action==="advance"){if(s.teamIndex<s.teams.length-1){s.teamIndex++;s.selected
 if(action==="next-round"){if(s.round===5){phase("verdict");}else{s.round++;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;phase("brief");}return;}
 if(action==="reset"){if(!confirm("Start a new crisis? This will replace the current local session."))return;const sound=s.sound;s=fresh();s.sound=sound;phase("intro");return;}
 }
-root.addEventListener("click",function(e){const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;act(b.dataset.action,b.dataset.route!==undefined?b.dataset.route:b.dataset.index===undefined?null:Number(b.dataset.index));});
+root.addEventListener("click",function(e){
+ const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;
+ const action=b.dataset.action,index=b.dataset.route!==undefined?b.dataset.route:b.dataset.index===undefined?null:Number(b.dataset.index);
+ const before=s.phase;
+ act(action,index);
+ // A selected option redraws the view: keep keyboard focus on the same control.
+ if(s.phase===before&&s.opened===null&&action!=="close-evidence"&&action!=="open-evidence"&&!root.contains(b)){
+  const replacement=Array.from(root.querySelectorAll("button[data-action]")).find(x=>x.dataset.action===action&&
+   (b.dataset.index===undefined||x.dataset.index===b.dataset.index)&&
+   (b.dataset.route===undefined||x.dataset.route===b.dataset.route));
+  if(replacement&&!replacement.disabled)replacement.focus({preventScroll:true});
+ }
+});
 root.addEventListener("input",function(e){const i=e.target;if(i.matches("input[data-team-name]")){s.names[Number(i.dataset.teamName)]=i.value;save();}});
-document.addEventListener("keydown",function(e){if(e.key==="Escape"&&s.opened!==null){s.opened=null;render();}});
+document.addEventListener("keydown",function(e){
+ if(s.opened===null)return;
+ if(e.key==="Escape"){e.preventDefault();closeExhibit();return;}
+ if(e.key!=="Tab")return;
+ const controls=Array.from(root.querySelectorAll(".overlay button:not([disabled])"));
+ if(!controls.length)return;
+ const first=controls[0],last=controls[controls.length-1];
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
 render();
 })(globalThis);
 

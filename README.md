@@ -24,30 +24,44 @@ This is **not** real multiplayer: no QR joining, no private phone screens, no ho
 
 ## Play and review
 
-The repository root \`index.html\` on **this branch** is a standalone, self-contained game. Download the file and open it in a modern browser. Do **not** merge into \`main\` or replace the Cloudflare production Worker until founder approval.
+The repository root `index.html` on **this branch** is a standalone, self-contained game. Download the file and open it in a modern browser. Do **not** merge into `main` or replace the Cloudflare production Worker until founder approval.
 
-The previous public game remains available on \`main\` and is unaffected by this branch.
+The previous public game remains available on `main` and is unaffected by this branch.
 
 ## Develop and test
 
-\`\`\`bash
+```bash
 node scripts/build.cjs
 node tests/rules.test.cjs
 npm install
 npx playwright install chromium
 node tests/browser.mjs
-\`\`\`
+```
 
 GitHub Actions runs 1,200 seeded engine simulations, deterministic ledger invariants and full Chromium playthroughs for 2, 3 and 4 teams, including 320px mobile. Actual browser screenshots are uploaded as a workflow artifact when the run succeeds. These automated tests do not substitute for Safari/iPhone device tests or independent group playtesting.
 
 ## Source structure
 
-- \`src/content.js\` — episode writing, adviser intelligence, trade-offs and costs.
-- \`src/rules.js\` — pure deterministic cash/risk state transitions and scoring.
-- \`src/art.js\` — original scalable illustrated environments and characters.
-- \`src/style.css\` — cinematic responsive visual system.
-- \`src/app.js\` — scene navigation, interaction, session persistence and view rendering.
-- \`scripts/build.cjs\` — creates the self-contained root \`index.html\`.
-- \`tests/\` — simulation and real-browser end-to-end tests.
+- `src/content.js` — episode writing, adviser intelligence, trade-offs and costs.
+- `src/rules.js` — pure deterministic cash/risk state transitions and scoring.
+- `src/art.js` — original scalable illustrated environments and characters.
+- `src/style.css` — cinematic responsive visual system.
+- `src/app.js` — scene navigation, interaction, session persistence and view rendering.
+- `scripts/build.cjs` — creates the self-contained root `index.html`.
+- `tests/` — simulation and real-browser end-to-end tests.
 
 **Design rule:** If a screen reads like a questionnaire or a KPI dashboard, it needs another pass. The player should feel inside the incident, not inside a report.
+
+## Typography and keyboard improvements (v2.1 preview)
+
+- Replaced the platform-dependent Impact headline font with an editorial system-font stack and robust fallbacks. No third-party font requests; the single-file game still runs offline.
+- Increased small-label and adviser-role legibility, repaired mobile heading line heights, long-name wrapping and narrow-screen receipts.
+- Selection controls now retain keyboard focus. Evidence dialogs restore focus on close/Escape and trap Tab navigation. Animations play on scene transitions, not every selection.
+- Browser tests inspect typography and overflow on six scenes and exercise keyboard interactions.
+
+## Outstanding charter requirements — not yet delivered
+
+- **Not built:** secure real-time phone multiplayer, QR joining, private adviser screens, server-authoritative state, separate host/projector views, individual voting, remote play/reconnection, accounts, payment/licensing and PDF case-file export.
+- **Not independently verified:** real iPhone/Safari, assistive-technology screen readers, five moderated customer groups, 30-player load and reconnect, commercial willingness-to-pay and validated economic forecasts.
+- **Partially delivered:** recurring SVG characters, six episodes, shared-screen team competition, local save/resume and seeded scenario variants. Character art direction still requires founder approval.
+- **Release boundary:** this is a draft development PR. Production main/Cloudflare stays unchanged until deliberate approval.

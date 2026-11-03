@@ -27,3 +27,65 @@
 .timeline-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:38px 0}.timeline-event{min-height:230px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;padding:25px;background:#d9d0c0;color:#1d2b35;border:0;box-shadow:9px 13px 0 #0007;transform:rotate(-1deg);transition:transform .2s}.timeline-event:nth-child(2){transform:rotate(1deg);background:#c6d1d2}.timeline-event:nth-child(3){transform:rotate(-2deg);background:#cbbda8}.timeline-event:hover:not(:disabled){transform:translateY(-7px)}.timeline-event:disabled{opacity:.45}.timeline-event .eyebrow{color:#9c4940}.timeline-event strong{font:900 clamp(45px,5vw,78px)/1 var(--display)}.timeline-event span:last-child{font:900 22px var(--display);text-transform:uppercase}.timeline-sequence{display:flex;gap:14px;min-height:100px;align-items:center;border-bottom:2px solid #caa275;border-top:2px solid #caa275;padding:15px 0;margin:20px 0}.sequence-mark{flex:1;display:flex;align-items:center;gap:20px;padding:12px;background:#263846}.sequence-mark small{font-size:12px;color:var(--gold)}.sequence-mark b{font:900 37px var(--display)}.timeline-success{background:#1a463c;border-left:5px solid #8fcdb5;padding:18px;color:#e2f6ec;font-size:16px}.allocation-board{display:grid;grid-template-columns:.7fr 1.3fr;gap:25px;margin:32px 0}.allocation-board>div{border-top:4px solid #b99b76;background:#142735ec;padding:25px}.allocation-amounts{display:flex;gap:9px;flex-wrap:wrap;margin:25px 0}.allocation-amounts button{min-height:65px;min-width:90px;padding:12px;border:1px solid #8c9ea8;background:#263745;color:#fff;font:900 28px var(--display)}.allocation-amounts button[aria-pressed=true]{background:var(--gold);color:#1c2830;border-color:var(--gold)}.allocation-routes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:20px}.allocation-route{min-height:175px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;background:#243746;color:#f2e7d9;border:1px solid #8da1aa;padding:17px}.allocation-route[aria-pressed=true]{border:3px solid var(--gold);background:#493a2b}.allocation-route strong{font:900 26px/.95 var(--display);margin:13px 0}.allocation-route small{font-size:12px;color:#c4d2d3;line-height:1.5}
 @media(max-width:800px){.allocation-board{grid-template-columns:1fr}.timeline-event{min-height:175px;padding:15px}.timeline-event strong{font-size:45px}.allocation-routes{grid-template-columns:1fr}.allocation-route{min-height:95px}}
 @media(max-width:540px){.timeline-grid{grid-template-columns:1fr;gap:10px}.timeline-event{min-height:95px;transform:none!important;flex-direction:row;align-items:center}.timeline-event strong{font-size:40px}.timeline-event span:last-child{font-size:20px}.timeline-sequence{gap:5px}.sequence-mark{display:block;padding:8px}.sequence-mark b{font-size:27px}.allocation-board>div{padding:16px}.allocation-amounts button{min-width:70px;font-size:23px}}
+
+/* Typography and legibility v2.1: offline-only system fonts, no Impact dependency. */
+:root{
+ --display:"Arial Narrow","Aptos Narrow","Liberation Sans Narrow","Helvetica Neue",Arial,system-ui,sans-serif;
+ --body:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+ --muted:#c5d0d4
+}
+body{font-family:var(--body);line-height:1.62;font-kerning:normal;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.display,.display-sm,.winner-name,.turn-name{font-family:var(--display);font-weight:900;line-height:1.04;letter-spacing:-.035em;text-wrap:balance;overflow-wrap:anywhere}
+.display{font-size:clamp(62px,9vw,142px);line-height:1}
+.display-sm{font-size:clamp(52px,6.8vw,98px);line-height:1.06}
+.winner-name{font-size:clamp(52px,10.6vw,146px);line-height:1.05;max-width:100%}
+.turn-name{font-size:clamp(52px,8vw,114px);line-height:1.05}
+.turn-index{line-height:1}
+.eyebrow{font-size:12px;line-height:1.55;letter-spacing:.12em}
+.small,.mini,.risk-note{font-size:13px;line-height:1.6;letter-spacing:.035em}
+.copy{font-size:16px;line-height:1.72}
+.plan .desc{font-size:15px;line-height:1.65}
+.plan .tag,.plan .trade,.adviser .bio small,.adviser .sealed,.adviser .check,.artifact .type,.artifact .time,.artifact .reviewed,.roster-row label span,.memo-meta,.case-id,.newspaper .mast,.newspaper .byline,.mark small,.roundup-row .cash small,.consult-count span{font-size:12px;letter-spacing:.075em;line-height:1.5}
+.adviser .bio strong,.plan h3,.rank h3,.artifact .name,.roster-row input,.case-file summary,.newspaper h2,.ledger-line span{overflow-wrap:anywhere}
+.adviser .bio{min-height:112px}
+.adviser .bio small{margin-top:9px}
+.intel-file blockquote,.teleprompter blockquote{line-height:1.6}
+.btn{min-height:48px;line-height:1.3}
+.footline{font-size:12px;line-height:1.55;letter-spacing:.055em}
+.footline span+span:before{margin-right:14px}
+.view h1:focus{outline:none}
+.ledger-line span{min-width:0}
+@media(max-width:800px){
+ .intro .lead,.brief-intro .lead{font-size:clamp(18px,3.1vw,22px)}
+ .winner-name{font-size:clamp(48px,10vw,85px)}
+ .turn-index{font-size:clamp(95px,15vw,150px)}
+ .adviser .bio{min-height:105px}
+}
+@media(max-width:540px){
+ .display{font-size:clamp(48px,15.1vw,79px);line-height:1.03}
+ .display-sm{font-size:clamp(40px,11.4vw,62px);line-height:1.09}
+ .winner-name{font-size:clamp(40px,10.7vw,63px);line-height:1.08}
+ .turn-name{font-size:clamp(42px,11vw,65px);line-height:1.08}
+ .lead{font-size:18px;line-height:1.55}
+ .copy{font-size:16px;line-height:1.65}
+ .eyebrow{font-size:12px;letter-spacing:.09em}
+ .small,.mini,.risk-note{font-size:13px}
+ .adviser .bio{min-height:112px}
+ .adviser .bio strong{font-size:clamp(20px,6vw,24px);line-height:1.08}
+ .adviser .bio small{font-size:12px;line-height:1.4}
+ .adviser .sealed,.adviser .check{font-size:11px}
+ .plan h3{font-size:clamp(30px,9vw,39px);line-height:1.08}
+ .artifact .name{font-size:clamp(23px,7vw,30px);line-height:1.1}
+ .newspaper h2{font-size:clamp(38px,11vw,55px);line-height:1.05}
+ .rank h3{font-size:clamp(21px,6.2vw,28px);line-height:1.1}
+ .rank .outcome{font-size:12px;letter-spacing:.045em;line-height:1.45;overflow-wrap:anywhere}
+ .overlay-sheet h2{font-size:clamp(35px,10vw,55px);line-height:1.08}
+ .timeline-sequence{flex-wrap:wrap;gap:8px}
+ .sequence-mark{min-width:0;flex:1 1 85px;gap:7px}
+ .ledger-line b{white-space:normal;text-align:right}
+ .footline{font-size:12px;letter-spacing:.02em}
+}
+@media(prefers-contrast:more){
+ .copy,.small,.mini,.risk-note,.adviser .bio small{color:#f0f4f2}
+ .plan,.adviser,.rank,.case-file{border-color:#d6e0df}
+}

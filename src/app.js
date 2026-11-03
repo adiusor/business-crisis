@@ -4,6 +4,7 @@ const C=g.BCContent,R=g.BCRules,A=g.BCArt,KEY="business-crisis-cinematic-v2";
 const root=document.getElementById("app");
 function fresh(){return {phase:"intro",teamCount:2,names:["TEAM ALPHA","TEAM BRAVO","TEAM CHARLIE","TEAM DELTA"],teams:[],round:0,teamIndex:0,viewed:[],opened:null,selected:[],plan:null,signal:null,allocation:{amount:0,route:null},timeline:[],timelineSolved:false,variant:0,seed:"",sound:false};}
 let s=fresh();
+let lastRenderedPhase=null;
 try{const saved=JSON.parse(localStorage.getItem(KEY)||"null");if(saved&&Array.isArray(saved.teams)&&typeof saved.phase==="string"&&saved.round>=0&&saved.round<=6&&saved.teams.length<=4&&saved.teamCount>=2&&saved.teamCount<=4){s=Object.assign(fresh(),saved);s.opened=null;}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
 function esc(v){return String(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
@@ -83,10 +84,22 @@ return '<section><div class="verdict-hero"><div class="eyebrow">17:45 / FINAL BO
 }
 function render(){
 const p=s.phase;const view={intro:intro,lobby:lobby,brief:brief,evidence:evidence,reconstruct:reconstruct,handoff:handoff,advisers:advisers,intel:intel,decision:decision,allocation:allocation,signal:signal,fallout:fallout,roundup:roundup,verdict:verdict}[p]||intro;
-root.innerHTML='<div class="scene-wrap">'+A.scene(sceneName())+'</div><div class="veil"></div><div class="grain"></div><div class="edge-light"></div><header class="hud"><div class="mark">'+A.insignia()+'<span>BUSINESS CRISIS<small>THE 09:17 INCIDENT</small></span></div><div class="hud-right"><span class="case-id">CASE 0917 / '+(s.teams.length?"EP "+ep().number+" / "+esc(p.toUpperCase()):"PROTOTYPE V2")+'</span><button type="button" class="icon-button" data-action="sound" aria-label="'+(s.sound?"Mute sound":"Enable sound")+'" title="'+(s.sound?"Mute sound":"Enable sound")+'">'+(s.sound?"♪":"♫")+'</button></div></header><main class="view enter" id="view">'+view()+'</main>';
+const animate=p!==lastRenderedPhase;
+root.innerHTML='<div class="scene-wrap">'+A.scene(sceneName())+'</div><div class="veil"></div><div class="grain"></div><div class="edge-light"></div><header class="hud"><div class="mark">'+A.insignia()+'<span>BUSINESS CRISIS<small>THE 09:17 INCIDENT</small></span></div><div class="hud-right"><span class="case-id">CASE 0917 / '+(s.teams.length?"EP "+ep().number+" / "+esc(p.toUpperCase()):"PROTOTYPE V2")+'</span><button type="button" class="icon-button" data-action="sound" aria-label="'+(s.sound?"Mute sound":"Enable sound")+'" title="'+(s.sound?"Mute sound":"Enable sound")+'">'+(s.sound?"♪":"♫")+'</button></div></header><main class="view '+(animate?"enter":"")+'" id="view">'+view()+'</main>';
+lastRenderedPhase=p;
 save();
 }
-function phase(p){s.phase=p;s.opened=null;render();window.scrollTo(0,0);}
+function phase(p){
+ s.phase=p;s.opened=null;render();window.scrollTo(0,0);
+ const h=root.querySelector(".view h1");
+ if(h){h.setAttribute("tabindex","-1");h.focus({preventScroll:true});}
+}
+function closeExhibit(){
+ const index=s.opened;if(index===null)return;
+ s.opened=null;render();
+ const opener=root.querySelector('[data-action="open-evidence"][data-index="'+index+'"]');
+ if(opener)opener.focus({preventScroll:true});
+}
 function playSound(){if(!s.sound)return;try{const AC=g.AudioContext||g.webkitAudioContext;if(!AC)return;const ctx=new AC(),o=ctx.createOscillator(),gain=ctx.createGain();o.type="sine";o.frequency.setValueAtTime(440,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(310,ctx.currentTime+.12);gain.gain.setValueAtTime(.022,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(gain);gain.connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16);o.onended=function(){ctx.close();};}catch(e){}}
 function act(action,index){
 if(action==="sound"){s.sound=!s.sound;render();return;}
@@ -96,7 +109,7 @@ if(action==="count-up"||action==="count-down"){s.teamCount=R.clamp(s.teamCount+(
 if(action==="begin"){const names=s.names.slice(0,s.teamCount).map(x=>String(x||"").trim());if(names.some(n=>!n||n.length>32)||new Set(names.map(n=>n.toLowerCase())).size!==names.length){alert("Enter a unique name for each team (1–32 characters).");return;}s.teams=names.map((n,i)=>R.createTeam(i,n));s.seed="BC-"+Date.now().toString(36);s.variant=R.seedVariant(s.seed);s.round=0;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;s.allocation={amount:0,route:null};phase("brief");return;}
 if(action==="evidence"){s.viewed=[];phase("evidence");return;}
 if(action==="open-evidence"){if(!Number.isInteger(index)||index<0||index>2)return;s.opened=index;if(!s.viewed.includes(index))s.viewed.push(index);render();const close=root.querySelector('[data-action="close-evidence"]');if(close)close.focus();return;}
-if(action==="close-evidence"){s.opened=null;render();return;}
+if(action==="close-evidence"){closeExhibit();return;}
 if(action==="reconstruct"&&s.viewed.length===3&&s.round===0){s.timeline=[];s.timelineSolved=false;phase("reconstruct");return;}
 if(action==="timeline-pick"&&s.phase==="reconstruct"){if(!s.timeline.includes(index)&&s.timeline.length<3){s.timeline.push(index);if(s.timeline.length===3)s.timelineSolved=s.timeline.join(",")==="1,0,2";render();}return;}
 if(action==="timeline-reset"){s.timeline=[];s.timelineSolved=false;render();return;}
@@ -116,8 +129,29 @@ if(action==="advance"){if(s.teamIndex<s.teams.length-1){s.teamIndex++;s.selected
 if(action==="next-round"){if(s.round===5){phase("verdict");}else{s.round++;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;phase("brief");}return;}
 if(action==="reset"){if(!confirm("Start a new crisis? This will replace the current local session."))return;const sound=s.sound;s=fresh();s.sound=sound;phase("intro");return;}
 }
-root.addEventListener("click",function(e){const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;act(b.dataset.action,b.dataset.route!==undefined?b.dataset.route:b.dataset.index===undefined?null:Number(b.dataset.index));});
+root.addEventListener("click",function(e){
+ const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;
+ const action=b.dataset.action,index=b.dataset.route!==undefined?b.dataset.route:b.dataset.index===undefined?null:Number(b.dataset.index);
+ const before=s.phase;
+ act(action,index);
+ // A selected option redraws the view: keep keyboard focus on the same control.
+ if(s.phase===before&&s.opened===null&&action!=="close-evidence"&&action!=="open-evidence"&&!root.contains(b)){
+  const replacement=Array.from(root.querySelectorAll("button[data-action]")).find(x=>x.dataset.action===action&&
+   (b.dataset.index===undefined||x.dataset.index===b.dataset.index)&&
+   (b.dataset.route===undefined||x.dataset.route===b.dataset.route));
+  if(replacement&&!replacement.disabled)replacement.focus({preventScroll:true});
+ }
+});
 root.addEventListener("input",function(e){const i=e.target;if(i.matches("input[data-team-name]")){s.names[Number(i.dataset.teamName)]=i.value;save();}});
-document.addEventListener("keydown",function(e){if(e.key==="Escape"&&s.opened!==null){s.opened=null;render();}});
+document.addEventListener("keydown",function(e){
+ if(s.opened===null)return;
+ if(e.key==="Escape"){e.preventDefault();closeExhibit();return;}
+ if(e.key!=="Tab")return;
+ const controls=Array.from(root.querySelectorAll(".overlay button:not([disabled])"));
+ if(!controls.length)return;
+ const first=controls[0],last=controls[controls.length-1];
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+});
 render();
 })(globalThis);
