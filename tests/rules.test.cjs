@@ -33,6 +33,14 @@ check(next.pending.every(p=>p.due>3),"due liabilities charged once");
 check(next.ledger.filter(x=>x.kind==="deferred").length===2,"each due item charged exactly once");
 check(R.evaluate(next).unpaid===0,"all due liabilities settled by round three");
 check(!next.ledger.some(x=>x.amount===240000),"annual renewal never credited as cash");
+let beforeAlloc=R.applyTurn(R.applyTurn(t0,0,0,0,[0,1],0),1,0,0,[0,1],0);
+let withoutAlloc=R.applyTurn(beforeAlloc,2,0,0,[0,1],0);
+let withAlloc=R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:10000,route:"audit"});
+check(withAlloc.cash===withoutAlloc.cash-10000,"allocation is charged to cash");
+check(withAlloc.risks.legal===withoutAlloc.risks.legal-7,"allocation reduces selected exposure");
+check(withAlloc.history[2].allocation.amount===10000,"allocation recorded in decision trail");
+assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:5000,route:"audit"}),/Allocation must/);checks++;
+assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:10000,route:"invalid"}),/Invalid allocation/);checks++;
 let scenarios=0,negative=0,renewed=0,conditional=0,lost=0,ties=0,determinism=0;
 let minCash=Infinity,maxCash=-Infinity,minScore=Infinity,maxScore=-Infinity;
 function rand(seed){let x=seed>>>0;return function(){x=(1664525*x+1013904223)>>>0;return x/4294967296;};}
