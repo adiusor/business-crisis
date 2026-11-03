@@ -20,7 +20,7 @@ jobs:
         run: node tests/championship.test.cjs
       - name: Install Chromium browser test runner
         run: |
-          npm install --no-save --no-audit --no-fund playwright@1.52.0
+          npm install --no-save --no-audit --no-fund playwright@latest
           npx playwright install --with-deps chromium
       - name: Verify final reveal in real browser at desktop and mobile widths
         run: node tests/championship.browser.mjs
