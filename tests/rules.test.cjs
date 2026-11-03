@@ -41,6 +41,27 @@ check(withAlloc.risks.legal===withoutAlloc.risks.legal-7,"allocation reduces sel
 check(withAlloc.history[2].allocation.amount===10000,"allocation recorded in decision trail");
 assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:5000,route:"audit"}),/Allocation must/);checks++;
 assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:10000,route:"invalid"}),/Invalid allocation/);checks++;
+// The highest performance score is not automatically a business victory.
+function modelTeam(id,name,cash,trust,legal,ops,customer){
+const t=R.createTeam(id,name);
+t.cash=cash;t.trust=trust;t.risks={legal,ops,customer,workforce:30,liquidity:30};t.pending=[];return t;
+}
+const atRisk=modelTeam(0,"FORGE",22000,45,40,67,70);
+const conditionalTeam=modelTeam(1,"ORBIT",11000,55,45,64,60);
+const noChampion=R.championshipResult([atRisk,conditionalTeam]);
+check(noChampion.champion===null,"no unsigned renewal may win the championship");
+check(noChampion.leader!==null,"score leader still exists without a champion");
+const qualified=modelTeam(2,"SIGNED",50000,78,30,35,20);
+check(R.evaluate(qualified).status==="RENEWED","qualified team has a signed renewal");
+const signedResult=R.championshipResult([atRisk,qualified]);
+check(signedResult.champion.team.name==="SIGNED","only renewed, solvent team can be champion");
+const broke=R.deepCopy(qualified);broke.cash=-1000;
+check(R.championshipResult([broke,atRisk]).champion===null,"insolvent team cannot win");
+const fragile=R.deepCopy(qualified);fragile.risks.ops=80;
+check(R.championshipResult([fragile,atRisk]).champion===null,"unsafe delivery cannot win");
+const twin=R.deepCopy(qualified);twin.id=3;twin.name="SIGNED TWIN";
+check(R.championshipResult([qualified,twin]).joint.length===2,"tied qualifying champions recognised");
+
 let scenarios=0,negative=0,renewed=0,conditional=0,lost=0,ties=0,determinism=0;
 let minCash=Infinity,maxCash=-Infinity,minScore=Infinity,maxScore=-Infinity;
 function rand(seed){let x=seed>>>0;return function(){x=(1664525*x+1013904223)>>>0;return x/4294967296;};}
