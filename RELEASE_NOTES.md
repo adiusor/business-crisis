@@ -1,22 +1,30 @@
-# BUSINESS CRISIS — Final Act candidate (v1.1)
+# BUSINESS CRISIS — Director's Cut (v1.2)
 
-## Scope
-This release substantially redesigns the endgame presentation. It keeps all six rounds, adviser rules, costs, exposure categories, scoring, contract logic and original client-side team setup as in v1.0 RC. It does **not** add multiplayer, payments or a production server.
+## Changed
 
-## The Final Act
-- A cinematic, click-to-unseal ending instead of showing an analytical dashboard immediately.
-- Team podiums ranked by scores, including shared first-place recognition on ties.
-- Interactive per-team case files with three views: Story, itemised Crisis Receipt, Full Evidence.
-- Each Story highlights actual highest-impact and highest-commitment episodes, remaining exposures and a grounded CFO quip.
-- Crisis Receipt tallies six recorded cash movements, baseline overhead, choices and liabilities, uncommitted funds, annual client renewal distinct from spendable cash.
-- Full Evidence preserves historical, decision-level metric deltas and the original score breakdown.
-- One download-ready facilitator report; print-friendly cash receipt.
+- Redesigned cinematic opening, team lobby, leaked-document briefing, six episode backdrops, intelligence room, strategic decision cards, crisis fallout and final case-file styling.
+- Replaced six small 166 × 190 pixel portrait rasters with original resolution-independent SVG illustrations matched to the English-language character names.
+- Reduced clutter by collapsing the detailed company metrics during decisions, while keeping cash, risk and contract exposure visible.
+- Narrative fallout now leads with the consequences; metrics and episode financial receipt remain available.
+- Preserved existing engine for cash ledger, risk, score, random seeded session twists, six-round choices, adviser consultation and final outcome.
+- Single index.html contains all artwork; no third-party asset requests.
 
-## Known limits
-- Client-side shared-screen prototype; separate devices are not synchronised.
-- Cash, risk and scoring are illustrative simulated constructs, not financial forecasts.
-- No real-world customer purchase checkout or public launch QA is claimed.
-- Original functions can still rebuild main screens on a click; this release does not refactor the whole frontend engine.
+## Automated checks
 
-## Publishing
-Keep this as a candidate until play-tested. To publish, replace the root `index.html` on the existing GitHub repository and verify the Cloudflare build is Ready.
+- Completed full browser playthroughs with 2, 3 and 4 teams, and mobile at 390px, on Chromium.
+- Verified no browser JavaScript errors in those runs and cash + net ledger spending = £260k.
+- Layout checks on 320, 375, 390, 428, 768, 1024 and 1440 pixel widths showed no horizontal overflow.
+- 1200 seeded strategy matches / 2400 individual team results; 0 ledger or state discrepancies, 0 differences among tested same-decision teams under same conditions.
+- Scores 5–95 percentile: 28–68; median cash remaining £29k; median risk 44.
+
+## Important limitations
+
+- This is a shared-screen game; QR join, real phone-based multiplayer, secure per-player intelligence and payments are not implemented.
+- Portaits are crisp stylised illustrations, not photorealistic artwork. Their final visual direction still needs founder approval.
+- Automated tests do not replace moderated playtests with real groups or production security/load testing.
+- Safari/iPhone compatibility was designed for but not directly tested on a real iPhone.
+- The source remains a single HTML file; modularisation remains future engineering work.
+
+## GitHub publish
+
+Upload only index.html to the root of adiusor/business-crisis; ensure exact filename, commit to main, verify Cloudflare deployment is Ready. Keep an earlier revision for rollback.
