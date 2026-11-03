@@ -16,6 +16,7 @@ A competitive, shared-screen narrative strategy game. A confidential restructuri
 - Separate legal, operational, workforce, customer and liquidity exposures, client confidence and nonlinear outcome scoring.
 - Local save/resume on the same device, reduced-motion CSS, optional interface sound, 320px-responsive layouts.
 - Final boardroom ranking, client renewal status and per-team causal case files.
+- Explicit championship gate: only a team with a renewed annual client contract, solvent response fund and viable operations can be Boardroom Champion. If none qualifies, there is **no champion**; the highest numeric score is identified separately.
 
 ## Not yet implemented
 
