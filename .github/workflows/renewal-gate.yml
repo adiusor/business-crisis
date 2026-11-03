@@ -3,7 +3,7 @@ on:
   push:
     branches: [fix/renewal-championship-gate]
   pull_request:
-    paths: [index.html, "tests/championship.test.cjs", ".github/workflows/renewal-gate.yml"]
+    paths: [index.html, "tests/**", ".github/workflows/renewal-gate.yml"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,3 +18,16 @@ jobs:
           node-version: "22"
       - name: Verify production script and seven championship scenarios
         run: node tests/championship.test.cjs
+      - name: Install Chromium browser test runner
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.52.0
+          npx playwright install --with-deps chromium
+      - name: Verify final reveal in real browser at desktop and mobile widths
+        run: node tests/championship.browser.mjs
+      - name: Upload rendered final reveal screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renewal-championship-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
