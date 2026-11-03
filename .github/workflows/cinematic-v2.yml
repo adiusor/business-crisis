@@ -1,0 +1,38 @@
+name: Cinematic v2 quality gates
+on:
+  push:
+    branches: [redesign/cinematic-crisis-v2]
+  pull_request:
+    paths: ["src/**", "tests/**", "index.html", "scripts/**", "package.json"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify reproducible standalone build
+        run: |
+          cp index.html /tmp/index-before.html
+          node scripts/build.cjs
+          cmp index.html /tmp/index-before.html
+      - name: Test economic engine and 1200 seeded sessions
+        run: node tests/rules.test.cjs
+      - name: Install browser runner
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Play 2-, 3- and 4-team games in Chromium
+        run: node tests/browser.mjs
+      - name: Upload actual browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-v2-browser-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
