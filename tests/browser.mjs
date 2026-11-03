@@ -25,6 +25,7 @@ await click("begin");
 for(let round=0;round<6;round++){
 await click("evidence");
 for(let j=0;j<3;j++){await click("open-evidence",j);assert.match(await page.locator(".finding").innerText(),/KEY FINDING/);assertions++;await page.locator('.overlay-sheet .btn[data-action="close-evidence"]').click();}
+if(round===0){await click("reconstruct");for(const i of [1,0,2])await click("timeline-pick",i);assert.match(await page.locator(".timeline-success").innerText(),/VERIFIED/);assertions++;}
 await click("handoff");
 for(let team=0;team<teams;team++){
 await click("advisers");
@@ -39,6 +40,7 @@ await click("decision");
 if(round===0&&team===0&&teams===2&&width===1440)await shot("03-strategy-desktop");
 await click("choose-plan",(team+round)%3);
 await click("signal");
+if(round===2||round===4){await click("choose-amount",10000);await page.locator('[data-action="choose-route"][data-route="audit"]').click();await click("confirm-allocation");}
 await click("choose-signal",(team+round+1)%3);
 await click("commit");
 assert.match(await page.locator(".newspaper h2").innerText(),/.+/);assertions++;
