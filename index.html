@@ -32,6 +32,11 @@
 @media(max-width:540px){.hud{padding:15px 17px}.mark{font-size:15px}.mark svg{width:27px;height:27px}.case-id{display:none}.view{padding:22px 17px 70px}.display{font-size:clamp(64px,17vw,95px)}.display-sm{font-size:clamp(48px,12vw,75px)}.intro{min-height:76dvh}.lead{font-size:19px}.copy{font-size:15px}.footline{gap:8px;font-size:10px}.footline span+span:before{margin-right:8px}.memo{transform:none}.evidence-table{grid-template-columns:1fr;transform:none;background:transparent;padding:0;border:0;box-shadow:none}.artifact{min-height:125px;transform:none!important;flex-direction:row;align-items:center;gap:15px}.artifact .name{font-size:29px}.artifact .time{display:none}.artifact:hover{transform:translateY(-2px)!important}.adviser-wall{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.adviser .bio{min-height:87px;padding:9px}.adviser .bio strong{font-size:23px}.adviser .bio small{font-size:9px}.adviser-intro{display:block}.consult-dock{display:block}.consult-dock .btn{width:100%;margin-top:15px}.intel-file:before{font-size:8px;right:8px;top:8px}.intel-head .portrait{width:70px;min-width:70px;height:90px}.intel-head h3{font-size:29px}.intel-file blockquote{font-size:17px}.plan{padding:20px}.plan h3{font-size:39px}.roundup-row{grid-template-columns:32px minmax(0,1fr);gap:12px}.roundup-row .num{font-size:37px}.roundup-row .cash{grid-column:2;text-align:left}.rank{grid-template-columns:40px minmax(0,1fr) 60px;padding:14px;gap:8px}.rank .place{font-size:33px}.rank h3{font-size:25px}.rank .score{font-size:38px}.newspaper{transform:none}.newspaper h2{font-size:53px}.clock-watermark{display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
 
+/* Physical reconstruction board and recovery-budget room */
+.timeline-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:38px 0}.timeline-event{min-height:230px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;padding:25px;background:#d9d0c0;color:#1d2b35;border:0;box-shadow:9px 13px 0 #0007;transform:rotate(-1deg);transition:transform .2s}.timeline-event:nth-child(2){transform:rotate(1deg);background:#c6d1d2}.timeline-event:nth-child(3){transform:rotate(-2deg);background:#cbbda8}.timeline-event:hover:not(:disabled){transform:translateY(-7px)}.timeline-event:disabled{opacity:.45}.timeline-event .eyebrow{color:#9c4940}.timeline-event strong{font:900 clamp(45px,5vw,78px)/1 var(--display)}.timeline-event span:last-child{font:900 22px var(--display);text-transform:uppercase}.timeline-sequence{display:flex;gap:14px;min-height:100px;align-items:center;border-bottom:2px solid #caa275;border-top:2px solid #caa275;padding:15px 0;margin:20px 0}.sequence-mark{flex:1;display:flex;align-items:center;gap:20px;padding:12px;background:#263846}.sequence-mark small{font-size:12px;color:var(--gold)}.sequence-mark b{font:900 37px var(--display)}.timeline-success{background:#1a463c;border-left:5px solid #8fcdb5;padding:18px;color:#e2f6ec;font-size:16px}.allocation-board{display:grid;grid-template-columns:.7fr 1.3fr;gap:25px;margin:32px 0}.allocation-board>div{border-top:4px solid #b99b76;background:#142735ec;padding:25px}.allocation-amounts{display:flex;gap:9px;flex-wrap:wrap;margin:25px 0}.allocation-amounts button{min-height:65px;min-width:90px;padding:12px;border:1px solid #8c9ea8;background:#263745;color:#fff;font:900 28px var(--display)}.allocation-amounts button[aria-pressed=true]{background:var(--gold);color:#1c2830;border-color:var(--gold)}.allocation-routes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:20px}.allocation-route{min-height:175px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;background:#243746;color:#f2e7d9;border:1px solid #8da1aa;padding:17px}.allocation-route[aria-pressed=true]{border:3px solid var(--gold);background:#493a2b}.allocation-route strong{font:900 26px/.95 var(--display);margin:13px 0}.allocation-route small{font-size:12px;color:#c4d2d3;line-height:1.5}
+@media(max-width:800px){.allocation-board{grid-template-columns:1fr}.timeline-event{min-height:175px;padding:15px}.timeline-event strong{font-size:45px}.allocation-routes{grid-template-columns:1fr}.allocation-route{min-height:95px}}
+@media(max-width:540px){.timeline-grid{grid-template-columns:1fr;gap:10px}.timeline-event{min-height:95px;transform:none!important;flex-direction:row;align-items:center}.timeline-event strong{font-size:40px}.timeline-event span:last-child{font-size:20px}.timeline-sequence{gap:5px}.sequence-mark{display:block;padding:8px}.sequence-mark b{font-size:27px}.allocation-board>div{padding:16px}.allocation-amounts button{min-width:70px;font-size:23px}}
+
 </style>
 </head>
 <body>
@@ -217,6 +222,11 @@ g.BCContent={advisers:advisers,episodes:episodes,initialCash:260000,annualContra
 "use strict";
 const DATA=g.BCContent;
 const RISK_KEYS=["legal","ops","workforce","customer","liquidity"];
+const ALLOCATIONS=[
+{id:"audit",name:"AUDIT & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
+{id:"capacity",name:"DELIVERY CAPACITY",delta:{ops:-8,workforce:-2},trust:1},
+{id:"people",name:"STAFF RECOVERY",delta:{workforce:-9,ops:-2},trust:1}
+];
 const ESCALATION=[
 {},
 {workforce:7,customer:2},
@@ -246,7 +256,7 @@ const coverage=team.cash-pending;
 team.risks.liquidity=clamp(Math.round(22+Math.max(0,DATA.initialCash-coverage)/DATA.initialCash*65+(team.cash<0?10:0)),18,95);
 team.insolvent=team.cash<0;
 }
-function applyTurn(input,round,planIndex,signalIndex,advisers,variant){
+function applyTurn(input,round,planIndex,signalIndex,advisers,variant,allocation){
 assert(input&&typeof input==="object","Missing team state");
 assert(Number.isInteger(round)&&round>=0&&round<DATA.episodes.length,"Invalid episode");
 assert(input.nextRound===round,"Episode already committed or out of order");
@@ -255,6 +265,9 @@ assert(Number.isInteger(planIndex)&&planIndex>=0&&planIndex<episode.plans.length
 assert(Number.isInteger(signalIndex)&&signalIndex>=0&&signalIndex<episode.signals.length,"Invalid public statement");
 assert(Array.isArray(advisers)&&advisers.length===2&&new Set(advisers).size===2&&advisers.every(n=>Number.isInteger(n)&&n>=0&&n<DATA.advisers.length),"Exactly two different advisers required");
 assert(Number.isInteger(variant)&&variant>=0&&variant<DATA.variants.length,"Invalid common scenario variant");
+const alloc=allocation||{amount:0,route:null};
+assert(alloc&&Number.isInteger(alloc.amount)&&[0,10000,20000].includes(alloc.amount),"Allocation must be £0, £10k or £20k");
+assert(alloc.amount===0||([2,4].includes(round)&&ALLOCATIONS.some(x=>x.id===alloc.route)),"Invalid allocation route or episode");
 const team=deepCopy(input),plan=episode.plans[planIndex],signal=episode.signals[signalIndex],due=[];
 if(round===0)addRisk(team,DATA.variants[variant].effect);
 addRisk(team,ESCALATION[round]);
@@ -266,13 +279,20 @@ else remain.push(item);
 team.pending=remain;
 expense(team,round,episode.base,"Mandatory operating response / "+episode.title,"baseline");
 expense(team,round,plan.spend,plan.name,"strategy");
+if(alloc.amount>0){
+const route=ALLOCATIONS.find(x=>x.id===alloc.route),factor=alloc.amount/10000;
+expense(team,round,alloc.amount,"Discretionary response / "+route.name,"allocation");
+const delta={};for(const k of Object.keys(route.delta))delta[k]=route.delta[k]*factor;
+addRisk(team,delta);
+team.trust=clamp(team.trust+route.trust*factor,0,100);
+}
 addRisk(team,plan.delta);addRisk(team,signal.delta);
 team.trust=clamp(team.trust+plan.trust+signal.trust,0,100);
 if(plan.delay)team.pending.push({id:"plan-"+(round+1),due:plan.delay.due,cost:plan.delay.cost,label:plan.delay.label,delta:deepCopy(plan.delay.delta||{})});
 if(signal.delay)team.pending.push({id:"signal-"+(round+1),due:signal.delay.due,cost:signal.delay.cost,label:signal.delay.label,delta:deepCopy(signal.delay.delta||{})});
 recalcLiquidity(team);
 const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.amount,0);
-team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),fallout:plan.fallout,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
+team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,fallout:plan.fallout,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
 team.nextRound++;
 return team;
 }
@@ -304,7 +324,7 @@ return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:
 }
 function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,evaluate:evaluate,rankTeams:rankTeams,seedVariant:seedVariant,sessionValid:sessionValid,clamp:clamp,deepCopy:deepCopy};
+g.BCRules={createTeam:createTeam,applyTurn:applyTurn,evaluate:evaluate,rankTeams:rankTeams,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);
 
@@ -396,7 +416,7 @@ g.BCArt={scene:scene,portrait:portrait,insignia:insignia};
 "use strict";
 const C=g.BCContent,R=g.BCRules,A=g.BCArt,KEY="business-crisis-cinematic-v2";
 const root=document.getElementById("app");
-function fresh(){return {phase:"intro",teamCount:2,names:["TEAM ALPHA","TEAM BRAVO","TEAM CHARLIE","TEAM DELTA"],teams:[],round:0,teamIndex:0,viewed:[],opened:null,selected:[],plan:null,signal:null,variant:0,seed:"",sound:false};}
+function fresh(){return {phase:"intro",teamCount:2,names:["TEAM ALPHA","TEAM BRAVO","TEAM CHARLIE","TEAM DELTA"],teams:[],round:0,teamIndex:0,viewed:[],opened:null,selected:[],plan:null,signal:null,allocation:{amount:0,route:null},timeline:[],timelineSolved:false,variant:0,seed:"",sound:false};}
 let s=fresh();
 try{const saved=JSON.parse(localStorage.getItem(KEY)||"null");if(saved&&Array.isArray(saved.teams)&&typeof saved.phase==="string"&&saved.round>=0&&saved.round<=6&&saved.teams.length<=4&&saved.teamCount>=2&&saved.teamCount<=4){s=Object.assign(fresh(),saved);s.opened=null;}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
@@ -423,7 +443,13 @@ function evidence(){
 const e=ep();let objects=e.evidence.map(function(d,i){return '<button type="button" class="artifact" data-action="open-evidence" data-index="'+i+'"><span class="type">EXHIBIT 0'+(i+1)+' · '+esc(d.type)+'</span><span class="name">'+esc(d.title)+'</span><span class="time">'+esc(d.time)+'</span>'+(s.viewed.includes(i)?'<span class="reviewed">REVIEWED ✓</span>':'')+'</button>';}).join("");
 let modal="";
 if(s.opened!==null){const d=e.evidence[s.opened];modal='<div class="overlay" role="dialog" aria-modal="true" aria-label="'+esc(d.title)+'"><article class="overlay-sheet"><button class="close" type="button" data-action="close-evidence" aria-label="Close exhibit">×</button><div class="eyebrow">EVIDENCE / EXHIBIT 0'+(s.opened+1)+' / '+esc(d.time)+'</div><h2>'+esc(d.title)+'</h2><div class="mini">'+esc(d.type)+' · VERIFIED EXTRACT</div><p>'+esc(d.body)+'</p><div class="finding">KEY FINDING: '+esc(d.clue)+'</div><div class="action-line">'+button("close-evidence","RETURN TO THE DESK →","")+'</div></article></div>';}
-return '<section><div class="evidence-top"><div class="eyebrow">EVIDENCE ROOM / EPISODE '+e.number+'</div><h1 class="display-sm">THE FACTS<br>ON THE <em>TABLE.</em></h1><p class="copy">Inspect each exhibit. Some details contradict what people think they know. None of them tells you what to do.</p></div><div class="evidence-table">'+objects+'</div><div class="evidence-progress"><div class="eyebrow">'+s.viewed.length+' / 3 EXHIBITS REVIEWED</div>'+button("handoff","BRIEF THE TEAMS →","",s.viewed.length<3)+'</div></section>'+modal;
+return '<section><div class="evidence-top"><div class="eyebrow">EVIDENCE ROOM / EPISODE '+e.number+'</div><h1 class="display-sm">THE FACTS<br>ON THE <em>TABLE.</em></h1><p class="copy">Inspect each exhibit. Some details contradict what people think they know. None of them tells you what to do.</p></div><div class="evidence-table">'+objects+'</div><div class="evidence-progress"><div class="eyebrow">'+s.viewed.length+' / 3 EXHIBITS REVIEWED</div>'+button(s.round===0?"reconstruct":"handoff",s.round===0?"RECONSTRUCT THE TIMELINE →":"BRIEF THE TEAMS →","",s.viewed.length<3)+'</div></section>'+modal;
+}
+function reconstruct(){
+const d=ep().evidence,order=[2,0,1],chosen=s.timeline||[],solved=s.timelineSolved;
+let pieces=order.map(function(i){return '<button type="button" class="timeline-event" data-action="timeline-pick" data-index="'+i+'" '+(chosen.includes(i)?'disabled':'')+'><span class="eyebrow">EVIDENCE 0'+(i+1)+'</span><strong>'+esc(d[i].time)+'</strong><span>'+esc(d[i].title)+'</span></button>';}).join("");
+let sequence=chosen.map(function(i,n){return '<div class="sequence-mark"><small>0'+(n+1)+'</small><b>'+esc(d[i].time)+'</b></div>';}).join("");
+return '<section class="reconstruct"><div class="eyebrow">FORENSIC RECONSTRUCTION / INCIDENT 0917</div><h1 class="display-sm">PUT THE<br><em>MORNING BACK.</em></h1><p class="lead">The exhibits were recovered out of order. Select the three events in the sequence they actually happened. The timeline matters more than a suspect.</p><div class="timeline-grid">'+pieces+'</div><div class="timeline-sequence">'+sequence+'</div>'+(solved?'<div class="timeline-success">TIMELINE VERIFIED. Access preceded distribution; the client response followed. This establishes sequence, not guilt.</div>':chosen.length===3?'<div class="empty-note">That sequence does not match the evidence timestamps. Recheck the exhibits and try again.</div>':'<p class="small">Select earliest → latest. You can reset the reconstruction.</p>')+'<div class="action-line">'+button("timeline-reset","RESET TIMELINE","ghost")+button("handoff","BRIEF THE TEAMS →","",!solved)+'</div></section>';
 }
 function handoff(){
 const t=currentTeam();return '<section class="turn-notice"><div class="turn-index">0'+(s.teamIndex+1)+'</div><div><div class="eyebrow">EPISODE '+ep().number+' / DECISION AUTHORITY</div><h1 class="turn-name">'+esc(t.name)+'</h1><p class="lead">Your team is on the clock. You can consult two specialists, choose a strategy and issue one public statement.</p><p class="turn-warning">Shared-screen prototype: other teams may see this information. Private phone-based multiplayer has not been implemented.</p><div class="action-line">'+button("advisers","ENTER THE INTELLIGENCE ROOM →","")+'</div></div></section>';
@@ -438,16 +464,21 @@ return '<section><div class="eyebrow">INTELLIGENCE UNSEALED / '+esc(currentTeam(
 }
 function decision(){
 const e=ep(),t=currentTeam();let plans=e.plans.map(function(p,i){const yes=s.plan===i;return '<button type="button" class="plan" data-action="choose-plan" data-index="'+i+'" aria-pressed="'+yes+'"><span class="letter">'+String.fromCharCode(65+i)+'</span><span class="tag">'+esc(p.tag)+' / STRATEGIC RESPONSE</span><h3>'+esc(p.name)+'</h3><div class="desc">'+esc(p.desc)+'</div><div class="trade"><b>UPSIDE</b><br>'+esc(p.benefits.join(" · "))+'<br><br><b>THE PRICE</b><br>'+esc(p.cost)+'</div><div class="price">'+money(p.spend)+'</div>'+(yes?'<span class="chosen">SELECTED ✓</span>':'')+'</button>';}).join("");
-return '<section><div class="decision-intro"><div class="eyebrow">THE BOARDROOM / '+esc(t.name)+' / '+esc(e.time)+'</div><h1 class="display-sm">THERE IS NO<br><em>PERFECT CALL.</em></h1><p class="lead">Choose a response. Every option solves something and puts something else at risk.</p></div><div class="plans">'+plans+'</div><div class="commit-strip"><div><div class="mini">REMAINING RESPONSE CASH</div><div class="money">'+money(t.cash)+'</div><div class="small">Mandatory operating costs of '+money(e.base)+' also apply this episode.</div></div>'+button("signal","SET THE PUBLIC MESSAGE →","",s.plan===null)+'</div></section>';
+return '<section><div class="decision-intro"><div class="eyebrow">THE BOARDROOM / '+esc(t.name)+' / '+esc(e.time)+'</div><h1 class="display-sm">THERE IS NO<br><em>PERFECT CALL.</em></h1><p class="lead">Choose a response. Every option solves something and puts something else at risk.</p></div><div class="plans">'+plans+'</div><div class="commit-strip"><div><div class="mini">REMAINING RESPONSE CASH</div><div class="money">'+money(t.cash)+'</div><div class="small">Mandatory operating costs of '+money(e.base)+' also apply this episode.</div></div>'+button("signal",[2,4].includes(s.round)?"ALLOCATE RECOVERY FUNDS →":"SET THE PUBLIC MESSAGE →","",s.plan===null)+'</div></section>';
+}
+function allocation(){
+const a=s.allocation||{amount:0,route:null};
+const options=R.allocations.map(function(x){return '<button type="button" class="allocation-route" data-action="choose-route" data-route="'+esc(x.id)+'" aria-pressed="'+(a.route===x.id)+'"><span class="eyebrow">RESPONSE CHANNEL</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.id==="audit"?"Legal review and client assurance":x.id==="capacity"?"Delivery capacity and contingency":"Rest, training and staff recovery")+'</small></button>';}).join("");
+return '<section><div class="eyebrow">RESOURCE ROOM / '+esc(currentTeam().name)+' / '+esc(ep().title)+'</div><h1 class="display-sm">EVERY POUND<br><em>HAS A JOB.</em></h1><p class="lead">Your strategy is already chosen. You may spend an additional £10k or £20k on one recovery channel—or hold the cash. Each allocation reduces a different exposure.</p><div class="allocation-board"><div><div class="eyebrow">01 / DISCRETIONARY AMOUNT</div><div class="allocation-amounts">'+[0,10000,20000].map(function(n){return '<button type="button" data-action="choose-amount" data-index="'+n+'" aria-pressed="'+(a.amount===n)+'">'+(n===0?"HOLD":money(n))+'</button>';}).join("")+'</div><p class="small">This is additional cash spending, not a transfer from the future client renewal.</p></div><div><div class="eyebrow">02 / WHERE THE MONEY GOES</div><div class="allocation-routes">'+options+'</div></div></div><div class="commit-strip"><div><div class="mini">ADDITIONAL CASH COMMITMENT</div><div class="money">'+money(a.amount)+'</div></div>'+button("confirm-allocation","APPROVE ALLOCATION →","",a.amount>0&&!a.route)+'</div></section>';
 }
 function signal(){
 const e=ep(),p=e.plans[s.plan];let options=e.signals.map(function(q,i){return '<button type="button" class="signal-choice" data-action="choose-signal" data-index="'+i+'" aria-pressed="'+(s.signal===i)+'"><strong>0'+(i+1)+' / '+esc(q.name)+'</strong><span>“'+esc(q.line)+'”</span></button>';}).join("");
 const preview=s.signal===null?"Select a statement to preview what your company will say.":e.signals[s.signal].line;
-return '<section><div class="eyebrow">THE MICROPHONE IS LIVE / '+esc(currentTeam().name)+'</div><h1 class="display-sm">WORDS HAVE<br><em>CONSEQUENCES.</em></h1><div class="signal-layout"><div><p class="copy">Your strategy is <strong>'+esc(p.name)+'</strong>. Now choose what the company will say. A bold promise can help today and become a liability tomorrow.</p><div class="signal-options">'+options+'</div></div><aside class="teleprompter"><div class="eyebrow">OFFICIAL STATEMENT / PREVIEW</div><blockquote>“'+esc(preview)+'”</blockquote><div class="redline">BOARD AUTHORISED / NOT YET RELEASED</div></aside></div><div class="commit-strip"><div><div class="mini">STRATEGY COST + MANDATORY RESPONSE</div><div class="money">'+money(p.spend+e.base)+'</div><div class="small">Existing deferred obligations may also fall due.</div></div>'+button("commit","COMMIT THIS DECISION →","",s.signal===null)+'</div></section>';
+return '<section><div class="eyebrow">THE MICROPHONE IS LIVE / '+esc(currentTeam().name)+'</div><h1 class="display-sm">WORDS HAVE<br><em>CONSEQUENCES.</em></h1><div class="signal-layout"><div><p class="copy">Your strategy is <strong>'+esc(p.name)+'</strong>. Now choose what the company will say. A bold promise can help today and become a liability tomorrow.</p><div class="signal-options">'+options+'</div></div><aside class="teleprompter"><div class="eyebrow">OFFICIAL STATEMENT / PREVIEW</div><blockquote>“'+esc(preview)+'”</blockquote><div class="redline">BOARD AUTHORISED / NOT YET RELEASED</div></aside></div><div class="commit-strip"><div><div class="mini">STRATEGY COST + MANDATORY RESPONSE</div><div class="money">'+money(p.spend+e.base+(s.allocation?s.allocation.amount:0))+'</div><div class="small">Existing deferred obligations may also fall due.</div></div>'+button("commit","COMMIT THIS DECISION →","",s.signal===null)+'</div></section>';
 }
 function fallout(){
-const t=currentTeam(),h=last(),e=ep(),pending=t.pending.reduce((x,y)=>x+y.cost,0);
-return '<section class="fallout-layout"><article class="newspaper"><div class="mast"><span>THE CRISIS WIRE</span><span>'+esc(e.time)+' / EDITION 0'+(s.round+1)+'</span></div><h2>'+esc(h.plan)+'</h2><div class="subhead">'+esc(t.name)+' issues its response as the situation develops.</div><p class="body">'+esc(h.fallout)+'</p><p class="body"><strong>THE PUBLIC RECORD:</strong> “'+esc(e.signals[h.signalIndex].line)+'”</p><div class="byline">DECISION FILED / EPISODE '+e.number+'</div></article><aside><div class="eyebrow">AFTERMATH / '+esc(t.name)+'</div><h2 class="display-sm" style="font-size:55px">THE<br><em>COST.</em></h2><div class="ledger-slip"><h3>RESPONSE RECEIPT</h3><div class="ledger-line"><span>Opening response fund</span><b>'+money(C.initialCash)+'</b></div><div class="ledger-line"><span>This episode’s spending</span><b>−'+money(h.roundSpent)+'</b></div><div class="ledger-line"><span>All spending to date</span><b>−'+money(C.initialCash-t.cash)+'</b></div><div class="ledger-line"><span>Unpaid future commitments</span><b>'+money(pending)+'</b></div><div class="mini" style="margin-top:20px">CASH STILL AVAILABLE</div><div class="ledger-total">'+money(t.cash)+'</div><p class="small">The annual client contract is not cash in the response fund. Pending commitments are disclosed separately.</p></div><div class="action-line">'+button("advance",s.teamIndex<s.teams.length-1?"PASS TO NEXT TEAM →":"REVEAL ROUND FALLOUT →","")+'</div></aside></section>';
+const t=currentTeam(),h=last(),e=ep(),pending=t.pending.reduce((x,y)=>x+y.cost,0),dueNote=h.paidDeferred.length?" Earlier promises now payable: "+h.paidDeferred.join("; ")+".":"";
+return '<section class="fallout-layout"><article class="newspaper"><div class="mast"><span>THE CRISIS WIRE</span><span>'+esc(e.time)+' / EDITION 0'+(s.round+1)+'</span></div><h2>'+esc(h.plan)+'</h2><div class="subhead">'+esc(t.name)+' issues its response as the situation develops.</div><p class="body">'+esc(h.fallout+dueNote)+'</p><p class="body"><strong>THE PUBLIC RECORD:</strong> “'+esc(e.signals[h.signalIndex].line)+'”</p><div class="byline">DECISION FILED / EPISODE '+e.number+'</div></article><aside><div class="eyebrow">AFTERMATH / '+esc(t.name)+'</div><h2 class="display-sm" style="font-size:55px">THE<br><em>COST.</em></h2><div class="ledger-slip"><h3>RESPONSE RECEIPT</h3><div class="ledger-line"><span>Opening response fund</span><b>'+money(C.initialCash)+'</b></div><div class="ledger-line"><span>This episode’s spending</span><b>−'+money(h.roundSpent)+'</b></div><div class="ledger-line"><span>All spending to date</span><b>−'+money(C.initialCash-t.cash)+'</b></div><div class="ledger-line"><span>Unpaid future commitments</span><b>'+money(pending)+'</b></div><div class="mini" style="margin-top:20px">CASH STILL AVAILABLE</div><div class="ledger-total">'+money(t.cash)+'</div><p class="small">The annual client contract is not cash in the response fund. Pending commitments are disclosed separately.</p></div><div class="action-line">'+button("advance",s.teamIndex<s.teams.length-1?"PASS TO NEXT TEAM →":"REVEAL ROUND FALLOUT →","")+'</div></aside></section>';
 }
 function roundup(){
 const e=ep();let rows=s.teams.map(function(t,i){const h=t.history[s.round];return '<div class="roundup-row"><div class="num">0'+(i+1)+'</div><div><h3>'+esc(t.name)+'</h3><p>'+esc(h.plan)+' · '+esc(h.signal)+'</p></div><div class="cash">'+money(t.cash)+'<small>CASH LEFT</small></div></div>';}).join("");
@@ -461,7 +492,7 @@ return '<details class="case-file"><summary>'+esc(t.name)+' / OPEN THE CASE FILE
 return '<section><div class="verdict-hero"><div class="eyebrow">17:45 / FINAL BOARD VERDICT</div><h1 class="display-sm">THE ROOM<br>HAS <em>DECIDED.</em></h1><div class="eyebrow">'+(ties?"A DEAD HEAT":"THE STRONGEST CRISIS RESPONSE")+'</div><div class="winner-name">'+esc(winner.team.name)+'</div><div class="winner-score">'+winner.outcome.score+' / 100 · '+esc(winner.outcome.status)+'</div><p class="lead">The winner is determined by financial resilience, independent exposure categories, client confidence and the consequences of commitments made along the way.</p></div><div class="rank-list">'+ranks+'</div><h2 class="display-sm" style="font-size:55px;margin-top:70px">THE CASE <em>FILES.</em></h2>'+cases+'<p class="risk-note">Illustrative business simulation, not a validated accounting forecast. This version is shared-screen only; phone-based multiplayer, host controls and payments are not implemented.</p><div class="action-line">'+button("reset","START A NEW CRISIS →","")+'</div></section>';
 }
 function render(){
-const p=s.phase;const view={intro:intro,lobby:lobby,brief:brief,evidence:evidence,handoff:handoff,advisers:advisers,intel:intel,decision:decision,signal:signal,fallout:fallout,roundup:roundup,verdict:verdict}[p]||intro;
+const p=s.phase;const view={intro:intro,lobby:lobby,brief:brief,evidence:evidence,reconstruct:reconstruct,handoff:handoff,advisers:advisers,intel:intel,decision:decision,allocation:allocation,signal:signal,fallout:fallout,roundup:roundup,verdict:verdict}[p]||intro;
 root.innerHTML='<div class="scene-wrap">'+A.scene(sceneName())+'</div><div class="veil"></div><div class="grain"></div><div class="edge-light"></div><header class="hud"><div class="mark">'+A.insignia()+'<span>BUSINESS CRISIS<small>THE 09:17 INCIDENT</small></span></div><div class="hud-right"><span class="case-id">CASE 0917 / '+(s.teams.length?"EP "+ep().number+" / "+esc(p.toUpperCase()):"PROTOTYPE V2")+'</span><button type="button" class="icon-button" data-action="sound" aria-label="'+(s.sound?"Mute sound":"Enable sound")+'" title="'+(s.sound?"Mute sound":"Enable sound")+'">'+(s.sound?"♪":"♫")+'</button></div></header><main class="view enter" id="view">'+view()+'</main>';
 save();
 }
@@ -472,24 +503,30 @@ if(action==="sound"){s.sound=!s.sound;render();return;}
 playSound();
 if(action==="lobby"){phase("lobby");return;}
 if(action==="count-up"||action==="count-down"){s.teamCount=R.clamp(s.teamCount+(action==="count-up"?1:-1),2,4);render();return;}
-if(action==="begin"){const names=s.names.slice(0,s.teamCount).map(x=>String(x||"").trim());if(names.some(n=>!n||n.length>32)||new Set(names.map(n=>n.toLowerCase())).size!==names.length){alert("Enter a unique name for each team (1–32 characters).");return;}s.teams=names.map((n,i)=>R.createTeam(i,n));s.seed="BC-"+Date.now().toString(36);s.variant=R.seedVariant(s.seed);s.round=0;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;phase("brief");return;}
+if(action==="begin"){const names=s.names.slice(0,s.teamCount).map(x=>String(x||"").trim());if(names.some(n=>!n||n.length>32)||new Set(names.map(n=>n.toLowerCase())).size!==names.length){alert("Enter a unique name for each team (1–32 characters).");return;}s.teams=names.map((n,i)=>R.createTeam(i,n));s.seed="BC-"+Date.now().toString(36);s.variant=R.seedVariant(s.seed);s.round=0;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;s.allocation={amount:0,route:null};phase("brief");return;}
 if(action==="evidence"){s.viewed=[];phase("evidence");return;}
 if(action==="open-evidence"){if(!Number.isInteger(index)||index<0||index>2)return;s.opened=index;if(!s.viewed.includes(index))s.viewed.push(index);render();const close=root.querySelector('[data-action="close-evidence"]');if(close)close.focus();return;}
 if(action==="close-evidence"){s.opened=null;render();return;}
-if(action==="handoff"&&s.viewed.length===3){s.teamIndex=0;s.selected=[];s.plan=null;s.signal=null;phase("handoff");return;}
+if(action==="reconstruct"&&s.viewed.length===3&&s.round===0){s.timeline=[];s.timelineSolved=false;phase("reconstruct");return;}
+if(action==="timeline-pick"&&s.phase==="reconstruct"){if(!s.timeline.includes(index)&&s.timeline.length<3){s.timeline.push(index);if(s.timeline.length===3)s.timelineSolved=s.timeline.join(",")==="1,0,2";render();}return;}
+if(action==="timeline-reset"){s.timeline=[];s.timelineSolved=false;render();return;}
+if(action==="handoff"&&s.viewed.length===3&&(s.round!==0||s.timelineSolved)){s.teamIndex=0;s.selected=[];s.plan=null;s.signal=null;s.allocation={amount:0,route:null};phase("handoff");return;}
 if(action==="advisers"){s.selected=[];phase("advisers");return;}
 if(action==="choose-adviser"){if(!Number.isInteger(index)||index<0||index>=6)return;const j=s.selected.indexOf(index);if(j>=0)s.selected.splice(j,1);else if(s.selected.length<2)s.selected.push(index);render();return;}
 if(action==="intel"&&s.selected.length===2){phase("intel");return;}
 if(action==="decision"){phase("decision");return;}
 if(action==="choose-plan"){if(!Number.isInteger(index)||index<0||index>=3)return;s.plan=index;render();return;}
-if(action==="signal"&&s.plan!==null){phase("signal");return;}
+if(action==="signal"&&s.plan!==null){if([2,4].includes(s.round)){s.allocation={amount:0,route:null};phase("allocation");}else phase("signal");return;}
+if(action==="choose-amount"){if(![0,10000,20000].includes(index))return;s.allocation.amount=index;render();return;}
+if(action==="choose-route"){if(!R.allocations.some(x=>x.id===String(index)))return;s.allocation.route=String(index);render();return;}
+if(action==="confirm-allocation"&&(s.allocation.amount===0||s.allocation.route)){phase("signal");return;}
 if(action==="choose-signal"){if(!Number.isInteger(index)||index<0||index>=3)return;s.signal=index;render();return;}
-if(action==="commit"&&s.plan!==null&&s.signal!==null){try{s.teams[s.teamIndex]=R.applyTurn(currentTeam(),s.round,s.plan,s.signal,s.selected,s.variant);phase("fallout");}catch(err){alert("The decision could not be committed: "+err.message);}return;}
+if(action==="commit"&&s.plan!==null&&s.signal!==null){try{s.teams[s.teamIndex]=R.applyTurn(currentTeam(),s.round,s.plan,s.signal,s.selected,s.variant,s.allocation);phase("fallout");}catch(err){alert("The decision could not be committed: "+err.message);}return;}
 if(action==="advance"){if(s.teamIndex<s.teams.length-1){s.teamIndex++;s.selected=[];s.plan=null;s.signal=null;phase("handoff");}else phase("roundup");return;}
 if(action==="next-round"){if(s.round===5){phase("verdict");}else{s.round++;s.teamIndex=0;s.viewed=[];s.selected=[];s.plan=null;s.signal=null;phase("brief");}return;}
 if(action==="reset"){if(!confirm("Start a new crisis? This will replace the current local session."))return;const sound=s.sound;s=fresh();s.sound=sound;phase("intro");return;}
 }
-root.addEventListener("click",function(e){const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;act(b.dataset.action,b.dataset.index===undefined?null:Number(b.dataset.index));});
+root.addEventListener("click",function(e){const b=e.target.closest("button[data-action]");if(!b||b.disabled)return;act(b.dataset.action,b.dataset.route!==undefined?b.dataset.route:b.dataset.index===undefined?null:Number(b.dataset.index));});
 root.addEventListener("input",function(e){const i=e.target;if(i.matches("input[data-team-name]")){s.names[Number(i.dataset.teamName)]=i.value;save();}});
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&s.opened!==null){s.opened=null;render();}});
 render();
