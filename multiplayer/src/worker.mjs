@@ -65,7 +65,7 @@ function publicRoom(room) {
 }
 function hostView(room) {
   return {...publicRoom(room),teams:room.teams.map(t=>({
-    id:t.id,name:t.name,players:t.members.map(m=>m.nickname),
+    id:t.id,name:t.name,invite:t.invite,players:t.members.map(m=>m.nickname),
     advisersReady:t.advisersLocked,voteReady:!!t.vote,
     cash:t.state.cash,trust:t.state.trust,history:t.state.history,
     result:(room.phase==="reveal"||room.phase==="finished")?R.evaluate(t.state):null
@@ -114,7 +114,7 @@ export class CrisisRoom {
       room={
         code:data.code,hostHash:data.hostHash,seed:data.code,variant:R.seedVariant(data.code),
         createdAt:Date.now(),phase:"lobby",round:0,players:[],
-        teams:data.names.map((name,id)=>({id,name,members:[],state:R.createTeam(id,name),picks:null,advisersLocked:false,vote:null}))
+        teams:data.names.map((name,id)=>({id,name,invite:randomHex(8),members:[],state:R.createTeam(id,name),picks:null,advisersLocked:false,vote:null}))
       };
       await this.ctx.storage.put("room",room);
       return respond({code:room.code},201);
@@ -127,6 +127,7 @@ export class CrisisRoom {
       const data=await bodyOf(req);
       const teamId=data.teamId;
       if(!Number.isInteger(teamId)||teamId<0||teamId>=room.teams.length) fail("Invalid team");
+      if(typeof data.invite!=="string"||room.teams[teamId].invite!==data.invite.toLowerCase()) fail("Valid team invitation required",403);
       const nickname=cleanName(data.nickname,24);
       if(room.players.some(p=>p.nickname.toLowerCase()===nickname.toLowerCase())) fail("Nickname already in use",409);
       const token=randomHex();
@@ -223,8 +224,8 @@ export default {
         }
         fail("Could not allocate a room",503);
       }
-      const match=/^\/api\/rooms\/([A-Z2-9]{8})\/(projector|join|state|advice|start|advisers|confirm|open-decisions|vote|resolve|advance)$/.exec(url.pathname.toUpperCase().replace(/\/(PROJECTOR|JOIN|STATE|ADVICE|START|ADVISERS|CONFIRM|OPEN-DECISIONS|VOTE|RESOLVE|ADVANCE)$/i,(m)=>m.toLowerCase()));
-      if(match) return env.ROOMS.get(env.ROOMS.idFromName(match[1])).fetch(req);
+      const match=/^\/api\/rooms\/([A-Z2-9]{8})\/(projector|join|state|advice|start|advisers|confirm|open-decisions|vote|resolve|advance)$/i.exec(url.pathname);
+      if(match) return env.ROOMS.get(env.ROOMS.idFromName(match[1].toUpperCase())).fetch(req);
       if(url.pathname.startsWith("/api/")) fail("API endpoint not found",404);
       if(env.ASSETS) return env.ASSETS.fetch(req);
       return respond({error:"Static assets not configured"},404);
