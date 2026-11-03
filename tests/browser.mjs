@@ -24,7 +24,7 @@ for(let i=2;i<teams;i++)await click("count-up");
 await click("begin");
 for(let round=0;round<6;round++){
 await click("evidence");
-for(let j=0;j<3;j++){await click("open-evidence",j);assert.match(await page.locator(".finding").innerText(),/KEY FINDING/);assertions++;await page.locator('.overlay-sheet .btn[data-action="close-evidence"]').click();}
+for(let j=0;j<3;j++){await click("open-evidence",j);assert.match(await page.locator(".finding").innerText(),/KEY FINDING/);assertions++;await page.locator('.overlay-sheet .close').click();}
 if(round===0){await click("reconstruct");for(const i of [1,0,2])await click("timeline-pick",i);assert.match(await page.locator(".timeline-success").innerText(),/VERIFIED/);assertions++;}
 await click("handoff");
 for(let team=0;team<teams;team++){
