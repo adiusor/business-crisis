@@ -7,9 +7,11 @@
     "build": "node scripts/build.cjs",
     "test:rules": "node tests/rules.test.cjs",
     "test:browser": "node tests/browser.mjs",
-    "test": "npm run test:rules && npm run test:browser"
+    "test": "npm run test:rules && npm run test:browser",
+    "test:multiplayer": "node tests/multiplayer.test.mjs"
   },
   "devDependencies": {
-    "playwright": "^1.52.0"
+    "playwright": "^1.52.0",
+    "wrangler": "^4.45.0"
   }
 }
