@@ -1,0 +1,30 @@
+name: Multiplayer foundation checks
+on:
+  pull_request:
+    paths:
+      - "multiplayer/**"
+      - "tests/multiplayer.test.mjs"
+      - "package.json"
+      - ".github/workflows/multiplayer.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  multiplayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Worker and browser JavaScript syntax
+        run: |
+          node --check multiplayer/src/worker.mjs
+          node --check multiplayer/public/app.js
+      - name: Run multiplayer authorization and six-episode integration tests
+        run: node tests/multiplayer.test.mjs
+      - name: Install Cloudflare CLI
+        run: npm install --no-audit --no-fund
+      - name: Verify Cloudflare Worker bundle without deployment
+        run: npx wrangler deploy --dry-run --config multiplayer/wrangler.toml --outdir /tmp/bc-multiplayer-build
