@@ -7,6 +7,7 @@ A competitive, shared-screen narrative strategy game. A confidential restructuri
 ## What's actually implemented
 
 - Six complete playable episodes with different scene art, evidence, adviser intelligence, strategies and statements.
+- Interactive evidence-timeline reconstruction in episode 1 and discretionary recovery-budget allocation in episodes 3 and 5.
 - Original vector scene artwork and six consistent character portraits, embedded in the deployable HTML.
 - Two to four teams in one browser, with a common scenario variant and independent team states.
 - Two sealed adviser choices per team per episode. Choices can be changed before confirmation.
