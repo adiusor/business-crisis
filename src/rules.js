@@ -103,7 +103,15 @@ if(!reasons.length)reasons.push("The company retains sufficient cash and has con
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
 }
 function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
+// Scores compare performance. The title requires the flagship renewal to be signed.
+function championshipResult(teams){
+const ranked=rankTeams(teams);
+const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
+const champion=eligible[0]||null;
+const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score):[];
+return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
+}
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,evaluate:evaluate,rankTeams:rankTeams,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+g.BCRules={createTeam:createTeam,applyTurn:applyTurn,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);
