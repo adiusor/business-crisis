@@ -1,0 +1,15 @@
+{
+  "name": "business-crisis-cinematic-v2",
+  "version": "2.0.0-preview",
+  "private": true,
+  "description": "Cinematic shared-screen corporate crisis strategy game",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test:rules": "node tests/rules.test.cjs",
+    "test:browser": "node tests/browser.mjs",
+    "test": "npm run test:rules && npm run test:browser"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0"
+  }
+}
