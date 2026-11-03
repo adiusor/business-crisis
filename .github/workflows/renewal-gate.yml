@@ -1,0 +1,34 @@
+name: Renewal championship gate
+on:
+  pull_request:
+    paths: [index.html, "tests/**", ".github/workflows/renewal-gate.yml"]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify production script and seven championship scenarios
+        run: node tests/championship.test.cjs
+      - name: Install Chromium browser test runner
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@latest
+          npx playwright install --with-deps chromium
+      - name: Verify final reveal in real browser at desktop and mobile widths
+        run: node tests/championship.browser.mjs
+      - name: Upload rendered final reveal screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renewal-championship-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
