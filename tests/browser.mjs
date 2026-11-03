@@ -51,6 +51,11 @@ assert.equal(await page.locator(".roundup-row").count(),teams);assertions++;
 await click("next-round");
 }
 assert.equal(await page.locator(".rank").count(),teams);assertions++;
+const championship=await page.evaluate(()=>{const teams=JSON.parse(localStorage.getItem("business-crisis-cinematic-v2")).teams;const r=BCRules.championshipResult(teams);return {hasChampion:!!r.champion,leader:r.leader.team.name};});
+const verdictText=await page.locator(".verdict-hero").innerText();
+if(championship.hasChampion)assert.match(verdictText,/BOARDROOM CHAMPION/);
+else {assert.match(verdictText,/NO BOARDROOM CHAMPION/);assert.match(verdictText,/0 TEAMS QUALIFIED/);}
+assertions+=2;
 assert.equal(await page.locator("details.case-file").count(),teams);assertions++;
 if(teams===2&&width===1440)await shot("05-verdict-desktop");
 if(width===320)await shot("05-verdict-mobile-320");
