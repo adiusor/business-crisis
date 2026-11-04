@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, ROOM_CODE_ALPHABET, SHORT_ROOM_CODE, LEGACY_ROOM_CODE, validRoomCode, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -471,4 +471,22 @@ test("team move refuses invalid destinations, spectators and same-team moves wit
   assert.throws(()=>act(room,host,"change_team",{teamIndex:1}),/lobby participant/);
   assert.throws(()=>act(room,{role:"player",playerId:"not-present"},"change_team",{teamIndex:1}),/lobby participant/);
   assert.deepEqual(room,snap);
+});
+
+
+test("new four-character room codes have a million unambiguous combinations and legacy codes keep working",()=>{
+  assert.equal(ROOM_CODE_ALPHABET.length,32);
+  assert.equal(new Set(ROOM_CODE_ALPHABET).size,32);
+  assert.equal(32**4,1048576);
+  for(const code of ["7KMP","ABCD","ZZZZ","2345","2HNP"]) {
+    assert.equal(validRoomCode(code),true);
+    assert.equal(SHORT_ROOM_CODE.test(code),true);
+    assert.equal(createRoom({code,hostHash:hash("host"),teamCount:2}).code,code);
+  }
+  assert.equal(validRoomCode("A1B2C3D4E5F6"),true);
+  assert.equal(LEGACY_ROOM_CODE.test("A1B2C3D4E5F6"),true);
+  for(const code of ["0000","OOPS","1111","IIII","0A00","aBCD","ABC","ABCDE","AB-C","A1B2C3D4E5FZ"]) {
+    assert.equal(validRoomCode(code),false,code);
+    assert.throws(()=>createRoom({code,hostHash:hash("host"),teamCount:2}),/Invalid room code/,code);
+  }
 });

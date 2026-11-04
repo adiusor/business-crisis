@@ -5,7 +5,7 @@ import CLIENT_HTML from "./client.html";
 import CLIENT_STYLE from "./client-style.txt";
 import CLIENT_SCRIPT from "./client-script.txt";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
-  clockFor, expireRoom, rotateProjector} from "./room-core.mjs";
+  clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
 
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
@@ -17,6 +17,9 @@ const problem = e => json({error: e && Number.isInteger(e.status) ? e.message : 
   e && Number.isInteger(e.status) ? e.status : 500);
 const token = () => Array.from(crypto.getRandomValues(new Uint8Array(32)),
   x => x.toString(16).padStart(2, "0")).join("");
+// Uniform CSPRNG selection across 32 symbols, never based on timestamps or counters.
+const shortCode = () => Array.from(crypto.getRandomValues(new Uint8Array(4)),
+  value => ROOM_CODE_ALPHABET[value & 31]).join("");
 const sha256 = async value => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",
   new TextEncoder().encode(value))), x => x.toString(16).padStart(2, "0")).join("");
 const fail = (status, message) => { throw Object.assign(new Error(message), {status}); };
@@ -65,9 +68,8 @@ export default {
         const input = await parse(request);
         if (!Number.isInteger(input.teamCount) || input.teamCount < 2 || input.teamCount > 4)
           fail(400, "Choose 2–4 teams");
-        for (let tries = 0; tries < 3; tries++) {
-          const code = Array.from(crypto.getRandomValues(new Uint8Array(6)),
-            x => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+        for (let tries = 0; tries < 20; tries++) {
+          const code = shortCode();
           const hostToken = token();
           const stub = env.CRISIS_ROOMS.get(env.CRISIS_ROOMS.idFromName(code));
           const res = await stub.fetch(new Request("https://room.internal/create", {method: "POST",
@@ -80,7 +82,7 @@ export default {
         }
         fail(503, "Unable to allocate a new room");
       }
-      const route = /^\/api\/rooms\/([A-F0-9]{12})\/(join|lobby|state|actions|socket|qr|projector-access)$/.exec(url.pathname);
+      const route = /^\/api\/rooms\/((?:[2-9A-HJ-NP-Z]{4}|[A-F0-9]{12}))\/(join|lobby|state|actions|socket|qr|projector-access)$/.exec(url.pathname);
       if (!route) fail(404, "Not found");
       const [, code, action] = route;
       if (action === "qr" && request.method === "GET") {
@@ -158,10 +160,18 @@ export class CrisisRoom extends DurableObject {
       if (path === "/create" && request.method === "POST") {
         const data = await parse(request);
         const room = createRoom(data);
+        let replacingExpired = false;
         await this.ctx.storage.transaction(async txn => {
-          if (await txn.get("room")) fail(409, "Room already exists");
+          const existing = await txn.get("room");
+          if (existing && (!Number.isSafeInteger(existing.expiresAtMs) || existing.expiresAtMs > Date.now()))
+            fail(409, "Room already exists");
+          if (existing) replacingExpired = true;
           await txn.put("room", room);
         });
+        // Reusing an expired short code must never grant old WebSockets access to a new room.
+        if (replacingExpired) for (const ws of this.ctx.getWebSockets()) {
+          try { ws.close(1008, "Previous room expired"); } catch (_) {}
+        }
         await this.schedule(room);
         return json({created: true}, 201);
       }

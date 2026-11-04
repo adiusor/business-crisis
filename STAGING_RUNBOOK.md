@@ -36,7 +36,7 @@ Every enabled staging run verifies the exact Worker name and routing policy, tes
 Use synthetic player names and no real customer information.
 
 1. On a host laptop, open the staging URL. Enter the staging room-creation key **on the host only**, choose 2 teams and create a room. Do not send the room-creation key to players.
-2. On one iPhone Safari and one Android Chrome device, scan the host QR or open the provided link. Choose different nicknames and teams. Rename at least one team through its captain.
+2. On one iPhone Safari and one Android Chrome device, scan the host QR or open the provided link. Also test typing the short **4-character code** at `/join` (case-insensitive). Choose different nicknames and teams. Rename at least one team through its captain. Previously created **12-character** links remain valid until they expire.
 3. Open the dedicated projector link from the host on a separate screen. Confirm it shows the public episode and clock, **not** players' names, confidential adviser advice, room-creation key or host controls.
 4. Start episode one. Have each captain select two advisers, read private intelligence, make a strategic choice and select a public statement. Confirm the projector and host see team completion without the private advice.
 5. Test one on-time submission (within 3:00), one submission in the reserve minute (−5 score), and one unanswered 4:00 deadline (−12 and actual economic deterioration). Do this in separate episodes if needed.
@@ -49,6 +49,6 @@ Use synthetic player names and no real customer information.
 
 ## Known limits and costs
 
-Staging remains an internet-accessible test environment; the app has not passed formal security, accessibility, GDPR, commercial load or real-device audits. The currently implemented nickname and room-code admission model needs rate limiting, stronger host identity and abuse handling before public sales. Cloudflare usage is billed according to the account's applicable plan and usage; small tests may fit in included quotas but **zero incremental cost is not guaranteed**.
+The four-character room code is easy to share, but **not private or secure** by itself. Use test nicknames only; production must add join-rate limiting, an optional room PIN or host-approved admission, and protection from room enumeration. Staging remains an internet-accessible test environment; the app has not passed formal security, accessibility, GDPR, commercial load or real-device audits. The currently implemented nickname and room-code admission model needs rate limiting, stronger host identity and abuse handling before public sales. Cloudflare usage is billed according to the account's applicable plan and usage; small tests may fit in included quotas but **zero incremental cost is not guaranteed**.
 
 Payments, automatic email results and collection of email addresses remain off. Room nicknames are personal data in some circumstances: use a privacy notice and retention/deletion process before gathering real participant information.

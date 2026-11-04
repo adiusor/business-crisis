@@ -80,8 +80,16 @@ try {
   const created = await req("/api/rooms", "POST", {teamCount: 2}, creationKey);
   assert.equal(created.response.status, 201, "Room creates through actual Worker: " + JSON.stringify(created.payload));
   const {roomCode, hostToken} = created.payload;
-  assert.match(roomCode, /^[A-F0-9]{12}$/);
+  assert.match(roomCode, /^[2-9A-HJ-NP-Z]{4}$/);
   assert.match(hostToken, /^[a-f0-9]{64}$/);
+  const extraCodes = new Set([roomCode]);
+  for (let idx = 0; idx < 12; idx++) {
+    const another = await req("/api/rooms","POST",{teamCount:2},creationKey);
+    assert.equal(another.response.status,201,"Collision retries must create valid rooms");
+    assert.match(another.payload.roomCode,/^[2-9A-HJ-NP-Z]{4}$/);
+    assert.equal(extraCodes.has(another.payload.roomCode),false,"Fresh short room codes may not collide");
+    extraCodes.add(another.payload.roomCode);
+  }
   const qr = await req("/api/rooms/" + roomCode + "/qr");
   assert.equal(qr.response.status, 200);
   assert.match(qr.payload, /<svg/);
@@ -222,7 +230,7 @@ try {
     await hostUI.locator("#create-form button.primary").click();
     await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
     const uiCode = (await hostUI.locator("#room-code").textContent()).trim();
-    assert.match(uiCode, /^[A-F0-9]{12}$/);
+    assert.match(uiCode, /^[2-9A-HJ-NP-Z]{4}$/);
     await hostUI.locator("#join-qr").evaluate(async image => {
       if (image.complete && image.naturalWidth > 0) return;
       await new Promise((resolve, reject) => {
@@ -230,7 +238,12 @@ try {
         image.addEventListener("error", () => reject(Error("QR image failed to load")), {once: true});
       });
     });
-    await phoneA.goto(base + "/join?room=" + uiCode);
+    await phoneA.goto(base + "/join");
+    await phoneA.locator("#join-code-form").waitFor({state: "visible"});
+    await phoneA.locator("#join-code").fill(uiCode.toLowerCase());
+    await phoneA.locator("#join-code-form button.primary").click();
+    await phoneA.locator("#join-form").waitFor({state: "visible"});
+    assert.match(phoneA.url(),new RegExp("room="+uiCode+"$"),"Manual 4-character code finds the right room");
     await phoneA.locator("#join-name").fill("Mobile Alice");
     assert.equal(await phoneA.locator("#join-team").inputValue(),"auto");
     await phoneA.locator("#join-team").selectOption("auto");
@@ -248,7 +261,7 @@ try {
     await hostUI.locator("#rotate-projector").click();
     await hostUI.locator("#projector-link").waitFor({state:"visible"});
     const projectorHref=await hostUI.locator("#projector-link").getAttribute("href");
-    assert.match(projectorHref,/\/projector\?room=[A-F0-9]{12}#access=[a-f0-9]{64}$/);
+    assert.match(projectorHref,/\/projector\?room=[2-9A-HJ-NP-Z]{4}#access=[a-f0-9]{64}$/);
     const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
     projected.on("pageerror",err=>browserErrors.push(err.message));
     await projected.goto(projectorHref,{waitUntil:"load"});

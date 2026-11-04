@@ -11,8 +11,9 @@
   const EPISODES = ["THE SEND", "THE FLOOR", "THE CLIENT", "THE BOARD",
     "THE OPERATION", "THE VERDICT"];
   const isProjector = location.pathname === "/projector";
+  const validRoomCode = code => /^[2-9A-HJ-NP-Z]{4}$/.test(code) || /^[A-F0-9]{12}$/.test(code);
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
-  let roomCode = /^[A-F0-9]{12}$/.test(codeFromUrl) ? codeFromUrl : "";
+  let roomCode = validRoomCode(codeFromUrl) ? codeFromUrl : "";
   let credential = null;
   let state = null;
   let socket = null;
@@ -68,11 +69,12 @@
     try {
       const data = await request("/api/rooms/" + roomCode + "/lobby");
       if (data.phase !== "lobby") {
-        show("join"); $("join-form").hidden = true;
+        show("join"); $("join-form").hidden = true; $("join-code-form").hidden = true;
         $("join-caption").textContent = "This room already started. Late joining is not available in the prototype.";
         return;
       }
       $("join-form").hidden = false;
+      $("join-code-form").hidden = true;
       $("join-caption").textContent = "Choose a nickname and the group you want to join. You can join without an account.";
       const target = $("join-team"), old = target.value;
       target.replaceChildren();
@@ -522,6 +524,14 @@
       await authenticateSession();
     } catch (e) { error(e.message); }
   });
+  $("join-code-form").addEventListener("submit", e => {
+    e.preventDefault(); error("");
+    const code = $("join-code").value.trim().toUpperCase();
+    if (!validRoomCode(code)) {
+      error("Enter a valid 4-character room code, for example 7KMP."); return;
+    }
+    location.assign("/join?room=" + encodeURIComponent(code));
+  });
   $("join-form").addEventListener("submit", async e => {
     e.preventDefault(); error("");
     try {
@@ -580,7 +590,12 @@
       $("join-caption").textContent = "Missing projector access. Ask the host for a new projection link.";
     } else if (location.pathname === "/join") lobby();
     else {show("create");error("Host login is not available on this tab. Use the original host tab or create a new room.");}
-  } else if (location.pathname === "/join" || isProjector) {
-    show("join"); $("join-form").hidden = true;error("The invitation is missing its room code.");
+  } else if (location.pathname === "/join") {
+    show("join"); $("join-form").hidden = true; $("join-code-form").hidden = false;
+    $("join-caption").textContent = "Enter the short code shown on the projector, or scan the QR to join directly.";
+    if (codeFromUrl) error("That room code is not valid. Try the four-character code.");
+  } else if (isProjector) {
+    show("join"); $("join-form").hidden = true; $("join-code-form").hidden = true;
+    error("The projector invitation is missing its room code.");
   } else show("create");
 })();

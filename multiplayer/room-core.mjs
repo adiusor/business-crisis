@@ -18,6 +18,13 @@ const requireState=(condition,status,message)=>{if(!condition)throw bad(status,m
 const clone=x=>JSON.parse(JSON.stringify(x));
 const fold=x=>x.toLocaleLowerCase("en");
 const validNow=x=>Number.isSafeInteger(x)&&x>=0;
+// New short codes avoid ambiguous 0/O and 1/I. Keep legacy 12-character codes valid.
+export const ROOM_CODE_ALPHABET="23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+export const SHORT_ROOM_CODE=/^[2-9A-HJ-NP-Z]{4}$/;
+export const LEGACY_ROOM_CODE=/^[A-F0-9]{12}$/;
+export function validRoomCode(code){
+ return typeof code==="string"&&(SHORT_ROOM_CODE.test(code)||LEGACY_ROOM_CODE.test(code));
+}
 function randomNames(n,seed){
  requireState(Number.isSafeInteger(seed)&&seed>=0,400,"Invalid name seed");
  const names=TEAM_NAME_POOL.slice();let x=seed>>>0;
@@ -28,7 +35,7 @@ function randomNames(n,seed){
  return names.slice(0,n);
 }
 export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,createdAtMs=Date.now()}){
- requireState(typeof code==="string"&&/^[A-F0-9]{12}$/.test(code),400,"Invalid room code");
+ requireState(validRoomCode(code),400,"Invalid room code");
  requireState(typeof hostHash==="string"&&/^[a-f0-9]{64}$/.test(hostHash),400,"Invalid host credential");
  requireState(validNow(createdAtMs),400,"Invalid room creation time");
  if(teamNames===undefined){

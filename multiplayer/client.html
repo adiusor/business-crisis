@@ -38,12 +38,18 @@
           <input id="create-key" type="password" autocomplete="off" required placeholder="Required to create a preview room">
           <button type="submit" class="primary">CREATE PRIVATE ROOM</button>
         </form>
+        <p><a href="/join">Already have a room code? Join the game.</a></p>
       </section>
 
       <section id="join-screen" hidden>
         <div class="eyebrow">02 / TEAM ARRIVAL</div>
         <h2>Step inside.</h2>
         <p id="join-caption">Enter your nickname and choose your team.</p>
+        <form id="join-code-form" hidden>
+          <label for="join-code">Enter the 4-character room code</label>
+          <input id="join-code" maxlength="12" minlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="E.g. 7KMP" required>
+          <button type="submit" class="primary">FIND ROOM</button>
+        </form>
         <form id="join-form">
           <label for="join-name">Your nickname</label>
           <input id="join-name" maxlength="24" required autocomplete="nickname" placeholder="How should your team know you?">
