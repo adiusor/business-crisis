@@ -42,7 +42,7 @@ response="$(curl --silent --show-error --fail --max-time 20 \
   --data '{"teamCount":2}' "$BASE/api/rooms")"
 code="$(jq -r '.roomCode // empty' <<<"$response")"
 host_token="$(jq -r '.hostToken // empty' <<<"$response")"
-if [[ ! "$code" =~ ^[A-F0-9]{12}$ ]] || [[ ! "$host_token" =~ ^[a-f0-9]{64}$ ]]; then
+if [[ ! "$code" =~ ^[2-9A-HJ-NP-Z]{4}$ ]] || [[ ! "$host_token" =~ ^[a-f0-9]{64}$ ]]; then
   echo "::error::Staging room creation response was invalid."
   exit 1
 fi
