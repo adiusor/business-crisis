@@ -491,6 +491,9 @@ try {
     assert.ok(editorial.filmOpacity>=0.4,
       "The original cinematic artwork must be sufficiently visible");
     assert.ok(editorial.overflow<=1,"Incident facts must fit a 320px phone");
+    assert.ok(await phoneA.locator(".scene-fact dd").evaluateAll(xs=>
+      xs.every(el=>el.scrollWidth <= el.clientWidth+1)),
+      "Incident values must not break in the middle of a word at 320px");
     // Cinematic scene remains scannable: one hero, six chapter markers, and
     // evidence whose full source paragraphs are progressively disclosed.
     assert.equal(await phoneA.locator(".scene-art > svg").count(),1);
