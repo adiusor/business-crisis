@@ -545,6 +545,8 @@ try {
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".strategy-grid .strategy-choice").count(),3);
+    assert.equal(await phoneA.getByRole("combobox",{name:"Choose a statement"}).count(),1,
+      "Decision controls must have real accessible labels");
     assert.equal(await phoneA.locator(".strategy-tradeoffs[open]").count(),0);
     await phoneA.locator(".strategy-tradeoffs summary").first().click();
     assert.match(await phoneA.locator(".strategy-tradeoffs[open]").innerText(),/UPSIDE/);
@@ -575,6 +577,14 @@ try {
     await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
       null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
+    await phoneA.locator(".aftershock-report").waitFor({state:"visible",timeout:12000});
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/CONTAIN THE LEAK/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
+    assert.equal(await phoneB.locator(".aftershock-report").count(),0,
+      "Rival team does not receive Alice's private consequence");
+    assert.equal(await hostUI.locator(".aftershock-report").count(),0);
+    assert.equal(await projected.locator(".aftershock-report").count(),0);
     const frozen=await phoneA.locator("#timer").textContent();
     await delay(1200);
     assert.equal(await phoneA.locator("#timer").textContent(),frozen,"A team that locked early has a frozen timer");
