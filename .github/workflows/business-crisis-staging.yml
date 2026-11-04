@@ -1,3 +1,4 @@
+# Staging activation requested by repository owner after supplying dedicated secrets.
 # Opt-in only. The deployment job cannot run until the owner explicitly sets
 # Actions variable BC_STAGING_DEPLOY_ENABLED=YES and configures dedicated secrets.
 # This workflow has NO permission to route, merge or publish the production game.
