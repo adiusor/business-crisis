@@ -49,7 +49,7 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
   expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
-   roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
+   roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},participatedIds:[],runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
 }
 export function authorize(room,hash){
@@ -274,7 +274,9 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
     "Emergency removal opens 90 seconds after the episode starts");
    requireState(clockFor(next,nowMs).stage!=="closed",409,"Episode deadline passed");
    requireState(!team.locked,409,"The team has already finished");
-   requireState(!team.votes?.[target.id]?.locked,409,"An already submitted vote cannot be removed");
+   requireState(!(team.participatedIds||[]).includes(target.id) &&
+    !team.votes?.[target.id]?.locked,409,
+    "A participant who voted this episode cannot be removed");
    requireState(next.players.filter(p=>p.teamIndex===target.teamIndex).length>1,409,
     "Cannot remove the last member of a team during an episode");
   }
@@ -333,6 +335,8 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
     if(t.runoff)requireState(t.runoff.choices.some(x=>ballotKey(x)===ballotKey(vote)),
       400,"Choose one of the two runoff proposals");
     t.votes[player.id]={ballot:vote,locked:true};
+    if(!Array.isArray(t.participatedIds))t.participatedIds=[];
+    if(!t.participatedIds.includes(player.id))t.participatedIds.push(player.id);
     resolveVotes(next,player.teamIndex,nowMs);
    }else{
     // Backwards compatibility for one-player rooms. Never allow the captain to
@@ -342,6 +346,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
       "Every team member must lock an individual vote");
     const vote=ballotFor(next,command);
     t.votes={[player.id]:{ballot:vote,locked:true}};
+    t.participatedIds=[player.id];
     decideTeam(next,player.teamIndex,vote,nowMs);
    }
 
@@ -361,7 +366,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   else{
    next.round++;next.startedAtMs=nowMs;
    next.teams.forEach(t=>{t.advisers=[];t.locked=false;t.lockedAtMs=null;t.timedOut=false;
-    t.votes={};t.runoff=null;t.roundPenalty=0;});
+    t.votes={};t.participatedIds=[];t.runoff=null;t.roundPenalty=0;});
   }
  }else throw bad(400,"Unknown command");
  next.revision++;
@@ -395,7 +400,8 @@ export function viewFor(room,actor,nowMs=Date.now()){
   ...(actor.role==="host"?{hostRoster:room.players.map(p=>({
     id:p.id,nickname:p.nickname,teamIndex:p.teamIndex,
     captain:room.teams[p.teamIndex].captainId===p.id,
-    hasVoted:!!room.teams[p.teamIndex].votes?.[p.id]?.locked
+    hasVoted:(room.teams[p.teamIndex].participatedIds||[]).includes(p.id) ||
+      !!room.teams[p.teamIndex].votes?.[p.id]?.locked
   }))}:{}),
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,
    ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,

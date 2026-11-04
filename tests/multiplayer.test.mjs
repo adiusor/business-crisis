@@ -742,7 +742,7 @@ test("emergency removal cannot delete submitted ballots or leave a team empty",(
  room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
  room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},at+1);
  room=applyRoomAction(room,a.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+1000);
- assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:a.actor.playerId,expectedRevision:room.revision},at+95000),/submitted vote/);
+ assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:a.actor.playerId,expectedRevision:room.revision},at+95000),/voted this episode/);
  assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:b.actor.playerId,expectedRevision:room.revision},at+95000),/last member/);
  assert.equal(room.players.length,3);
  room=applyRoomAction(room,host,{type:"set_captain",playerId:teammate.actor.playerId,expectedRevision:room.revision},at+5000);
@@ -752,4 +752,32 @@ test("emergency removal cannot delete submitted ballots or leave a team empty",(
  room=applyRoomAction(room,teammate.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+6000);
  assert.equal(room.teams[0].locked,true);
  assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:teammate.actor.playerId,expectedRevision:room.revision},at+100000),/already finished/);
+});
+
+
+test("an initial tied ballot is still protected from facilitator removal during private runoff",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const eve=enter(room,"Eve",0,2);room=eve.room;
+ const bob=enter(room,"Bob",1,3);room=bob.room;
+ const at=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
+ room=applyRoomAction(room,alice.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},at+5);
+ room=applyRoomAction(room,alice.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+1000);
+ room=applyRoomAction(room,eve.actor,{type:"lock_vote",planIndex:1,signalIndex:1,expectedRevision:room.revision},at+2000);
+ assert.equal(room.teams[0].locked,false);
+ assert.equal(room.teams[0].runoff.ordinal,1);
+ assert.equal(Object.keys(room.teams[0].votes).length,0,"Runoff clears the active ballot");
+ assert.deepEqual(room.teams[0].participatedIds,[alice.actor.playerId,eve.actor.playerId],
+  "Participation remains auditable even when a runoff resets current votes");
+ for(const player of [alice.actor,eve.actor]){
+  assert.throws(()=>applyRoomAction(room,host,
+    {type:"remove_player",playerId:player.playerId,expectedRevision:room.revision},at+95000),
+    /voted this episode/,"The facilitator cannot discard a participant after their original ballot");
+  assert.equal(viewFor(room,host).hostRoster.find(p=>p.id===player.playerId).hasVoted,true);
+ }
+ room=applyRoomAction(room,alice.actor,{type:"lock_vote",planIndex:1,signalIndex:1,expectedRevision:room.revision},at+96000);
+ room=applyRoomAction(room,eve.actor,{type:"lock_vote",planIndex:1,signalIndex:1,expectedRevision:room.revision},at+97000);
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].economic.history.length,1);
 });
