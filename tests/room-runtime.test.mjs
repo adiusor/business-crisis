@@ -379,7 +379,7 @@ try {
     await phoneB.context().setOffline(false);
     await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
-    assert.equal(await phoneB.locator(".scene-art[data-scene='2'] svg").count(),1,
+    assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
       "Each episode uses the matching cinematic illustration");
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
