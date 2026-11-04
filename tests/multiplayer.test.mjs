@@ -49,6 +49,15 @@ const pub=await projector(code);
 check(pub.status===200&&pub.data.phase==="lobby","projector is publicly readable");
 check(!JSON.stringify(pub.data).includes(inviteA),"projector does not expose team invitations");
 check(!JSON.stringify(pub.data).includes(hostToken),"projector does not expose host token");
+
+const qrReq=new Request("https://preview.example/api/rooms/"+code+"/qr?team=0&invite="+inviteA);
+const qrRes=await worker.fetch(qrReq,env);
+const qrSvg=await qrRes.text();
+check(qrRes.status===200&&qrRes.headers.get("content-type").includes("image/svg+xml"),"private QR endpoint renders SVG");
+check(qrSvg.includes("<svg")&&qrSvg.includes("</svg>"),"QR artwork contains SVG vector");
+const wrongQr=await call("/api/rooms/"+code+"/qr?team=0&invite="+inviteB);
+check(wrongQr.status===403,"QR cannot be generated using another team's invitation");
+
 const badJoin=await call("/api/rooms/"+code+"/join",{method:"POST",data:{teamId:0,nickname:"IMPOSTOR",invite:inviteB}});
 check(badJoin.status===403,"another team's invitation cannot be used");
 const join=async(teamId,nickname,invite)=>call("/api/rooms/"+code+"/join",{method:"POST",data:{teamId,nickname,invite}});
