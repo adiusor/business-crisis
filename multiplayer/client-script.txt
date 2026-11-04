@@ -982,15 +982,12 @@
     clearTimeout(retryHandle);
     try {
       const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") +
-        location.host + "/api/rooms/" + roomCode + "/socket",
-        ["bc-room","bc-auth-"+credential]);
+        location.host + "/api/rooms/" + roomCode + "/socket");
       socket = ws;
       setConnection(false);
       ws.addEventListener("open", () => {
         if (socket !== ws || !credential) return;
-        // Server authenticates the handshake before accepting a connection.
-        // First snapshot arrives without any separate token-bearing message.
-        if(ws.protocol!=="bc-room")ws.close(1008,"Unsupported room protocol");
+        ws.send(JSON.stringify({type:"authenticate",token:credential}));
       });
       ws.addEventListener("message", event => {
         if (socket !== ws) return;

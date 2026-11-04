@@ -37,14 +37,11 @@ async function req(url, method = "GET", body, bearer) {
 }
 function socketFor(credential, code) {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket("ws://127.0.0.1:" + port + "/api/rooms/" + code + "/socket",
-      ["bc-room","bc-auth-"+credential]);
+    const ws = new WebSocket("ws://127.0.0.1:" + port + "/api/rooms/" + code + "/socket");
     const messages = [];
     sockets.push(ws);
     const deadline = setTimeout(() => reject(Error("Socket authentication timeout")), 8000);
-    ws.addEventListener("open", () => {
-      assert.equal(ws.protocol,"bc-room","Only the harmless protocol label is echoed");
-    });
+    ws.addEventListener("open", () => ws.send(JSON.stringify({type:"authenticate",token:credential})));
     ws.addEventListener("message", event => {
       let msg;
       try { msg = JSON.parse(event.data); } catch (_) { return; }
@@ -451,31 +448,30 @@ try {
     assert.doesNotMatch(html,/credentialHash/);
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
-  // No unauthenticated WebSocket is accepted at all: the handshake rejects
-  // both missing credentials and validly-shaped but invalid credentials.
-  async function expectRejectedSocket(protocols,label){
-    const ws=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket",protocols);
-    sockets.push(ws);
+  // A few unauthenticated handshakes are tolerated briefly, but cannot
+  // occupy all 64 room connection slots and deny service to actual players.
+  const anonymous=[];
+  for(let i=0;i<8;i++){
+    const pending=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
+    sockets.push(pending);anonymous.push(pending);
     await new Promise((resolve,reject)=>{
-      const deadline=setTimeout(()=>reject(Error("Unauthenticated upgrade hung: "+label)),8000);
-      let done=false;
-      const rejected=()=>{
-        if(done)return;
-        done=true;clearTimeout(deadline);resolve();
-      };
-      ws.addEventListener("open",()=>{
-        clearTimeout(deadline);reject(Error("Unauthorized socket was accepted: "+label));
-        ws.close();
-      },{once:true});
-      ws.addEventListener("error",rejected,{once:true});
-      ws.addEventListener("close",rejected,{once:true});
+      const timeout=setTimeout(()=>reject(Error("Pending socket failed to open")),6000);
+      pending.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
+      pending.addEventListener("error",()=>{clearTimeout(timeout);reject(Error("Pending socket unexpectedly rejected"));},{once:true});
     });
   }
-  await expectRejectedSocket(undefined,"no credential");
-  await expectRejectedSocket(["bc-room","bc-auth-"+"e".repeat(64)],"invalid credential");
-  const stillHealthy=await socketFor(hostToken,roomCode);
-  assert.equal(stillHealthy.messages[0].state.viewer.role,"host",
-    "Rejected upgrades did not exhaust legitimate connection slots");
+  const ninth=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
+  sockets.push(ninth);
+  await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(Error("Pending socket cap was not enforced")),7000);
+    ninth.addEventListener("open",()=>{clearTimeout(timeout);reject(Error("Nine pending sockets were accepted"));ninth.close();},{once:true});
+    ninth.addEventListener("error",()=>{clearTimeout(timeout);resolve();},{once:true});
+    ninth.addEventListener("close",()=>{clearTimeout(timeout);resolve();},{once:true});
+  });
+  const afterAttack=await socketFor(hostToken,roomCode);
+  assert.equal(afterAttack.messages[0].state.viewer.role,"host",
+    "Authenticated host can still enter while anonymous sockets occupy their small quota");
+  for(const ws of anonymous)ws.close();
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
     qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
     privacy: "role-filtered snapshots", serverClock: "3m + 1m", deployments: 0}, null, 2));

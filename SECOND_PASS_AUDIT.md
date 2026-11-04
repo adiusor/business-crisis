@@ -13,7 +13,7 @@
 | Score clarity | Printed `economic − penalty = score` without stating the zero floor | Print `floor 0` in the score decomposition and explain `max(0, score − penalties)` | Unit test with penalties exceeding economic score |
 | Ending accuracy | When no team met all renewal requirements, the report incorrectly announced that the contract was lost, even for conditional cases | Recognise the best crisis response and separately mark that no confirmed renewal was secured. Never equate `CONDITIONAL` with `LOST` | Report browser checks and score eligibility rules |
 | Team engagement | A complete ballot combines strategy, public statement and optional investment. With larger teams preferences can be spread across many alternatives | Keep complex decisions, but add a **team-private provisional strategy pulse** based on the real locked ballots. It encourages discussion without publishing votes to opponents or inventing a result | Underlying immutable vote tally; browser and role-filtered data tests |
-| Room WebSockets | Up to 64 connections could be opened before validating credentials, allowing anonymous clients to occupy participant slots | Require a valid role token **in the WebSocket handshake** before accepting any socket; return 401 for missing or invalid credentials. Only the harmless protocol label is echoed back | Local Cloudflare Durable Object WebSocket test with missing, incorrect and valid authenticated upgrades |
+| Room WebSockets | Up to 64 unverified socket handshakes could occupy all room slots | Limit simultaneous still-unauthenticated socket connections to eight, reserving the other slots for authenticated participants. Keep first-message SHA-256 credential verification and rotated projector token revocation | Local Cloudflare Durable Object test opening eight pending sockets, rejecting the ninth and confirming host access remains possible |
 | Narrative audit | Contradiction in source naming would be easy when public episode labels are also duplicated client-side | Remove stale unused client episode-name constant; retain the six canonical chapters in `src/content.js` | Six-episode storyline structural tests |
 | Real-device recovery | Players reconnect through their saved in-tab credential, but lost browser storage cannot recover their identity | **Not solved**; commercial version needs host-controlled recovery/revocation and fail-safe quorum policy | Explicit release blocker |
 
@@ -27,7 +27,7 @@
 
 ## Remaining commercial release blockers
 
-**Security:** four-character room codes are locators, not access-control secrets. They can be guessed; public lobby/join still requires application- or edge-level abuse controls, rate limiting and ideally a host-approved admission/PIN. Authenticated WebSocket upgrades avoid anonymous socket allocation, but this is not a substitute for rate limits. The credential travels in a TLS-protected WebSocket subprotocol header and must be treated as sensitive in infrastructure logs; a commercial version should replace it with short-lived socket tickets. External rate limiting, payment security and real host accounts have not been implemented.
+**Security:** four-character room codes are locators, not access-control secrets. They can be guessed; public lobby/join still requires application- or edge-level abuse controls, rate limiting and ideally a host-approved admission/PIN. A cap of eight unauthenticated connections prevents total room-slot exhaustion by anonymous clients, but those eight connections may remain idle; this is **not** full anti-abuse protection. Automatic expiry based on Worker alarms and handshake-only authentication were attempted but failed the Cloudflare local runtime/rotation tests and were **not shipped**. Production needs platform rate limiting and, ideally, short-lived socket tickets or more robust connection quotas. External rate limiting, payment security and real host accounts have not been implemented.
 
 **Availability and scale:** the current input ceiling is **30 participants total**, and 30 concurrent physical devices have **not** been load-tested. Four teams of 10–20 participants each are not a verified supported scenario. Reconnection after storage loss, participant removal and a fair absent-voter policy remain open questions.
 
@@ -42,7 +42,7 @@
 - Economic tests: 1,200 seeded simulations with a reconciled cash ledger, repeatable outcome state and liability accounting.
 - Storyline tests: six ordered timestamps, three evidence exhibits, independent adviser intelligence and consequential alternatives.
 - Multiplayer: authorization, individual votes, tie/revote/captain-casting, own-team clock freeze, deadlines, 4-character and legacy room codes, role privacy and scoring.
-- Cloudflare local: HTTP/QR, WebSocket broadcast and reconnection, handshake rejection before socket allocation, projector revocation and post-round public recap.
+- Cloudflare local: HTTP/QR, WebSocket broadcast and reconnection, pending connection cap, projector revocation and post-round public recap.
 - Browser: 320px mobile, 1280px projector, 2/3/4-team standalone playthroughs, printable report, opened evidence preserved, role-filtered data, keyboard focus and client console errors.
 - Isolated Cloudflare staging only; **no** merge, `main` write, production Worker change, email sending or payment activation.
 

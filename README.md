@@ -58,7 +58,7 @@ bash -n scripts/smoke-staging.sh
 
 ## Second-pass code and fairness audit
 
-See **[SECOND_PASS_AUDIT.md](SECOND_PASS_AUDIT.md)** for the verified fixes: stable player keyboard focus during live WebSocket updates; monotonic room revision rendering; safer host Next/Start retries; public recap data minimisation; cash-aware championship tie-breaking; truthful no-champion wording; a private provisional strategy vote pulse; and authentication of WebSocket upgrades before any socket slot is accepted. The audit lists remaining recovery, room-code guessing, load-test and commercial privacy blockers without treating them as solved.
+See **[SECOND_PASS_AUDIT.md](SECOND_PASS_AUDIT.md)** for the verified fixes: stable player keyboard focus during live WebSocket updates; monotonic room revision rendering; safer host Next/Start retries; public recap data minimisation; cash-aware championship tie-breaking; truthful no-champion wording; a private provisional strategy vote pulse; and an enforced cap of eight unauthenticated WebSocket slots so anonymous connections cannot consume the whole room budget. The audit lists remaining recovery, room-code guessing, load-test and commercial privacy blockers without treating them as solved.
 
 ## Cinematic information design and storyline audit
 
