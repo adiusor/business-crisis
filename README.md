@@ -56,6 +56,10 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Second-pass code and fairness audit
+
+See **[SECOND_PASS_AUDIT.md](SECOND_PASS_AUDIT.md)** for the verified fixes: stable player keyboard focus during live WebSocket updates; monotonic room revision rendering; safer host Next/Start retries; public recap data minimisation; cash-aware championship tie-breaking; truthful no-champion wording; a private provisional strategy vote pulse; and expiry of unauthenticated WebSocket connections. The audit lists remaining recovery, room-code guessing, load-test and commercial privacy blockers without treating them as solved.
+
 ## Cinematic information design and storyline audit
 
 **The game keeps its economic and narrative depth while reducing simultaneous reading.** The six episodes now use custom, lightweight vector scene illustrations; a six-step visual progress strip; a one-line evidence finding on each of three exhibits (full source revealed on click); and a collapsed full briefing for players who want more context. Strategy choices show their core action and description first, with benefits, cost and trade-offs available behind **Reveal trade-offs**. Confidential adviser briefs are retained and grouped as a private expandable dossier.

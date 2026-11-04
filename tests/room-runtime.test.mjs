@@ -353,6 +353,22 @@ try {
       "Briefing disclosure stays open as teammates vote");
 
     await phoneA.locator('[data-plan="0"]').click();
+    const revisionBeforeOpposingDecision=Number(
+      await phoneA.locator("#room-screen").getAttribute("data-revision"));
+    assert.equal(await phoneA.locator('[data-plan="0"]').evaluate(el=>el===document.activeElement),
+      true,"Selected choice is keyboard-focused");
+    // An opponent's adviser choice broadcasts another room revision. It must not
+    // reset Alice's keyboard focus, opened strategy detail or draft selection.
+    await phoneB.locator('[data-choice="2"]').click();
+    await phoneB.locator('[data-choice="3"]').click();
+    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    await phoneA.waitForFunction(rev=>
+      Number(document.querySelector("#room-screen")?.dataset.revision)>rev,
+      revisionBeforeOpposingDecision,{timeout:12000});
+    assert.equal(await phoneA.locator('[data-plan="0"]').evaluate(el=>el===document.activeElement),
+      true,"Remote WebSocket updates preserve a participant's active choice");
+    assert.equal(await phoneA.locator(".strategy-tradeoffs[open]").count(),1,
+      "Team updates do not collapse chosen strategy's tradeoffs");
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
@@ -363,9 +379,6 @@ try {
     assert.equal(await phoneA.locator("#timer").textContent(),frozen,"A team that locked early has a frozen timer");
     const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
     await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
-    await phoneB.locator('[data-choice="2"]').click();
-    await phoneB.locator('[data-choice="3"]').click();
-    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneB.locator('[data-plan="1"]').click();
     await phoneB.locator("#player-actions select").last().selectOption("1");
     await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
@@ -386,6 +399,11 @@ try {
 
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
+    await phoneA.locator(".recap-details summary").click();
+    const publicAftershock=await phoneA.locator("#round-recap").innerText();
+    assert.match(publicAftershock,/RESPONSE COST/);
+    assert.doesNotMatch(publicAftershock,/CASH £|TRUST \d/,
+      "Mid-game public recaps must not leak rival cash or trust");
     const overflow = await phoneA.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
     await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});
@@ -425,6 +443,16 @@ try {
     assert.doesNotMatch(html,/credentialHash/);
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
+  // Pending WebSocket connections without credentials must not hold all room
+  // slots forever. Legitimate sockets authenticate immediately and stay connected.
+  const pending=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
+  sockets.push(pending);
+  const pendingClose=await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(Error("Pending socket did not expire")),22000);
+    pending.addEventListener("close",event=>{clearTimeout(timeout);resolve(event.code);},{once:true});
+    pending.addEventListener("error",()=>{}, {once:true});
+  });
+  assert.equal(pendingClose,1008,"Unauthenticated socket closes after deadline");
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
     qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
     privacy: "role-filtered snapshots", serverClock: "3m + 1m", deployments: 0}, null, 2));

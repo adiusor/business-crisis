@@ -9,8 +9,6 @@
     ["INES PARK", "CLIENT PARTNER"], ["ELI MERCER", "FINANCE CONTROLLER"],
     ["NOOR SHAH", "SECURITY LEAD"], ["RUTH BELL", "PEOPLE DIRECTOR"]
   ];
-  const EPISODES = ["THE SEND", "THE FLOOR", "THE CLIENT", "THE BOARD",
-    "THE OPERATION", "THE VERDICT"];
   const isProjector = location.pathname === "/projector";
   const validRoomCode = code => /^[2-9A-HJ-NP-Z]{4}$/.test(code) || /^[A-F0-9]{12}$/.test(code);
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
@@ -30,6 +28,7 @@
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   let draftRunoffOrdinal = 0;
+  let playerRenderKey = null;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -358,8 +357,8 @@
       const line=node("div",null,"recap-team");
       line.append(node("strong",team.name));
       line.append(node("span",team.plan+" / "+team.signal));
-      line.append(node("small","CASH £"+team.cash.toLocaleString("en-GB")+
-        " · TRUST "+team.trust+" · TIME PENALTY −"+team.timingPenalty));
+      line.append(node("small","RESPONSE COST £"+team.spent.toLocaleString("en-GB")+
+        " · TIME PENALTY −"+team.timingPenalty));
       details.append(line);
     }
     box.append(details);
@@ -410,12 +409,50 @@
     wrap.append(select);
     return wrap;
   }
-  function renderPlayerActions() {
+  function updateTeamPulse(target,voting,mine){
+    const pulse=target.querySelector(".team-pulse");
+    if(!pulse)return;
+    const show=!mine.locked&&!voting.runoff&&voting.lockedVotes>0;
+    pulse.hidden=!show;
+    if(!show)return;
+    pulse.querySelector(".pulse-count").textContent=
+      voting.lockedVotes+" / "+voting.totalMembers+" VOTES";
+    const totals=[0,0,0];
+    for(const entry of voting.tally||[])
+      if(entry.ballot&&totals[entry.ballot.planIndex]!==undefined)
+        totals[entry.ballot.planIndex]+=entry.count;
+    for(const bar of pulse.querySelectorAll("[data-pulse-plan]")){
+      const count=totals[Number(bar.dataset.pulsePlan)]||0;
+      bar.querySelector(".pulse-value").textContent=String(count);
+      bar.querySelector(".pulse-fill").style.width=
+        Math.min(100,Math.round(count/voting.totalMembers*100))+"%";
+    }
+  }
+  function renderPlayerActions(force = false) {
     const target = $("player-actions");
-    target.replaceChildren();
     target.hidden = state.viewer.role !== "player";
-    if (target.hidden) return;
+    if (target.hidden) {playerRenderKey=null;target.replaceChildren();return;}
     const mine = state.teams[state.viewer.teamIndex], privateData = state.privateTeam;
+    // Every unrelated team WebSocket update used to tear down this entire form,
+    // destroying keyboard focus and open trade-off cards. Rebuild only when
+    // this player's meaningful decision state changes.
+    const snapshotKey=JSON.stringify([
+      state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
+      mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
+      privateData.economic,privateData.voting?.myVote,privateData.voting?.runoff,
+      state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
+    ]);
+    if(!force && playerRenderKey===snapshotKey){
+      const label=target.querySelector("[data-vote-progress]");
+      if(label&&!mine.locked){
+        const voting=privateData.voting;
+        label.textContent="YOUR TEAM / "+voting.lockedVotes+" OF "+voting.totalMembers+" VOTES LOCKED";
+      }
+      updateTeamPulse(target,privateData.voting,mine);
+      return;
+    }
+    playerRenderKey=snapshotKey;
+    target.replaceChildren();
     if (state.phase === "lobby") {
       target.append(node("h3", "YOUR TEAM / CHANGE BEFORE START", "section-label"));
       target.append(node("p", "You're currently on " + mine.name +
@@ -447,14 +484,38 @@
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
     target.append(renderPrivateExposure(privateData.economic));
     const progress = node("div", null, "ballot-progress");
-    progress.append(node("strong", mine.locked ?
+    const voteHeadline=node("strong", mine.locked ?
       (mine.timedOut ? "DEADLINE MISSED" : "TEAM DECISION LOCKED · CLOCK STOPPED") :
-      "YOUR TEAM / " + voting.lockedVotes + " OF " + voting.totalMembers + " VOTES LOCKED"));
+      "YOUR TEAM / " + voting.lockedVotes + " OF " + voting.totalMembers + " VOTES LOCKED");
+    voteHeadline.dataset.voteProgress="true";
+    progress.append(voteHeadline);
     progress.append(node("p", mine.locked ?
       (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
       "Every player locks a complete proposal. Most votes wins; a tie sends your team into a private revote."));
     target.append(progress);
+    if(state.episode){
+      const pulse=node("section",null,"team-pulse");
+      pulse.hidden=true;
+      pulse.append(node("strong","TEAM STRATEGY PULSE"));
+      pulse.append(node("small","0 / 0 VOTES","pulse-count"));
+      const rows=node("div",null,"pulse-rows");
+      state.episode.plans.forEach((plan,i)=>{
+        const row=node("div",null,"pulse-row");
+        row.dataset.pulsePlan=String(i);
+        const caption=node("div",null,"pulse-caption");
+        caption.append(node("span",String.fromCharCode(65+i)+" · "+plan.name),
+          node("strong","0","pulse-value"));
+        const track=node("div",null,"pulse-track");
+        track.append(node("span",null,"pulse-fill"));
+        row.append(caption,track);rows.append(row);
+      });
+      pulse.append(rows);
+      pulse.append(node("small","STRATEGY TREND ONLY · THE FULL PACKAGE IS THE VOTE",
+        "pulse-footnote"));
+      target.append(pulse);
+      updateTeamPulse(target,voting,mine);
+    }
     if (privateData.intelligence.length) {
       const dossier=node("details",null,"intel-dossier");
       dossier.open=expandedIntel;
@@ -481,7 +542,7 @@
         const item = button("", () => {
           if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
           else if (draftPicks.length < 2) draftPicks.push(i);
-          renderPlayerActions();
+          renderPlayerActions(true);
           target.querySelector('[data-choice="' + i + '"]')?.focus({preventScroll: true});
         }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
         item.dataset.choice = i;
@@ -523,7 +584,7 @@
         const choose = button(selected ? "SELECTED" : "VOTE FOR THIS PROPOSAL", () => {
           draftPlan = proposal.planIndex; draftSignal = proposal.signalIndex;
           draftAmount = proposal.allocation.amount; draftRoute = proposal.allocation.route;
-          renderPlayerActions();
+          renderPlayerActions(true);
         }, "secondary");
         choose.dataset.runoff = String(i); card.append(choose); target.append(card);
       });
@@ -553,7 +614,7 @@
         facts.append(node("strong","COST"),node("p",p.cost));
         detail.append(facts);card.append(detail);
         const choose=button(draftPlan===i?"✓ SELECTED":"CHOOSE "+String.fromCharCode(65+i),()=>{
-          draftPlan=i;renderPlayerActions();
+          draftPlan=i;renderPlayerActions(true);
           target.querySelector('[data-plan="'+i+'"]')?.focus({preventScroll:true});
         },"secondary");
         choose.dataset.plan=i;choose.setAttribute("aria-pressed",String(draftPlan===i));
@@ -566,7 +627,7 @@
           {value: 0,label:"£0 — keep cash available"},
           {value: 10000,label:"£10,000 additional investment"},
           {value: 20000,label:"£20,000 additional investment"}
-        ],draftAmount,v=>{draftAmount=Number(v);draftRoute=null;renderPlayerActions();}));
+        ],draftAmount,v=>{draftAmount=Number(v);draftRoute=null;renderPlayerActions(true);}));
         if (draftAmount > 0) {
           target.append(labelledSelect("Investment channel",
             ep.allocations.map(x=>({value:x.id,label:x.name})),
@@ -578,7 +639,7 @@
         {value:"",label:"Select a statement"},
         ...ep.signals.map((x,i)=>({value:String(i),label:x.name+" — "+x.line}))
       ],draftSignal===null?"":String(draftSignal),
-        v=>{draftSignal=v===""?null:Number(v);renderPlayerActions();}));
+        v=>{draftSignal=v===""?null:Number(v);renderPlayerActions(true);}));
     }
     const allocation = {amount:draftAmount,route:draftAmount?(draftRoute||ep.allocations[0]?.id):null};
     const allowed = !voting.runoff || voting.runoff.choices.some(x=>
@@ -657,12 +718,12 @@
     header.append(node("h2", "THE BOARDROOM VERDICT"));
     header.append(node("p", "Six decisions. One crisis. Real consequences.", "report-subhead"));
     const winner = node("div", null, "report-winner");
-    winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "NO TEAM QUALIFIED FOR THE CONTRACT", "report-kicker"));
+    winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "NO CONFIRMED RENEWAL", "report-kicker"));
     winner.append(node("strong", verdict.hasChampion ? verdict.champions.join(" / ") :
-      "THE CONTRACT WAS LOST"));
+      "BEST CRISIS RESPONSE · " + verdict.leader));
     winner.append(node("p", verdict.hasChampion ?
-      "The winning team combined an eligible business outcome with the strongest adjusted score." :
-      "The highest score alone does not guarantee victory. Teams must also meet the contract, cash and operational criteria."));
+      "The winning team secured renewal eligibility and the strongest adjusted score. Exact ties share the title; otherwise cash breaks score ties." :
+      "No team met every renewal criterion. The highest-ranked team still receives recognition for its relative crisis performance; a conditional or at-risk contract is not the same as a lost contract."));
     header.append(winner);
     sheet.append(header);
     sheet.append(node("h3", "FINAL TEAM RANKINGS", "report-section-title"));
@@ -686,7 +747,7 @@
       fill.style.width = Math.min(100, Math.max(0, team.score)) + "%";
       track.append(fill);card.append(track);
       card.append(node("p", "Economic " + team.rawScore + " − time penalties " +
-        team.timingPenalty + " = final score " + team.score, "report-formula"));
+        team.timingPenalty + " (floor 0) = final score " + team.score, "report-formula"));
       const metrics = node("div", null, "report-metrics");
       for(const [label,value] of [
         ["CASH REMAINING",cash(team.cash)],
@@ -772,10 +833,13 @@
   }
 
   function showRoom(next) {
-    const prevRound = state?.round;
+    if(!next || next.code !== roomCode)return;
+    if(state && state.code===next.code && next.revision < state.revision)return;
+    const prevRound = state?.round, prevCode=state?.code;
     state = next;
     clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
-    if (draftRound !== state.round || prevRound !== state.round) {
+    if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
+      playerRenderKey = null;
       draftRound = state.round;
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
@@ -789,6 +853,7 @@
     }
     if (draftPicks === null) draftPicks = state.privateTeam?.advisers?.slice() || [];
     show("room");
+    $("room-screen").dataset.revision = String(state.revision);
     $("room-code").textContent = state.phase === "lobby" ? state.code : "";
     $("room-code").parentElement.hidden = state.phase !== "lobby";
     const projection = state.viewer.role === "projector";
@@ -863,9 +928,13 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote"].includes(command.type);
+          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote", "start", "advance"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
+          if (command.type === "advance" &&
+            !(state.phase === "advisers" && state.teams.every(t=>t.locked))) throw e;
+          if (command.type === "start" &&
+            !(state.phase === "lobby" && state.teams.every(t=>t.ready))) throw e;
           if (command.type === "lock_vote") {
             const team = state.teams[state.viewer.teamIndex];
             // The initial vote may already have landed before the revision conflict.

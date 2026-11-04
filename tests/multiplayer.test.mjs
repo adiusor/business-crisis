@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, ROOM_CODE_ALPHABET, SHORT_ROOM_CODE, LEGACY_ROOM_CODE, validRoomCode, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, ROOM_CODE_ALPHABET, SHORT_ROOM_CODE, LEGACY_ROOM_CODE, validRoomCode, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor, finalVerdict} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -615,4 +615,58 @@ test("second tied vote ends the debate with a known captain casting vote instead
  assert.equal(room.teams[0].runoff,null);
  assert.equal(room.teams[0].lockedAtMs,now+4000);
  assert.equal(viewFor(room,a.actor,now+20000).privateTeam.teamClock.stage,"locked");
+});
+
+
+test("intermediate public recaps disclose choices and cost but not rival cash or trust",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const bob=enter(room,"Bob",1,2);room=bob.room;
+ room=act(room,host,"start");
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,alice.actor,"lock_advisers");
+ room=act(room,bob.actor,"select_advisers",{advisers:[2,3]});
+ room=act(room,bob.actor,"lock_advisers");
+ room=act(room,host,"advance");
+ assert.equal(typeof room.lastRecap.teams[0].cash,"number","authoritative ledger stays intact");
+ for(const actor of [host,alice.actor,bob.actor,{role:"projector"}]){
+  const view=viewFor(room,actor),recap=view.lastRecap;
+  assert.equal(recap.round,1);
+  assert.equal(recap.teams.length,2);
+  assert.equal(typeof recap.teams[0].spent,"number");
+  assert.equal(typeof recap.teams[0].plan,"string");
+  assert.equal(typeof recap.teams[0].signal,"string");
+  assert.equal(JSON.stringify(recap).includes('"cash"'),false);
+  assert.equal(JSON.stringify(recap).includes('"trust"'),false);
+  assert.equal(JSON.stringify(recap).includes('"advisers"'),false);
+ }
+ assert.equal(typeof viewFor(room,alice.actor).privateTeam.economic.cash,"number");
+ assert.equal(Object.hasOwn(viewFor(room,host),"privateTeam"),false);
+});
+
+test("final championship score ties break on cash; exact ties share, deductions floor at zero",()=>{
+ const {room}=fixture();
+ room.phase="complete";room.round=5;
+ for(const team of room.teams){
+  team.economic.nextRound=6;
+  team.economic.trust=85;
+  team.economic.risks={legal:22,ops:22,workforce:22,customer:22,liquidity:22};
+  team.economic.cash=90000;
+  team.economic.pending=[];
+  team.penaltyPoints=0;
+ }
+ room.teams[1].economic.cash=120000;
+ let verdict=finalVerdict(room);
+ assert.equal(verdict.ranked[0].name,"BRAVO");
+ assert.equal(verdict.ranked[0].rawScore,verdict.ranked[1].rawScore);
+ assert.deepEqual(verdict.champions,["BRAVO"],
+   "Cash breaks economic score ties rather than declaring both teams champions");
+ room.teams[0].economic.cash=120000;
+ verdict=finalVerdict(room);
+ assert.equal(verdict.champions.length,2,"Exact cash-and-score ties share the title");
+ room.teams[0].penaltyPoints=200;
+ verdict=finalVerdict(room);
+ const penalized=verdict.ranked.find(x=>x.name==="ALPHA");
+ assert.equal(penalized.score,0,"Final score does not go negative");
+ assert.ok(verdict.scoringNote.includes("max(0"));
 });

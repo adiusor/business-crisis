@@ -220,10 +220,21 @@ export function finalVerdict(room){
     spent:h.roundSpent,cash:h.cash,trust:h.trust,timedOut:!!h.timedOut,fallout:h.fallout}))};
  }).sort((a,b)=>b.score-a.score||b.cash-a.cash||a.id-b.id);
  const eligible=ranked.filter(x=>x.eligible),champion=eligible[0]||null;
- const joint=champion?eligible.filter(x=>x.score===champion.score):[];
+ // Score ties break on remaining cash, matching the ranked ordering.
+ // Only a true score-and-cash tie results in shared championship.
+ const joint=champion?eligible.filter(x=>x.score===champion.score&&x.cash===champion.cash):[];
  return {ranked,leader:ranked[0].name,champions:joint.map(x=>x.name),
   championScore:champion?champion.score:null,hasChampion:!!champion,
-  scoringNote:"Final score = economic score minus 5 for late answers or 12 for missed answers per episode (minimum 0). A renewed contract, solvent fund and viable operations are still required to be champion."};
+  scoringNote:"Final score = max(0, economic score − time penalties). Late answers cost 5 and missed deadlines cost 12 points each. Score ties break on remaining cash; exact score-and-cash ties share the title. Contract renewal, solvent funds and viable operations remain championship requirements."};
+}
+// Mid-game recaps disclose commitments and spend, not competitors' remaining
+// cash or trust. Full economic outcomes become public after the final verdict.
+export function publicRecap(recap){
+ if(!recap)return null;
+ return {round:recap.round,teams:recap.teams.map(t=>({
+  name:t.name,plan:t.plan,signal:t.signal,spent:t.spent,
+  timedOut:!!t.timedOut,timingPenalty:t.timingPenalty
+ }))};
 }
 export function publicEpisode(room){
  if(room.phase!=="advisers")return null;
@@ -337,7 +348,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
    revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
-   lastRecap:room.lastRecap,
+   lastRecap:publicRecap(room.lastRecap),
    teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
     votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
@@ -348,7 +359,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
  requireState(actor.role==="host"||!!player,401,"Unauthorized");
  const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
-  lastRecap:room.lastRecap,teamNameOptions:TEAM_NAME_POOL.slice(),
+  lastRecap:publicRecap(room.lastRecap),teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,
    ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
