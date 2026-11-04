@@ -258,7 +258,7 @@
     target.append(labelledSelect("Choose a statement",[
       {value:"",label:"Select a statement"},
       ...episode.signals.map((x,i)=>({value:String(i),label:x.name+" — "+x.line}))
-    ],draftSignal===null?"":String(draftSignal),v=>draftSignal=v===""?null:Number(v)));
+    ],draftSignal===null?"":String(draftSignal),v=>{draftSignal=v===""?null:Number(v);renderPlayerActions();}));
     target.append(button("COMMIT STRATEGY & STATEMENT",async()=>{
       try{
         const allocation={amount:draftAmount,route:draftAmount?(draftRoute||episode.allocations[0]?.id):null};
