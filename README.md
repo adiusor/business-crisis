@@ -20,7 +20,15 @@ A competitive, shared-screen narrative strategy game. A confidential restructuri
 
 ## Not yet implemented
 
-This is **not** real multiplayer: no QR joining, no private phone screens, no host/projector separation, no backend authority, no authentication, no Stripe or licences. Adviser advice is only visually sealed until selection, not secure against other users on a shared device. The economics are illustrative simulation rules, not an industry-validated financial forecast.
+The **playable game** is still **not real multiplayer**: no QR joining, no private phone screens, no host/projector separation, no connected server-authoritative gameplay, no production authentication, no Stripe or licences. Adviser advice is only visually sealed until selection, not secure against other users on a shared device. The economics are illustrative simulation rules, not an industry-validated financial forecast.
+
+## Experimental room backend (Draft PR only; not deployed)
+
+`multiplayer/room-core.mjs` introduces server-owned room state: 2–4 teams, nickname-only pre-game joining, one captain per team, host-only round controls, exactly two private adviser choices per team, immutable validated actions and revision checks to reject stale writes. `multiplayer/worker.mjs` is an *isolated* Cloudflare Worker / Durable Object adapter with authenticated HTTP snapshots and hibernatable WebSocket notifications. Room credentials are issued once; only SHA-256 hashes are stored. The host receives public team readiness, never team-private selections. New room creation is disabled unless a separate server-side `ROOM_CREATION_KEY` is configured.
+
+This is **backend scaffolding, not a working player-facing multiplayer game**. The existing standalone `index.html` does not call this API, does not provide QR/phone UIs, and does not use the server as authority for its economic decisions. No Cloudflare deployment or runtime/device/load test has been performed. An unauthenticated user knowing a room code can join its pre-start lobby until it is full; production needs organiser authentication, rate limits, admission/abuse controls, reconnect and token revocation, cross-device security review and complete gameplay integration.
+
+Run the isolated protocol tests with `node --test tests/multiplayer.test.mjs`. The draft-only configuration is `multiplayer/wrangler.jsonc`, with a **different Worker name** and a SQLite-backed Durable Object. It intentionally has `workers_dev: false` and no deploy workflow. Do not configure the shared-screen game with `ROOM_CREATION_KEY` or any Cloudflare API credentials. The existing Cloudflare preflight only verifies **read** access, not deployment permission.
 
 ## Play and review
 
@@ -48,6 +56,7 @@ GitHub Actions reports cash, score and risk percentiles from 1,200 seeded simula
 - `src/style.css` — cinematic responsive visual system.
 - `src/app.js` — scene navigation, interaction, session persistence and view rendering.
 - `scripts/build.cjs` — creates the self-contained root `index.html`.
+- `multiplayer/` — experimental server room authority, no browser integration or deployment.
 - `tests/` — simulation and real-browser end-to-end tests.
 
 **Design rule:** If a screen reads like a questionnaire or a KPI dashboard, it needs another pass. The player should feel inside the incident, not inside a report.

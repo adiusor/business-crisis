@@ -1,7 +1,7 @@
 name: Cinematic v2 quality gates
 on:
   pull_request:
-    paths: ["src/**", "tests/**", "index.html", "scripts/**", "package.json", ".github/workflows/cinematic-v2.yml"]
+    paths: ["src/**", "multiplayer/**", "tests/**", "index.html", "scripts/**", "package.json", ".github/workflows/cinematic-v2.yml"]
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -28,8 +28,15 @@ jobs:
           node --check src/rules.js
           node --check src/art.js
           node --check src/app.js
+          node --check multiplayer/room-core.mjs
+          node --check multiplayer/worker.mjs
+          node --check tests/multiplayer.test.mjs
       - name: Test economic engine and 1200 seeded sessions
         run: node tests/rules.test.cjs
+      - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
+        run: |
+          node --test tests/multiplayer.test.mjs
+          node -e "JSON.parse(require('node:fs').readFileSync('multiplayer/wrangler.jsonc', 'utf8'))"
       - name: Install browser runner
         run: |
           npm install --no-audit --no-fund
