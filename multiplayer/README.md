@@ -7,7 +7,7 @@ This is a **separate Cloudflare Worker** built on the cinematic v2 game rules. I
 - One persistent Cloudflare Durable Object per eight-character room code.
 - Server-authoritative, deterministic six-episode economic transitions using the same \`src/content.js\` and \`src/rules.js\` as cinematic v2.
 - Host-created rooms with 2–4 named teams. The host receives a 256-bit bearer credential stored locally in the browser.
-- **Different private invitation links for each team.** Room code alone cannot grant access to a team; a 64-bit team invitation is required to join. Do not post private invitations publicly.
+- **Different private invitation links and scannable QR codes for each team.** Room code alone cannot grant access to a team; a 64-bit team invitation is required to join. Do not post private invitations publicly.
 - Nickname-only players; local bearer token persists for reconnecting on the same device.
 - Each team selects two advisers, may change them until confirmation, and sees **only its own two** adviser briefings. Other teams' private intelligence is never sent in player or projector API responses.
 - One team-level vote per episode (the first member to submit locks the decision). The host cannot settle until all teams have locked their votes.
@@ -25,7 +25,7 @@ npm run test:multiplayer
 npx wrangler dev --config multiplayer/wrangler.toml
 \`\`\`
 
-Open the local address printed by Wrangler. Choose **Host a new incident**, create two to four teams, and copy each team's **private invitation** to its players. Open the projector from the host screen in a second tab or display. Start the game after at least one player has joined each team.
+Open the local address printed by Wrangler. Choose **Host a new incident**, create two to four teams, and copy or show each team's **private invitation / QR code** to its players. Open the projector from the host screen in a second tab or display. Start the game after at least one player has joined each team.
 
 The existing cinematic v2 shared-screen preview remains separate and can still be built with \`npm run build\`.
 
@@ -39,7 +39,7 @@ Host: create, start, open decisions once all adviser choices are confirmed, reso
 
 **This is a foundation, not a production security certification.** The room host is authenticated by a bearer credential; players are authenticated by random bearer credentials tied to their team. Team invite URLs are capability secrets. Avoid exposing them in screenshots, analytics, third-party QR services, or public projector views.
 
-Still required before public launch: rate limiting and abuse prevention for unauthenticated room creation/join, room expiration and deletion policies, host credential recovery/organiser accounts, load/reconnect testing, individual ballots and tie resolution, WebSocket/SSE push instead of polling, QR generation, Safari/iOS and accessibility testing, production monitoring, commercial payment and licensing, five independent facilitated playtests. Do not claim 30-player support until measured.
+Still required before public launch: rate limiting and abuse prevention for unauthenticated room creation/join, room expiration and deletion policies, host credential recovery/organiser accounts, load/reconnect testing, individual ballots and tie resolution, WebSocket/SSE push instead of polling, Safari/iOS and accessibility testing, production monitoring, commercial payment and licensing, five independent facilitated playtests. Do not claim 30-player support until measured.
 
 ## Deployment boundary
 
