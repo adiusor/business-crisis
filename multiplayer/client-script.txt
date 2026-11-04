@@ -479,12 +479,17 @@
     }
   }
   function renderTeamAftershock(impact) {
-    const report = node("section", null, "aftershock-report");
+    // Read the full consequence when a decision locks; collapse the old file
+    // next episode so a three-minute ballot stays ahead of retrospective reading.
+    const report = node("details", null, "aftershock-report");
     report.setAttribute("aria-label", "Private consequence of your last team decision");
-    report.append(node("small", "AFTERSHOCK / YOUR EPISODE " +
+    report.open = impact.round === state.round + 1;
+    const summary=node("summary",null,"aftershock-summary");
+    summary.append(node("small", "AFTERSHOCK / YOUR EPISODE " +
       String(impact.round).padStart(2,"0"), "aftershock-eyebrow"));
-    report.append(node("h3", impact.timedOut ? "NO RESPONSE FILED" : impact.plan,
+    summary.append(node("strong", impact.timedOut ? "NO RESPONSE FILED" : impact.plan,
       "aftershock-title"));
+    report.append(summary);
     report.append(node("p", impact.fallout, "aftershock-fallout"));
     const ledger = node("div", null, "aftershock-ledger");
     const trust = impact.trustChange;
