@@ -57,6 +57,10 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Third-pass consistency and facilitation audit
+
+See **[THIRD_PASS_AUDIT.md](THIRD_PASS_AUDIT.md)** for repaired issues and remaining blockers. This pass aligns standalone and multiplayer championship tie-breaking on both score and remaining cash; bridges the client's **14:00 deadline** into episode five without assuming a shutdown or inventing a successful renewal; logs facilitator captain transfers and removals in a minimal, public intervention trail (never individual ballots or credentials); and adds a brief neutral epilogue explaining that the original email sender remains unconfirmed. Public projection shows recent host intervention events; the ordinary interface keeps its history collapsed to avoid adding more reading.
+
 ## Pre-game rules — 60-second host briefing
 
 Every **new room** now opens a six-point **RULES OF ENGAGEMENT** briefing automatically in the lobby. The same short rules appear on the host screen, every player's phone and the public projector (alongside the join QR). Only the host sees an instruction to read them aloud.

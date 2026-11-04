@@ -44,6 +44,18 @@ test("the six incident chapters form one time-ordered, evidence-led story",()=>{
  }
 });
 
+test("14:00 renewal deadline is acknowledged without fabricating a decision or contractor shutdown",()=>{
+ const client=C.episodes[2],press=C.episodes[3],operations=C.episodes[4];
+ assert.match(client.brief,/14:00/);
+ assert.ok(Number(press.time.slice(0,2))<14);
+ assert.ok(Number(operations.time.slice(0,2))>14);
+ assert.match(operations.brief,/14:00/);
+ assert.match(operations.brief,/did not confirm renewal/);
+ assert.doesNotMatch(operations.brief,/contractor disputes the shutdown/i);
+ assert.match(operations.evidence[1].body,/supervised access/);
+ assert.doesNotMatch(operations.evidence[1].body,/reinstatement/i);
+});
+
 test("the cash and commitment ledger react materially to competing strategy and statement choices",()=>{
  const advisers=[0,1],variant=0;
  for(let round=0;round<C.episodes.length;round++){

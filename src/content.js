@@ -114,11 +114,11 @@ signals:[
 {name:"REFUSE COMMENT",line:"We will not comment on internal company matters.",delta:{legal:-2,workforce:7,customer:6},trust:-5}
 ]},
 {id:"warehouse",number:"05",time:"15:40",title:"THE BOTTLENECK",kicker:"The service promise meets reality",scene:"warehouse",base:17000,
-brief:"The overnight service run is at risk. A contractor disputes the shutdown, two senior operators are exhausted, and the client is tracking every milestone in your recovery plan.",
+brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
 headline:"THE PROMISE IS DUE. THE SHIFT ISN'T READY.",
 evidence:[
 {type:"DELIVERY BOARD",time:"15:16",title:"THE MISSED HANDOVER",body:"One specialist team is short of capacity. The backup route has not been fully tested. There is still a narrow window to protect the critical shipment.",clue:"More money can buy capacity, but not instant experience."},
-{type:"VENDOR LETTER",time:"15:27",title:"THE CONTRACTOR",body:"The contractor requests reinstatement or a paid transition. Its agreement permits a short emergency extension under supervision.",clue:"A supervised transition is available, but it carries security controls and cost."},
+{type:"VENDOR LETTER",time:"15:27",title:"THE CONTRACTOR",body:"The contractor requests continued supervised access or a paid transition. Its agreement permits a short emergency extension under supervision.",clue:"An agreed, supervised transition is available, but it requires security controls and money."},
 {type:"PEOPLE UPDATE",time:"15:34",title:"THE EXHAUSTION WARNING",body:"Two key staff have worked through their breaks. Both say another emergency shift would be unsafe.",clue:"A heroic overtime plan has a real operational and human limit."}
 ],
 advice:[

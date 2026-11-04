@@ -71,6 +71,12 @@ const fragile=R.deepCopy(qualified);fragile.risks.ops=80;
 check(R.championshipResult([fragile,atRisk]).champion===null,"unsafe delivery cannot win");
 const twin=R.deepCopy(qualified);twin.id=3;twin.name="SIGNED TWIN";
 check(R.championshipResult([qualified,twin]).joint.length===2,"tied qualifying champions recognised");
+const richer=R.deepCopy(qualified);richer.id=4;richer.name="CASH LEADER";richer.cash+=1000;
+check(R.evaluate(richer).score===R.evaluate(qualified).score,
+ "Cash-based tie break must not change economic score in an otherwise safe reserve");
+const cashResult=R.championshipResult([qualified,richer]);
+check(cashResult.champion.team.name==="CASH LEADER"&&cashResult.joint.length===1,
+ "Equal-score champions do not share title when one team has more response cash");
 
 let scenarios=0,negative=0,renewed=0,conditional=0,lost=0,ties=0,determinism=0;
 let minCash=Infinity,maxCash=-Infinity,minScore=Infinity,maxScore=-Infinity;

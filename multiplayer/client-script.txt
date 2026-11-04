@@ -3,7 +3,7 @@
 // Never stores or transmits an email address. Room bearer tokens remain in sessionStorage.
 (() => {
   const $ = id => document.getElementById(id);
-  const REPORT_EXPORT_CSS = "*{box-sizing:border-box}body{margin:0;padding:32px;background:#e8ecef;color:#152330;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.55}\n.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}\n.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}\n.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}\n.report-eyebrow,.report-kicker{color:#efb17c}\n.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}\n.report-subhead{color:#bbcbd4;font-size:18px}\n.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}\n.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}\n.report-winner p{color:#c3d2dc}\n.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}\n.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}\n.report-rankings{display:grid;gap:16px}\n.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}\n.report-team.winner{border:2px solid #bb7e49}\n.report-rank-row{display:flex;justify-content:space-between;gap:20px}\n.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}\n.report-rank-number,.report-status,.report-episode-number{color:#b87842}\n.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}\n.report-final-score strong{font-size:49px;line-height:1}\n.report-final-score span{font-size:14px;color:#5b6975}\n.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}\n.report-score-fill{height:100%;background:#bf844f}\n.report-formula{font-size:12px;color:#566677}\n.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}\n.report-metric{background:#edf2f4;padding:12px}\n.report-metric small{display:block;color:#6a7d8b;font-size:9px}\n.report-metric strong{display:block;font-size:17px;margin-top:5px}\n.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}\n.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}\n.report-reasons p{margin:6px 0;font-size:12px}\n.report-team-timeline{break-before:auto;page-break-inside:auto}\n.report-team-timeline h4{font-size:20px;margin:24px 0 12px}\n.report-episodes{display:grid;gap:9px}\n.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}\n.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}\n.report-episode-top strong{font-size:17px}\n.report-missed{color:#a43d31;font-size:11px;font-weight:900}\n.report-choice-line{font-size:14px;margin:8px 0}\n.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}\n.report-fallout{font-size:12px;color:#435360}\n.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}\n.report-foot strong{color:#263a47}\n@media(max-width:650px){body{padding:0}.report-sheet{padding:15px;box-shadow:none}.report-head{padding:22px}.report-head h2{font-size:33px}.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-rank-row h4{font-size:20px}}\n@media print{@page{size:A4;margin:13mm}body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report-sheet{max-width:none;box-shadow:none;padding:0}.report-team{break-inside:avoid}.report-head{break-inside:avoid}}.cash-trajectory{border-top:1px solid #d9e2e8;margin:18px 0 8px;padding:14px 0 0}\n.cash-heading{font-size:11px;letter-spacing:.13em;color:#7e5c46}\n.cash-trajectory-labels{display:flex;justify-content:space-between;gap:10px;font-size:10px;font-weight:800;color:#687681}\n.cash-trajectory svg{display:block;overflow:visible}\n";
+  const REPORT_EXPORT_CSS = "*{box-sizing:border-box}body{margin:0;padding:32px;background:#e8ecef;color:#152330;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.55}\n.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}\n.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}\n.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}\n.report-eyebrow,.report-kicker{color:#efb17c}\n.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}\n.report-subhead{color:#bbcbd4;font-size:18px}\n.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}\n.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}\n.report-winner p{color:#c3d2dc}\n.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}\n.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}\n.report-rankings{display:grid;gap:16px}\n.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}\n.report-team.winner{border:2px solid #bb7e49}\n.report-rank-row{display:flex;justify-content:space-between;gap:20px}\n.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}\n.report-rank-number,.report-status,.report-episode-number{color:#b87842}\n.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}\n.report-final-score strong{font-size:49px;line-height:1}\n.report-final-score span{font-size:14px;color:#5b6975}\n.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}\n.report-score-fill{height:100%;background:#bf844f}\n.report-formula{font-size:12px;color:#566677}\n.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}\n.report-metric{background:#edf2f4;padding:12px}\n.report-metric small{display:block;color:#6a7d8b;font-size:9px}\n.report-metric strong{display:block;font-size:17px;margin-top:5px}\n.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}\n.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}\n.report-reasons p{margin:6px 0;font-size:12px}\n.report-team-timeline{break-before:auto;page-break-inside:auto}\n.report-team-timeline h4{font-size:20px;margin:24px 0 12px}\n.report-episodes{display:grid;gap:9px}\n.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}\n.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}\n.report-episode-top strong{font-size:17px}\n.report-missed{color:#a43d31;font-size:11px;font-weight:900}\n.report-choice-line{font-size:14px;margin:8px 0}\n.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}\n.report-fallout{font-size:12px;color:#435360}\n.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}\n.report-foot strong{color:#263a47}\n@media(max-width:650px){body{padding:0}.report-sheet{padding:15px;box-shadow:none}.report-head{padding:22px}.report-head h2{font-size:33px}.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-rank-row h4{font-size:20px}}\n@media print{@page{size:A4;margin:13mm}body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report-sheet{max-width:none;box-shadow:none;padding:0}.report-team{break-inside:avoid}.report-head{break-inside:avoid}}.cash-trajectory{border-top:1px solid #d9e2e8;margin:18px 0 8px;padding:14px 0 0}\n.cash-heading{font-size:11px;letter-spacing:.13em;color:#7e5c46}\n.cash-trajectory-labels{display:flex;justify-content:space-between;gap:10px;font-size:10px;font-weight:800;color:#687681}\n.cash-trajectory svg{display:block;overflow:visible}\n.report-epilogue{padding:17px 20px;margin:27px 0 10px;border-left:3px solid #b77b48;background:#edf3f3;break-inside:avoid}\n.report-epilogue strong{display:block;letter-spacing:.12em;font-size:11px;color:#8a6547}\n.report-epilogue p{margin:7px 0 0;font-size:13px;line-height:1.55;color:#354550}\n";
   const ADV = [
     ["MARA VALE", "GENERAL COUNSEL"], ["DANIEL ROOK", "OPERATIONS DIRECTOR"],
     ["INES PARK", "CLIENT PARTNER"], ["ELI MERCER", "FINANCE CONTROLLER"],
@@ -149,6 +149,30 @@
     }
     banner.hidden = !text;
     banner.textContent = text;
+  }
+  function interventionLabel(event){
+    return event.kind==="captain"?
+      "HOST TRANSFERRED CAPTAINSHIP · "+event.team:
+      "HOST REMOVED A PARTICIPANT · "+event.team;
+  }
+  function renderFacilitatorLog(){
+    const items=state.interventions||[];
+    const projector=state.viewer.role==="projector",target=$("facilitator-log");
+    target.hidden=projector||items.length===0;
+    if(!target.hidden){
+      $("facilitator-log-count").textContent="· "+items.length;
+      const list=$("facilitator-log-items");
+      list.replaceChildren();
+      for(const event of items.slice().reverse()){
+        const label=interventionLabel(event);
+        const item=node("li",label+" · "+(event.round?"EP "+String(event.round).padStart(2,"0"):"LOBBY"));
+        list.append(item);
+      }
+    }
+    const notice=$("projector-intervention");
+    const latest=items.at(-1),now=Date.now()+clockOffset;
+    notice.hidden=!projector||!latest||now-latest.atMs>90000;
+    if(!notice.hidden)notice.textContent="FACILITATOR UPDATE / "+interventionLabel(latest);
   }
   function renderProjectorTicker(){
     const target=$("projector-ticker");
@@ -846,6 +870,10 @@
       wrap.append(cases);timelines.append(wrap);
     }
     sheet.append(timelines);
+    const coda=node("aside",null,"report-epilogue");
+    coda.append(node("strong","ONE FINAL UNANSWERED QUESTION"));
+    coda.append(node("p","The original sender has not been identified. A contractor access log was evidence of access, not proof of responsibility. This verdict evaluates how each team responded to the crisis — it does not invent an attribution."));
+    sheet.append(coda);
     const footer=node("footer",null,"report-foot");
     footer.append(node("strong","BUSINESS CRISIS / THE 09:17 INCIDENT"));
     footer.append(node("p","Illustrative economic simulation for gameplay, not a financial projection. No individual ballots, confidential adviser choices, participant names or email addresses are included."));
@@ -939,7 +967,7 @@
       $("join-link").textContent = link; $("join-link").href = link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
-    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderFacilitatorLog(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
     tick();
   }
   function tick() {
@@ -970,6 +998,10 @@
     $("timer-wrap").classList.toggle("grace", grace);
     $("timer-wrap").classList.toggle("stopped", stopped);
     renderTeamClocks();
+    if(state.viewer.role==="projector" && state.interventions?.length){
+      const latest=state.interventions.at(-1);
+      $("projector-intervention").hidden=now-latest.atMs>90000;
+    }
     if(state.viewer.role==="host"){
       for(const el of document.querySelectorAll("[data-remove-after]"))
         el.disabled=now<Number(el.dataset.removeAfter);

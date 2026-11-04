@@ -133,7 +133,7 @@ function championshipResult(teams){
 const ranked=rankTeams(teams);
 const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
 const champion=eligible[0]||null;
-const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score):[];
+const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score&&x.team.cash===champion.team.cash):[];
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
 }
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}

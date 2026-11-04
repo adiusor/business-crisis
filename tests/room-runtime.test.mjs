@@ -207,10 +207,17 @@ try {
     {type:"set_captain",playerId:benId,expectedRevision:adminView.revision},adminToken);
   assert.equal(transferred.response.status,200);
   assert.equal(transferred.payload.state.hostRoster.find(p=>p.nickname==="Ben").captain,true);
+  assert.equal(transferred.payload.state.interventions.length,1);
+  assert.equal(transferred.payload.state.interventions[0].kind,"captain");
+  assert.equal(transferred.payload.state.interventions[0].round,0);
+  assert.doesNotMatch(JSON.stringify(transferred.payload.state.interventions),/Ben|player-|credential/);
   const removed=await req("/api/rooms/"+adminCode+"/actions","POST",
     {type:"remove_player",playerId:benId,expectedRevision:transferred.payload.state.revision},adminToken);
   assert.equal(removed.response.status,200);
   assert.equal(removed.payload.state.hostRoster.length,2);
+  assert.deepEqual(removed.payload.state.interventions.map(x=>x.kind),["captain","removed"]);
+  assert.equal(JSON.stringify(removed.payload.state.interventions).includes(benId),false,
+    "Administrative trail excludes removed participant IDs");
   assert.equal(removed.payload.state.hostRoster.find(p=>p.nickname==="Anna").captain,true,
     "Original member inherits leadership after the captain leaves");
   assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,ben.payload.playerToken)).response.status,401,
@@ -323,6 +330,13 @@ try {
       [...document.querySelectorAll(".roster-entry")].some(x=>
         x.textContent.includes("Mobile Bob")&&x.textContent.includes("CAPTAIN")));
 
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#facilitator-log")?.hidden===false &&
+      document.querySelectorAll("#facilitator-log-items li").length===1);
+    assert.match(await hostUI.locator("#facilitator-log").innerText(),/TRANSFERRED CAPTAINSHIP/);
+    await phoneA.waitForFunction(()=>document.querySelector("#facilitator-log")?.hidden===false);
+    assert.doesNotMatch(await phoneA.locator("#facilitator-log").innerText(),/Mobile Bob/);
+
     // Host can issue a projection link without revealing their own host bearer token.
     await hostUI.locator("#rotate-projector").click();
     await hostUI.locator("#projector-link").waitFor({state:"visible"});
@@ -345,6 +359,9 @@ try {
     assert.equal(await projected.locator("#game-rules").evaluate(el=>el.open),true,
       "Projector displays the full briefing while players join");
     assert.equal(await projected.locator("#game-rules .rule-card").count(),6);
+    assert.equal(await projected.locator("#projector-intervention").isVisible(),true,
+      "Recent facilitator changes are visible on the public projector");
+    assert.match(await projected.locator("#projector-intervention").textContent(),/TRANSFERRED CAPTAINSHIP/);
     assert.equal(await projected.locator("#rules-host-note").isVisible(),false);
     await projected.screenshot({path:path.join(root,"screenshots","09-briefing-projector-1280.png"),fullPage:true});
     assert.match(await projected.locator("#projector-join-link").getAttribute("href"),
@@ -508,6 +525,9 @@ try {
     await reportHost.locator("#boardroom-report").waitFor({state:"visible",timeout:12000});
     assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
     assert.equal(await reportHost.locator(".report-team").count(),2);
+    assert.equal(await reportHost.locator(".report-epilogue").count(),1,
+      "Final report acknowledges that the sender is not identified");
+    assert.match(await reportHost.locator(".report-epilogue").innerText(),/not been identified/);
     assert.equal(await reportHost.locator(".cash-trajectory svg").count(),2,
       "Final report shows actual response fund trajectory for each team");
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
@@ -524,6 +544,8 @@ try {
     assert.match(html,/FINAL TEAM RANKINGS/);
     assert.match(html,/THE DECISION TRAIL/);
     assert.match(html,/CASH TRAJECTORY/);
+    assert.match(html,/ONE FINAL UNANSWERED QUESTION/);
+    assert.match(html,/not been identified/);
     assert.match(html,/role="img"/);
     assert.doesNotMatch(html,/FACILITATOR DEBRIEF/,"Debrief not exported into private team reports");
     assert.doesNotMatch(html,new RegExp(hostToken));

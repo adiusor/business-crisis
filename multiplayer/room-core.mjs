@@ -47,7 +47,7 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  const names=teamNames.map(x=>typeof x==="string"?x.trim():"");
  requireState(names.every(x=>x.length>=1&&x.length<=32)&&new Set(names.map(fold)).size===names.length,400,"Teams require unique names (1–32 characters)");
  return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
-  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,
+  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,interventions:[],
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
    roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},participatedIds:[],runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
@@ -248,6 +248,12 @@ export function publicEpisode(room){
   allocations:[2,4].includes(room.round)?R.allocations.map(a=>({id:a.id,name:a.name})):[],
   responseFund:C.initialCash,annualContractValue:C.annualContractValue};
 }
+function logIntervention(room,kind,teamName,nowMs){
+ // Public and minimal: no participant IDs, personal reasons or ballot choices.
+ if(!Array.isArray(room.interventions))room.interventions=[];
+ room.interventions.push({kind,team:teamName,round:room.phase==='lobby'?0:room.round+1,atMs:nowMs});
+ if(room.interventions.length>12)room.interventions=room.interventions.slice(-12);
+}
 export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  requireState(validNow(nowMs),400,"Invalid server clock");
  requireState(command&&typeof command==="object"&&!Array.isArray(command),400,"Invalid command");
@@ -263,6 +269,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   const team=next.teams[target.teamIndex];
   requireState(team.captainId!==target.id,409,"Already the team captain");
   team.captainId=target.id;
+  logIntervention(next,"captain",team.name,nowMs);
  }else if(type==="remove_player"){
   requireState(isHost,403,"Only the host can remove a participant");
   requireState(next.phase==="lobby"||next.phase==="advisers",409,"Participant removal is closed");
@@ -287,6 +294,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   // definitive winning vote among the remaining members. Resolve precisely
   // once using the unchanged server-authoritative economics and clock.
   if(next.phase==="advisers")resolveVotes(next,target.teamIndex,nowMs);
+  logIntervention(next,"removed",team.name,nowMs);
  }else if(type==="change_team"){
   requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can change teams");
   const destination=command.teamIndex;
@@ -384,7 +392,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
    revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
-   lastRecap:publicRecap(room.lastRecap),
+   lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),
    teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
     votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
@@ -395,7 +403,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
  requireState(actor.role==="host"||!!player,401,"Unauthorized");
  const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
-  lastRecap:publicRecap(room.lastRecap),teamNameOptions:TEAM_NAME_POOL.slice(),
+  lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
   ...(actor.role==="host"?{hostRoster:room.players.map(p=>({
     id:p.id,nickname:p.nickname,teamIndex:p.teamIndex,

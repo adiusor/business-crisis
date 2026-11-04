@@ -796,3 +796,32 @@ test("an initial tied ballot is still protected from facilitator removal during 
  assert.equal(room.teams[0].locked,true);
  assert.equal(room.teams[0].economic.history.length,1);
 });
+
+
+test("host interventions are public, bounded and never reveal participant IDs or private ballots",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const eve=enter(room,"Eve",0,2);room=eve.room;
+ const bob=enter(room,"Bob",1,3);room=bob.room;
+ const mara=enter(room,"Mara",0,4);room=mara.room;
+ assert.deepEqual(viewFor(room,host).interventions,[]);
+ room=act(room,host,"set_captain",{playerId:eve.actor.playerId});
+ room=act(room,host,"remove_player",{playerId:eve.actor.playerId});
+ assert.equal(room.interventions.length,2);
+ assert.deepEqual(room.interventions.map(x=>x.kind),["captain","removed"]);
+ assert.deepEqual(room.interventions.map(x=>x.team),["ALPHA","ALPHA"]);
+ assert.deepEqual(room.interventions.map(x=>x.round),[0,0]);
+ for(const viewer of [host,alice.actor,bob.actor,{role:"projector"}]){
+  const events=viewFor(room,viewer).interventions;
+  assert.deepEqual(events,room.interventions);
+  assert.doesNotMatch(JSON.stringify(events),/player-|Alice|Bob|Eve|Mara|credential|ballot|advisers|hostHash/,
+    "Interventions must never disclose personal identities or decision details");
+ }
+ assert.equal(JSON.stringify(viewLobby(room)).includes("interventions"),false,
+  "Unauthenticated lobby lookup does not need the intervention trail");
+ for(let i=0;i<18;i++){
+  const to=i%2===0?mara.actor.playerId:alice.actor.playerId;
+  room=act(room,host,"set_captain",{playerId:to});
+ }
+ assert.ok(room.interventions.length<=12,"Only the last twelve changes are retained");
+});
