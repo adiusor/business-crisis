@@ -266,6 +266,11 @@ try {
     await hostUI.locator("#create-teams").selectOption("2");
     await hostUI.locator("#create-form button.primary").click();
     await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
+    assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),true,
+      "Host's pre-game briefing opens by default");
+    assert.equal(await hostUI.locator("#game-rules .rule-card").count(),6);
+    assert.equal(await hostUI.locator("#rules-host-note").isVisible(),true,
+      "Only host sees the read-aloud instruction");
     const uiCode = (await hostUI.locator("#room-code").textContent()).trim();
     assert.match(uiCode, /^[2-9A-HJ-NP-Z]{4}$/);
     await hostUI.locator("#join-qr").evaluate(async image => {
@@ -286,12 +291,23 @@ try {
     await phoneA.locator("#join-team").selectOption("auto");
     await phoneA.locator("#join-form button.primary").click();
     await phoneA.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
+    assert.equal(await phoneA.locator("#game-rules .rule-card").count(),6);
+    assert.equal(await phoneA.locator("#game-rules").evaluate(el=>el.open),true);
+    assert.equal(await phoneA.locator("#rules-host-note").isVisible(),false);
+    const rulesOverflow=await phoneA.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+    assert.ok(rulesOverflow<=1,"Rules must not overflow a 320px phone: "+rulesOverflow);
+    await (await import("node:fs/promises")).mkdir(path.join(root,"screenshots"),{recursive:true});
+    await phoneA.screenshot({path:path.join(root,"screenshots","08-briefing-phone-320.png"),fullPage:true});
+    await phoneA.locator("#game-rules summary").click();
+    assert.equal(await phoneA.locator("#game-rules").evaluate(el=>el.open),false);
     await phoneB.goto(base + "/join?room=" + uiCode);
     await phoneB.locator("#join-name").fill("Mobile Bob");
     await phoneB.locator("#join-team").selectOption("0");
     await phoneB.locator("#join-form button.primary").click();
     await phoneB.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
     await hostUI.waitForFunction(() => document.querySelector("#team-list")?.textContent?.includes("Mobile Bob"));
+    assert.equal(await phoneA.locator("#game-rules").evaluate(el=>el.open),false,
+      "Remote joins must not reopen a briefing the player has closed");
     assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
       "No start when all players join the same team");
     await hostUI.locator(".host-roster summary").click();
@@ -326,6 +342,11 @@ try {
     assert.deepEqual(await projected.locator(".team small").allTextContents(),
       ["2 PLAYERS JOINED","0 PLAYERS JOINED"],"Projector displays public counts from server, not hidden nicknames");
     assert.equal(await projected.locator("#projector-invite").isVisible(),true);
+    assert.equal(await projected.locator("#game-rules").evaluate(el=>el.open),true,
+      "Projector displays the full briefing while players join");
+    assert.equal(await projected.locator("#game-rules .rule-card").count(),6);
+    assert.equal(await projected.locator("#rules-host-note").isVisible(),false);
+    await projected.screenshot({path:path.join(root,"screenshots","09-briefing-projector-1280.png"),fullPage:true});
     assert.match(await projected.locator("#projector-join-link").getAttribute("href"),
       new RegExp("/join\\?room="+uiCode+"$"));
     const projectionQR=await projected.locator("#projector-qr").evaluate(async img=>{
@@ -362,6 +383,16 @@ try {
     assert.match(await hostUI.locator("#episode-panel").innerText().catch(() => ""), /|^$/); // Lobby has no episode yet.
     await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
+    assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),false,
+      "Rules collapse when the host starts");
+    assert.equal(await phoneB.locator("#game-rules").evaluate(el=>el.open),false,
+      "All players start with the briefing collapsed");
+    assert.equal(await projected.locator("#game-rules").isVisible(),false,
+      "Live projection keeps rules off the screen during the episode");
+    await phoneB.locator("#game-rules summary").click();
+    assert.equal(await phoneB.locator("#game-rules").evaluate(el=>el.open),true,
+      "Players can reopen the rules during an episode");
+    await phoneB.locator("#game-rules summary").click();
     assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
     assert.equal(await hostUI.locator(".roster-entry button.roster-remove:disabled").count(),2,
       "Facilitator may not remove a team's only member during a live round");

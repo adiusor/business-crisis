@@ -708,7 +708,7 @@
     if (target.hidden) return;
     if (state.phase === "lobby") {
       const ready = state.teams.every(t => t.ready);
-      target.append(node("p", "You are the host. Share the QR code or link with players."));
+      target.append(node("p", "Read the six RULES OF ENGAGEMENT aloud before starting. Share the QR link so everyone joins a team."));
       target.append(button("START THE FIRST 3-MINUTE WINDOW",
         () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
       if (!ready) target.append(node("p", "Every team must have a participant before the first episode."));
@@ -886,7 +886,7 @@
   function showRoom(next) {
     if(!next || next.code !== roomCode)return;
     if(state && state.code===next.code && next.revision < state.revision)return;
-    const prevRound = state?.round, prevCode=state?.code;
+    const prevRound = state?.round, prevCode=state?.code, prevPhase=state?.phase;
     state = next;
     clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
     if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
@@ -914,6 +914,14 @@
     document.body.classList.toggle("game-complete", state.phase === "complete");
     $("viewer-mode").hidden = !projection;
     $("projector-invite").hidden = !projection || state.phase !== "lobby";
+    // Open the six-point briefing on first entry; keep an individual's
+    // explicit open/close choice across WebSocket updates. Once the host starts,
+    // collapse it to a small optional reference and remove it from projection.
+    const rules=$("game-rules");
+    if(prevPhase!==state.phase || prevCode!==state.code)
+      rules.open=state.phase==="lobby";
+    rules.hidden=projection && state.phase!=="lobby";
+    $("rules-host-note").hidden=state.viewer.role!=="host" || state.phase!=="lobby";
     if (projection) {
       const link = location.origin + "/join?room=" + state.code;
       $("projector-invite-room").textContent = state.code;

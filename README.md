@@ -57,6 +57,14 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Pre-game rules — 60-second host briefing
+
+Every **new room** now opens a six-point **RULES OF ENGAGEMENT** briefing automatically in the lobby. The same short rules appear on the host screen, every player's phone and the public projector (alongside the join QR). Only the host sees an instruction to read them aloud.
+
+The rules explain the six linked episodes, captain's two private advisers, every player's complete strategy/statement/optional-investment vote, majority/tie/runoff/captain casting, the 3-minute window plus 1-minute −5-point reserve, 4-minute −12-point economic timeout and the renewal/cash/operations championship gate. The host still controls when the next episode begins. No simulator rules or time limits were altered.
+
+As soon as an episode starts, the briefing **automatically collapses** on host and player devices (and disappears from the live projector). Players can reopen it by tapping its heading, without interrupting their votes. A manually closed lobby briefing stays closed across other players' WebSocket joins; remote updates never force a reread. Browser and unit tests verify both the wording and its visibility states.
+
 ## Second-pass code and fairness audit
 
 See **[SECOND_PASS_AUDIT.md](SECOND_PASS_AUDIT.md)** for the verified fixes: stable player keyboard focus during live WebSocket updates; monotonic room revision rendering; safer host Next/Start retries; public recap data minimisation; cash-aware championship tie-breaking; truthful no-champion wording; a private provisional strategy vote pulse; and verified per-role WebSocket authorization; abuse-resistant limits for unauthenticated handshakes still need Cloudflare edge controls and must not be considered solved. The audit lists remaining recovery, room-code guessing, load-test and commercial privacy blockers without treating them as solved.

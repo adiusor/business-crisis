@@ -569,3 +569,61 @@ body{background:radial-gradient(ellipse at 15% -15%,#183a4b 0%,transparent 52%),
  .roster-entry{align-items:flex-start;flex-direction:column}
  .roster-buttons{justify-content:flex-start}
 }
+
+
+
+/* Opening rules are displayed at full strength in the lobby, then collapse
+   to a small optional reference throughout the game. No modal or autoplay. */
+.game-rules{border:1px solid #557887;background:linear-gradient(145deg,#173747,#0b2531);
+ margin:16px 0 20px;box-shadow:0 13px 32px #06121b30}
+.game-rules[hidden]{display:none!important}
+.game-rules>summary{display:flex;flex-wrap:wrap;gap:8px 15px;align-items:center;
+ cursor:pointer;list-style:none;padding:14px 17px;border-left:4px solid #e3b183}
+.game-rules>summary::-webkit-details-marker{display:none}
+.game-rules>summary .briefing-eyebrow{font:800 10px ui-monospace,SFMono-Regular,Consolas,monospace;
+ letter-spacing:.1em;color:#eab683}
+.game-rules>summary strong{font-family:Georgia,serif;letter-spacing:-.035em;
+ font-size:clamp(20px,2.4vw,34px);color:#f7eee2;flex:1 1 200px}
+.game-rules>summary .briefing-toggle{color:#c0d5da;font-size:10px;letter-spacing:.08em;font-weight:850}
+.game-rules>summary .briefing-toggle:after{content:" +";color:#f3ba88}
+.game-rules[open]>summary .briefing-toggle:after{content:" −"}
+.briefing-host-note{margin:3px 16px 12px;border-left:2px solid #e9b889;
+ padding:7px 12px;color:#f2d9be;font-size:12px;font-weight:800;letter-spacing:.035em}
+.briefing-grid{list-style:none;margin:0;padding:5px 15px 14px;display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.rule-card{min-width:0;display:flex;align-items:flex-start;gap:10px;
+ background:#0a2330a8;border:1px solid #375c6a;padding:12px 13px}
+.rule-index{color:#f0b98b;font:900 16px ui-monospace,SFMono-Regular,Consolas,monospace;min-width:26px}
+.rule-card strong{font-size:12px;line-height:1.25;letter-spacing:.055em;color:#f9e9d6;display:block}
+.rule-card p{font-size:13px;line-height:1.43;margin:6px 0 0;color:#d0dfe3}
+.briefing-closing{margin:5px 15px 7px;font-family:Georgia,serif;
+ font-size:clamp(15px,1.7vw,23px);font-weight:700;letter-spacing:-.025em;
+ color:#f0d6b8;text-align:center}
+.briefing-closing span{color:#7ed0c4}
+.briefing-fairplay{margin:8px 15px 16px;text-align:center;color:#b5cbd2;
+ font-size:11px;line-height:1.4}
+.in-game .game-rules,.game-complete .game-rules{margin:7px 0 12px}
+.in-game .game-rules>summary,.game-complete .game-rules>summary{padding:9px 12px}
+.in-game .game-rules>summary strong,.game-complete .game-rules>summary strong{font:900 14px Arial,sans-serif;letter-spacing:.065em}
+.in-game .game-rules>summary .briefing-eyebrow,.game-complete .game-rules>summary .briefing-eyebrow{display:none}
+.projector-mode.in-game .game-rules,.projector-mode.game-complete .game-rules{display:none!important}
+.player-view.in-game #game-rules,.player-view.game-complete #game-rules{order:8}
+.projector-mode .game-rules{margin:8px 0 11px;background:#112b39}
+.projector-mode .briefing-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px 10px 8px}
+.projector-mode .rule-card{padding:9px 11px;gap:8px}
+.projector-mode .rule-card strong{font-size:11px}
+.projector-mode .rule-card p{font-size:12px;margin:4px 0 0;line-height:1.35}
+.projector-mode .game-rules>summary{padding:9px 12px}
+.projector-mode .game-rules>summary strong{font-size:23px}
+.projector-mode .briefing-closing{margin:3px 8px 4px;font-size:17px}
+.projector-mode .briefing-fairplay{margin:3px 10px 8px;font-size:10px}
+@media(max-width:680px){
+ .briefing-grid{grid-template-columns:1fr;gap:7px;padding:6px 10px 9px}
+ .rule-card{padding:10px}
+ .game-rules>summary{padding:12px}
+ .game-rules>summary strong{font-size:22px}
+ .projector-mode .briefing-grid{grid-template-columns:1fr}
+}
+@media print{
+ .game-rules{display:none!important}
+}
