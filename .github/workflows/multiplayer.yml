@@ -4,6 +4,7 @@ on:
     paths:
       - "multiplayer/**"
       - "tests/multiplayer.test.mjs"
+      - "tests/multiplayer.browser.mjs"
       - "package.json"
       - ".github/workflows/multiplayer.yml"
   workflow_dispatch:
@@ -26,5 +27,16 @@ jobs:
         run: node tests/multiplayer.test.mjs
       - name: Install Cloudflare CLI
         run: npm install --no-audit --no-fund
+      - name: Install Chromium for real-browser multiplayer test
+        run: npx playwright install --with-deps chromium
+      - name: Play host, two phone clients and projector in Chromium
+        run: node tests/multiplayer.browser.mjs
+      - name: Upload multiplayer screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multiplayer-browser-screenshots
+          path: screenshots/multiplayer-*.png
+          if-no-files-found: ignore
       - name: Verify Cloudflare Worker bundle without deployment
         run: npx wrangler deploy --dry-run --config multiplayer/wrangler.toml --outdir /tmp/bc-multiplayer-build
