@@ -48,6 +48,17 @@ jobs:
       - name: Check for existing Cloudflare deployment credentials
         shell: bash
         run: |
+          # Only report presence/absence; never print token or account ID values.
+          if [[ -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "Cloudflare API token: present"
+          else
+            echo "Cloudflare API token: MISSING"
+          fi
+          if [[ -n "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "Cloudflare account ID: present"
+          else
+            echo "Cloudflare account ID: MISSING"
+          fi
           if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
             echo "::error::Preview deployment is blocked: set repository Actions secret CLOUDFLARE_API_TOKEN and Actions secret or variable CLOUDFLARE_ACCOUNT_ID. No Cloudflare account credentials were accessed or created."
             echo "## Preview deployment blocked" >> "$GITHUB_STEP_SUMMARY"
