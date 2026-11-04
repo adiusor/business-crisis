@@ -10,6 +10,8 @@ const C = globalThis.BCContent;
 const R = globalThis.BCRules;
 const MAX_BODY = 8192;
 const MAX_PLAYERS = 40;
+const MAX_ROOMS_PER_IP_PER_DAY = 6;
+const ROOM_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const API_HEADERS = {"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff"};
 
@@ -108,16 +110,27 @@ export class CrisisRoom {
   async handle(req) {
     const url=new URL(req.url);
     const action=url.pathname.split("/").at(-1);
+    if(url.pathname==="/internal/limit" && req.method==="POST") {
+      const now=Date.now();
+      let rate=await this.ctx.storage.get("createRate");
+      if(!rate||now>=rate.resetAt) rate={count:0,resetAt:now+24*60*60*1000};
+      if(rate.count>=MAX_ROOMS_PER_IP_PER_DAY) fail("Preview limit: maximum six new rooms per day per IP address",429);
+      rate.count++;
+      await this.ctx.storage.put("createRate",rate);
+      return respond({allowed:true,remaining:MAX_ROOMS_PER_IP_PER_DAY-rate.count});
+    }
     let room=await this.ctx.storage.get("room");
+    if(room&&room.expiresAt&&Date.now()>room.expiresAt) fail("This preview room has expired",410);
     if(url.pathname==="/internal/init" && req.method==="POST") {
       if(room) fail("Room already exists",409);
       const data=await bodyOf(req);
       room={
         code:data.code,hostHash:data.hostHash,seed:data.code,variant:R.seedVariant(data.code),
-        createdAt:Date.now(),phase:"lobby",round:0,players:[],
+        createdAt:Date.now(),expiresAt:Date.now()+ROOM_LIFETIME_MS,phase:"lobby",round:0,players:[],
         teams:data.names.map((name,id)=>({id,name,invite:randomHex(8),members:[],state:R.createTeam(id,name),picks:null,advisersLocked:false,vote:null}))
       };
       await this.ctx.storage.put("room",room);
+      if(typeof this.ctx.storage.setAlarm==="function") await this.ctx.storage.setAlarm(room.expiresAt);
       return respond({code:room.code},201);
     }
     if(!room) fail("Room not found",404);
@@ -208,6 +221,9 @@ export class CrisisRoom {
     await this.ctx.storage.put("room",room);
     return respond(id.role==="host"?hostView(room):playerView(room,id.player));
   }
+  async alarm() {
+    if(typeof this.ctx.storage.deleteAll==="function") await this.ctx.storage.deleteAll();
+  }
 }
 function requirePost(req) { if(req.method!=="POST") fail("Method not allowed",405); }
 
@@ -223,6 +239,11 @@ export default {
         if(!Array.isArray(data.names)||data.names.length<2||data.names.length>4) fail("Create two to four teams");
         const names=data.names.map(n=>cleanName(n));
         if(new Set(names.map(n=>n.toLowerCase())).size!==names.length) fail("Team names must be different");
+        // Durable Object per source IP limits accidental or automated room floods.
+        const ip=req.headers.get("CF-Connecting-IP")||"local-preview";
+        const limiter=env.ROOMS.get(env.ROOMS.idFromName("create-limit:"+ip));
+        const permitted=await limiter.fetch(new Request("https://room.internal/internal/limit",{method:"POST"}));
+        if(!permitted.ok) return permitted;
         for(let i=0;i<3;i++) {
           const code=roomCode(),token=randomHex();
           const stub=env.ROOMS.get(env.ROOMS.idFromName(code));
