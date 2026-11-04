@@ -318,13 +318,23 @@ try {
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator('[data-plan="0"]').click();
     await phoneA.locator("#player-actions select").last().selectOption("0");
-    await phoneA.getByRole("button", {name: "COMMIT STRATEGY & STATEMENT"}).click();
+    await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
+    await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
+    const frozen=await phoneA.locator("#timer").textContent();
+    await delay(1200);
+    assert.equal(await phoneA.locator("#timer").textContent(),frozen,"A team that locked early has a frozen timer");
+    const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
+    await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
     await phoneB.locator('[data-choice="2"]').click();
     await phoneB.locator('[data-choice="3"]').click();
     await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneB.locator('[data-plan="1"]').click();
     await phoneB.locator("#player-actions select").last().selectOption("1");
-    await phoneB.getByRole("button", {name: "COMMIT STRATEGY & STATEMENT"}).click();
+    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
+    await hostUI.waitForFunction(()=>document.querySelector("#ready-notice")?.textContent?.includes("ALL TEAMS READY"));
+    assert.equal(await hostUI.locator("#host-share").isVisible(),false,"QR share hidden after game starts");
+    assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
+    assert.equal(await hostUI.locator("#room-code").isVisible(),false,"Room code hidden after start");
     // Network loss while a team is waiting must not lose its saved session.
     await phoneB.context().setOffline(true);
     await hostUI.getByRole("button", {name: "START NEXT EPISODE"}).click();
@@ -341,6 +351,31 @@ try {
     await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});
     await phoneA.screenshot({path: path.join(root, "screenshots", "06-room-mobile-320.png"), fullPage: true});
     await projected.screenshot({path:path.join(root,"screenshots","07-projector-1280.png"),fullPage:true});
+    // A complete room can render and export a stand-alone human-readable report.
+    const reportHost=await browser.newPage({viewport:{width:1366,height:900},acceptDownloads:true});
+    reportHost.on("pageerror",err=>browserErrors.push(err.message));
+    await reportHost.addInitScript(({code,token})=>{
+      sessionStorage.setItem("bc-preview-session-"+code,token);
+    },{code:roomCode,token:hostToken});
+    await reportHost.goto(base+"/?room="+roomCode,{waitUntil:"load"});
+    await reportHost.locator("#boardroom-report").waitFor({state:"visible",timeout:12000});
+    assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
+    assert.equal(await reportHost.locator(".report-team").count(),2);
+    assert.equal(await reportHost.locator(".report-episode").count(),12);
+    assert.equal(await reportHost.getByRole("button",{name:"PRINT / SAVE AS PDF"}).count(),1);
+    assert.equal((await reportHost.locator("#results").innerText()).includes("JSON"),false);
+    const downloadPromise=reportHost.waitForEvent("download");
+    await reportHost.getByRole("button",{name:"SAVE VISUAL REPORT (.HTML)"}).click();
+    const downloaded=await downloadPromise;
+    assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.html");
+    const html=await (await import("node:fs/promises")).readFile(await downloaded.path(),"utf8");
+    assert.match(html,/THE BOARDROOM VERDICT/);
+    assert.match(html,/FINAL TEAM RANKINGS/);
+    assert.match(html,/THE DECISION TRAIL/);
+    assert.doesNotMatch(html,new RegExp(hostToken));
+    assert.doesNotMatch(html,new RegExp(roomCode));
+    assert.doesNotMatch(html,/<script/i);
+    assert.doesNotMatch(html,/credentialHash/);
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",

@@ -71,30 +71,35 @@ test("selections are team-private; host can see readiness but not adviser picks"
   assert.equal(viewFor(room, a.actor).viewer.captain, true);
 });
 
-test("only the captain changes and locks a team's advisers", () => {
-  let {room, host} = fixture();
-  const a = enter(room, "Alice", 0, 1); room = a.room;
-  const teammate = enter(room, "Eve", 0, 3); room = teammate.room;
-  const b = enter(room, "Bob", 1, 2); room = b.room;
-  room = act(room, host, "start");
-  assert.throws(() => act(room, teammate.actor, "select_advisers", {advisers: [0,1]}), /captain/);
-  assert.throws(() => act(room, host, "select_advisers", {advisers: [0,1]}), /participant/);
-  assert.throws(() => act(room, a.actor, "lock_advisers"), /Choose two advisers first/);
-  for (const invalid of [[1,1], [0, 6], [0], ["0", 1]]) {
-    assert.throws(() => act(room, a.actor, "select_advisers", {advisers: invalid}), /two different advisers/);
-  }
-  room = act(room, a.actor, "select_advisers", {advisers: [0,1]});
-  room = act(room, a.actor, "select_advisers", {advisers: [2,5]}); // Change before confirmation.
-  room = act(room, a.actor, "lock_advisers");
-  assert.deepEqual(viewFor(room, teammate.actor).privateTeam.advisers, [2,5]);
-  assert.throws(() => act(room, a.actor, "select_advisers", {advisers: [1,2]}), /locked/);
-  assert.throws(() => act(room, a.actor, "lock_advisers"), /locked/);
-  assert.throws(() => act(room, host, "advance"), /Not every team/);
-  room = act(room, b.actor, "select_advisers", {advisers: [1,3]});
-  room = act(room, b.actor, "lock_advisers");
-  room = act(room, host, "advance");
-  assert.equal(room.round, 1);
-  assert.equal(room.teams.every(t => t.locked === false && t.advisers.length === 0), true);
+test("captain selects advisers; every teammate must vote before team clock stops", () => {
+  let {room,host}=fixture();
+  const a=enter(room,"Alice",0,1);room=a.room;
+  const mate=enter(room,"Eve",0,3);room=mate.room;
+  const b=enter(room,"Bob",1,2);room=b.room;
+  room=act(room,host,"start");
+  assert.throws(()=>act(room,mate.actor,"select_advisers",{advisers:[0,1]}),/captain/);
+  assert.throws(()=>act(room,host,"select_advisers",{advisers:[0,1]}),/participant/);
+  assert.throws(()=>act(room,a.actor,"lock_advisers"),/Choose two advisers first/);
+  room=act(room,a.actor,"select_advisers",{advisers:[2,5]});
+  assert.deepEqual(viewFor(room,mate.actor).privateTeam.advisers,[2,5]);
+  assert.throws(()=>act(room,a.actor,"lock_advisers"),/Every team member must lock/);
+  room=act(room,mate.actor,"lock_vote",{planIndex:0,signalIndex:1});
+  assert.equal(room.teams[0].locked,false);
+  assert.equal(room.teams[0].economic.nextRound,0);
+  assert.equal(viewFor(room,mate.actor).privateTeam.voting.lockedVotes,1);
+  assert.throws(()=>act(room,mate.actor,"lock_vote",{planIndex:0,signalIndex:1}),/already locked/);
+  assert.throws(()=>act(room,a.actor,"select_advisers",{advisers:[1,3]}),/cannot change/);
+  room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:1});
+  assert.equal(room.teams[0].locked,true);
+  assert.equal(room.teams[0].economic.nextRound,1);
+  assert.equal(viewFor(room,a.actor).privateTeam.teamClock.stage,"locked");
+  assert.throws(()=>act(room,host,"advance"),/Not every team/);
+  room=act(room,b.actor,"select_advisers",{advisers:[1,3]});
+  room=act(room,b.actor,"lock_advisers");
+  room=act(room,host,"advance");
+  assert.equal(room.round,1);
+  assert.equal(room.teams.every(t=>t.locked===false&&t.advisers.length===0&&
+    t.lockedAtMs===null&&Object.keys(t.votes).length===0&&t.runoff===null),true);
 });
 
 test("revision guards reject stale writes and do not mutate prior room state", () => {
@@ -489,4 +494,87 @@ test("new four-character room codes have a million unambiguous combinations and 
     assert.equal(validRoomCode(code),false,code);
     assert.throws(()=>createRoom({code,hostHash:hash("host"),teamCount:2}),/Invalid room code/,code);
   }
+});
+
+
+test("two separate team timers: one freezes when unanimous; the other continues until its own lock",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const mate=enter(room,"Eve",0,3);room=mate.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ const start=1_000_000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},start);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},start+5);
+ room=applyRoomAction(room,b.actor,{type:"select_advisers",advisers:[2,3],expectedRevision:room.revision},start+6);
+ room=applyRoomAction(room,a.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},start+15000);
+ assert.equal(room.teams[0].locked,false);
+ assert.equal(room.teams[0].economic.nextRound,0);
+ room=applyRoomAction(room,mate.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},start+30000);
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].lockedAtMs,start+30000);
+ assert.equal(viewFor(room,a.actor,start+100000).privateTeam.teamClock.stage,"locked");
+ assert.equal(viewFor(room,a.actor,start+100000).privateTeam.teamClock.remainingMs,150000);
+ assert.equal(viewFor(room,b.actor,start+100000).privateTeam.teamClock.stage,"normal");
+ assert.equal(viewFor(room,host,start+100000).teams[0].votesSubmitted,2);
+ assert.equal(viewFor(room,host,start+100000).teams[1].votesSubmitted,0);
+ assert.throws(()=>applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},start+100001),/Not every team/);
+ room=applyRoomAction(room,b.actor,{type:"lock_vote",planIndex:1,signalIndex:2,expectedRevision:room.revision},start+ROUND_MS+14000);
+ assert.equal(room.teams[0].roundPenalty,0);
+ assert.equal(room.teams[1].roundPenalty,5);
+ assert.equal(viewFor(room,b.actor,start+ROUND_MS+22000).privateTeam.teamClock.stage,"locked");
+ room=applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},start+ROUND_MS+22001);
+ assert.equal(room.round,1);
+ assert.deepEqual(room.teams.map(t=>t.roundResults[0].penalty),[0,5]);
+});
+
+test("2-player tie triggers private runoff and only the final winning complete ballot changes economy",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const mate=enter(room,"Eve",0,3);room=mate.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ const start=1_000_000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},start);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},start+1);
+ const a0={planIndex:0,signalIndex:0,allocation:{amount:0,route:null}};
+ const a1={planIndex:1,signalIndex:1,allocation:{amount:0,route:null}};
+ room=applyRoomAction(room,a.actor,{type:"lock_vote",...a0,expectedRevision:room.revision},start+1000);
+ room=applyRoomAction(room,mate.actor,{type:"lock_vote",...a1,expectedRevision:room.revision},start+2000);
+ assert.equal(room.teams[0].locked,false);
+ assert.equal(room.teams[0].economic.history.length,0);
+ assert.equal(room.teams[0].runoff.choices.length,2);
+ assert.equal(room.teams[0].runoff.ordinal,1);
+ assert.equal(viewFor(room,a.actor,start+3000).privateTeam.voting.runoff.choices.length,2);
+ assert.equal(viewFor(room,a.actor,start+3000).privateTeam.teamClock.stage,"normal");
+ for(const viewer of [host,b.actor,{role:"projector"}])
+  assert.equal(JSON.stringify(viewFor(room,viewer,start+3000)).includes('"runoff"'),false,"No opposing-runoff disclosure");
+ assert.throws(()=>applyRoomAction(room,a.actor,
+  {type:"lock_vote",planIndex:2,signalIndex:2,expectedRevision:room.revision},start+3001),/two runoff proposals/);
+ room=applyRoomAction(room,a.actor,{type:"lock_vote",...a1,expectedRevision:room.revision},start+4000);
+ assert.equal(room.teams[0].locked,false);
+ room=applyRoomAction(room,mate.actor,{type:"lock_vote",...a1,expectedRevision:room.revision},start+5000);
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].economic.nextRound,1);
+ assert.equal(room.teams[0].economic.history[0].planIndex,1);
+ assert.equal(room.teams[0].economic.history.length,1);
+});
+
+test("three player majority applies a complete proposal once, without disclosing individual ballots",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ const c=enter(room,"Charlie",0,3);room=c.room;
+ const d=enter(room,"Dana",0,4);room=d.room;
+ const start=10000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},start);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},start+1);
+ for(const [actor,plan,offset] of [[a.actor,1,2],[c.actor,0,3],[d.actor,1,4]]){
+  room=applyRoomAction(room,actor,{type:"lock_vote",planIndex:plan,signalIndex:0,expectedRevision:room.revision},start+offset);
+  if(offset<4)assert.equal(room.teams[0].locked,false);
+ }
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].economic.history[0].planIndex,1);
+ assert.equal(room.teams[0].economic.history.length,1);
+ assert.equal(JSON.stringify(viewFor(room,host)).includes('"myVote"'),false);
+ assert.equal(JSON.stringify(viewFor(room,b.actor)).includes('"myVote"'),false);
+ assert.equal(viewFor(room,host).teams[0].votesSubmitted,3);
 });

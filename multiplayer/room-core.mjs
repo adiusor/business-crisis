@@ -48,7 +48,7 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
   expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
-   roundPenalty:0,penaltyPoints:0,roundResults:[],economic:R.createTeam(i,name)})),
+   roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
 }
 export function authorize(room,hash){
@@ -97,6 +97,95 @@ export function clockFor(room,nowMs=Date.now()){
  return {normalEndsAt,closesAt,serverNowMs:nowMs,
   stage:nowMs<normalEndsAt?"normal":nowMs<closesAt?"grace":"closed"};
 }
+// A team's timer freezes at its successful server-side lock. Other teams keep running.
+// Unlike the shared clock, this includes the server-stored freeze timestamp.
+export function teamClockFor(room,teamIndex,nowMs=Date.now()){
+ const clock=clockFor(room,nowMs);
+ if(!clock)return null;
+ const t=room.teams[teamIndex];
+ requireState(!!t,400,"Invalid team");
+ if(t.locked){
+  const at=Number.isSafeInteger(t.lockedAtMs)?t.lockedAtMs:
+   t.timedOut?clock.closesAt:room.startedAtMs;
+  return {...clock,stage:t.timedOut?"closed":"locked",lockedAtMs:at,
+   remainingMs:t.timedOut?0:Math.max(0,(at<clock.normalEndsAt?clock.normalEndsAt:clock.closesAt)-at)};
+ }
+ return {...clock,remainingMs:Math.max(0,(
+  nowMs<clock.normalEndsAt?clock.normalEndsAt:clock.closesAt)-nowMs)};
+}
+const ballotKey=ballot=>JSON.stringify([ballot.planIndex,ballot.signalIndex,ballot.allocation.amount,ballot.allocation.route]);
+function ballotFor(room,cmd){
+ const e=C.episodes[room.round],p=cmd.planIndex,statement=cmd.signalIndex;
+ requireState(Number.isInteger(p)&&p>=0&&p<e.plans.length,400,"Invalid strategic choice");
+ requireState(Number.isInteger(statement)&&statement>=0&&statement<e.signals.length,400,"Invalid public statement");
+ const alloc=cmd.allocation===undefined?{amount:0,route:null}:cmd.allocation;
+ requireState(alloc&&typeof alloc==="object"&&!Array.isArray(alloc)&&
+   Number.isInteger(alloc.amount)&&[0,10000,20000].includes(alloc.amount),400,"Invalid allocation");
+ requireState(alloc.amount===0?alloc.route===null:
+  ([2,4].includes(room.round)&&R.allocations.some(a=>a.id===alloc.route)),400,
+  "Invalid allocation route or episode");
+ return {planIndex:p,signalIndex:statement,allocation:{amount:alloc.amount,route:alloc.route}};
+}
+function decideTeam(room,teamIndex,ballot,atMs){
+ const t=room.teams[teamIndex];
+ requireState(!t.locked,409,"This team's decision is locked");
+ try{t.economic=R.applyTurn(t.economic,room.round,ballot.planIndex,ballot.signalIndex,
+  t.advisers,room.variant,ballot.allocation);}
+ catch(e){throw bad(400,e.message);}
+ t.locked=true;t.lockedAtMs=atMs;
+ const clock=clockFor(room,atMs);
+ if(clock.stage==="grace"){t.roundPenalty=GRACE_PENALTY;t.penaltyPoints+=GRACE_PENALTY;}
+}
+// The complete proposal is the ballot: strategy + statement + optional investment.
+// All team members must lock. A tied leader triggers a private debate/runoff, never
+// an arbitrary client decision. The countdown continues during all runoff votes.
+function resolveVotes(room,teamIndex,nowMs){
+ const t=room.teams[teamIndex],members=room.players.filter(p=>p.teamIndex===teamIndex);
+ if(!members.length||!members.every(p=>t.votes?.[p.id]?.locked))return;
+ const tally=new Map();
+ for(const p of members){
+  const vote=t.votes[p.id].ballot,key=ballotKey(vote);
+  const x=tally.get(key);
+  if(x)x.count++;
+  else tally.set(key,{ballot:vote,count:1,first:room.players.findIndex(x=>x.id===p.id)});
+ }
+ const ordered=[...tally.values()].sort((a,b)=>b.count-a.count||a.first-b.first);
+ const leaders=ordered.filter(x=>x.count===ordered[0].count);
+ if(leaders.length===1){decideTeam(room,teamIndex,leaders[0].ballot,nowMs);return;}
+ // If 3+ proposals tie for first, select the two most similar packages
+ // (strategy > public statement > investment), with stable proposer-order tie breaking.
+ // This provides a focused, meaningful debate instead of arbitrary two nominees.
+ const distance=(a,b)=>
+   (a.planIndex===b.planIndex?0:8) +
+   (a.signalIndex===b.signalIndex?0:4) +
+   Math.abs(a.allocation.amount-b.allocation.amount)/10000 +
+   (a.allocation.route===b.allocation.route?0:1);
+ let pair=[leaders[0],leaders[1]],best=distance(pair[0].ballot,pair[1].ballot);
+ for(let i=0;i<leaders.length;i++)for(let j=i+1;j<leaders.length;j++){
+   const d=distance(leaders[i].ballot,leaders[j].ballot);
+   if(d<best){best=d;pair=[leaders[i],leaders[j]];}
+ }
+ const choices=pair.map(x=>x.ballot);
+ t.runoff={choices,ordinal:(t.runoff?.ordinal||0)+1};
+ t.votes={};
+}
+export function privateVoteStatus(room,player){
+ const t=room.teams[player.teamIndex],members=room.players.filter(p=>p.teamIndex===player.teamIndex);
+ const votes=t.votes||{};
+ const tally=new Map();
+ for(const p of members){
+  const vote=votes[p.id];
+  if(!vote?.locked)continue;
+  const k=ballotKey(vote.ballot),entry=tally.get(k);
+  if(entry)entry.count++;
+  else tally.set(k,{ballot:vote.ballot,count:1});
+ }
+ return {lockedVotes:members.filter(p=>votes[p.id]?.locked).length,
+  totalMembers:members.length,
+  myVote:votes[player.id]?.locked?clone(votes[player.id].ballot):null,
+  runoff:t.runoff?clone(t.runoff):null,
+  tally:[...tally.values()].map(x=>({...x,ballot:clone(x.ballot)}))};
+}
 export function expireRoom(room,nowMs=Date.now()){
  const clock=clockFor(room,nowMs);
  if(!clock||clock.stage!=="closed"||room.teams.every(t=>t.locked))return room;
@@ -104,7 +193,7 @@ export function expireRoom(room,nowMs=Date.now()){
  for(const t of next.teams){
   if(t.locked)continue;
   t.economic=R.applyTimeout(t.economic,next.round,next.variant);
-  t.locked=true;t.timedOut=true;t.advisers=[];t.roundPenalty=NO_ANSWER_PENALTY;
+  t.locked=true;t.timedOut=true;t.lockedAtMs=clock.closesAt;t.advisers=[];t.roundPenalty=NO_ANSWER_PENALTY;
   t.penaltyPoints+=NO_ANSWER_PENALTY;
  }
  next.revision++;
@@ -169,34 +258,42 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   requireState(next.phase==="lobby",409,"Room already started");
   requireState(next.teams.every(t=>t.captainId),409,"Each team needs a participant");
   next.phase="advisers";next.startedAtMs=nowMs;
- }else if(type==="select_advisers"||type==="lock_advisers"||type==="submit_decision"){
+ }else if(type==="select_advisers"||type==="lock_advisers"||type==="submit_decision"||type==="lock_vote"){
   requireState(!!player,403,"Only a participant can submit a decision");
   requireState(next.phase==="advisers",409,"Adviser selection is closed");
   const clock=clockFor(next,nowMs);
   requireState(clock.stage!=="closed",409,"The four-minute window has ended");
   const t=next.teams[player.teamIndex];
-  requireState(t.captainId===player.id,403,"Only your team's captain can confirm selections");
   requireState(!t.locked,409,"This team's decision is locked");
   if(type==="select_advisers"){
+   requireState(t.captainId===player.id,403,"Only your team's captain can select advisers");
+   requireState(!Object.values(t.votes||{}).some(v=>v.locked),409,
+    "Advisers cannot change once team voting has started");
    const picks=command.advisers;
    requireState(Array.isArray(picks)&&picks.length===2&&picks.every(x=>Number.isInteger(x)&&x>=0&&x<C.advisers.length)
     &&new Set(picks).size===2,400,"Choose exactly two different advisers");
    t.advisers=picks.slice();
   }else{
    requireState(t.advisers.length===2,409,"Choose two advisers first");
-   // The entire economic decision is committed on the server in one atomic action.
-   const e=C.episodes[next.round],p=command.planIndex,s=command.signalIndex;
-   requireState(Number.isInteger(p)&&p>=0&&p<e.plans.length,400,"Invalid strategic choice");
-   requireState(Number.isInteger(s)&&s>=0&&s<e.signals.length,400,"Invalid public statement");
-   const alloc=command.allocation===undefined?{amount:0,route:null}:command.allocation;
-   requireState(alloc&&typeof alloc==="object"&&!Array.isArray(alloc)&&
-    Number.isInteger(alloc.amount)&&[0,10000,20000].includes(alloc.amount),400,"Invalid allocation");
-   requireState(alloc.amount===0?alloc.route===null:
-    ([2,4].includes(next.round)&&R.allocations.some(a=>a.id===alloc.route)),400,"Invalid allocation route or episode");
-   try{t.economic=R.applyTurn(t.economic,next.round,p,s,t.advisers,next.variant,alloc);}
-   catch(e){throw bad(400,e.message);}
-   t.locked=true;
-   if(clock.stage==="grace"){t.roundPenalty=GRACE_PENALTY;t.penaltyPoints+=GRACE_PENALTY;}
+   if(type==="lock_vote"){
+    const vote=ballotFor(next,command);
+    t.votes=t.votes||{};
+    requireState(!t.votes[player.id]?.locked,409,"Your vote is already locked");
+    if(t.runoff)requireState(t.runoff.choices.some(x=>ballotKey(x)===ballotKey(vote)),
+      400,"Choose one of the two runoff proposals");
+    t.votes[player.id]={ballot:vote,locked:true};
+    resolveVotes(next,player.teamIndex,nowMs);
+   }else{
+    // Backwards compatibility for one-player rooms. Never allow the captain to
+    // override other players' votes or commit on behalf of multiple members.
+    requireState(t.captainId===player.id,403,"Only your team's captain can confirm selections");
+    requireState(next.players.filter(p=>p.teamIndex===player.teamIndex).length===1,409,
+      "Every team member must lock an individual vote");
+    const vote=ballotFor(next,command);
+    t.votes={[player.id]:{ballot:vote,locked:true}};
+    decideTeam(next,player.teamIndex,vote,nowMs);
+   }
+
   }
  }else if(type==="advance"){
   requireState(isHost,403,"Only the host can advance");
@@ -212,7 +309,8 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   if(next.round===5){next.phase="complete";next.startedAtMs=null;}
   else{
    next.round++;next.startedAtMs=nowMs;
-   next.teams.forEach(t=>{t.advisers=[];t.locked=false;t.timedOut=false;t.roundPenalty=0;});
+   next.teams.forEach(t=>{t.advisers=[];t.locked=false;t.lockedAtMs=null;t.timedOut=false;
+    t.votes={};t.runoff=null;t.roundPenalty=0;});
   }
  }else throw bad(400,"Unknown command");
  next.revision++;
@@ -232,7 +330,9 @@ export function viewFor(room,actor,nowMs=Date.now()){
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
    lastRecap:room.lastRecap,
    teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
-    timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty})),
+    timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
+    votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
+    lockedAtMs:t.lockedAtMs||null})),
    verdict:room.phase==="complete"?finalVerdict(room):null};
  }
  const player=actor.role==="player"?room.players.find(p=>p.id===actor.playerId):null;
@@ -242,12 +342,15 @@ export function viewFor(room,actor,nowMs=Date.now()){
   lastRecap:room.lastRecap,teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,
-   ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty})),
+   ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
+   roundPenalty:t.roundPenalty,votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
+   lockedAtMs:t.lockedAtMs||null})),
   verdict:room.phase==="complete"?finalVerdict(room):null};
  if(!player)return {...shared,viewer:{role:"host"}};
  const t=room.teams[player.teamIndex],eco=t.economic,episode=C.episodes[room.round];
  return {...shared,viewer:{role:"player",teamIndex:player.teamIndex,captain:t.captainId===player.id,nickname:player.nickname},
-  privateTeam:{advisers:t.advisers.slice(),
+  privateTeam:{advisers:t.advisers.slice(),teamClock:teamClockFor(room,player.teamIndex,nowMs),
+   voting:privateVoteStatus(room,player),
    intelligence:room.phase==="advisers"?t.advisers.map(i=>({name:C.advisers[i].name,role:C.advisers[i].role,brief:episode.advice[i]})):[],
    economic:{cash:eco.cash,trust:eco.trust,risks:clone(eco.risks),
     pendingLiability:eco.pending.reduce((sum,x)=>sum+x.cost,0),nextRound:eco.nextRound},

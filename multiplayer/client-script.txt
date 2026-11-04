@@ -3,6 +3,7 @@
 // Never stores or transmits an email address. Room bearer tokens remain in sessionStorage.
 (() => {
   const $ = id => document.getElementById(id);
+  const REPORT_EXPORT_CSS = "*{box-sizing:border-box}body{margin:0;padding:32px;background:#e8ecef;color:#152330;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.55}\n.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}\n.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}\n.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}\n.report-eyebrow,.report-kicker{color:#efb17c}\n.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}\n.report-subhead{color:#bbcbd4;font-size:18px}\n.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}\n.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}\n.report-winner p{color:#c3d2dc}\n.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}\n.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}\n.report-rankings{display:grid;gap:16px}\n.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}\n.report-team.winner{border:2px solid #bb7e49}\n.report-rank-row{display:flex;justify-content:space-between;gap:20px}\n.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}\n.report-rank-number,.report-status,.report-episode-number{color:#b87842}\n.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}\n.report-final-score strong{font-size:49px;line-height:1}\n.report-final-score span{font-size:14px;color:#5b6975}\n.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}\n.report-score-fill{height:100%;background:#bf844f}\n.report-formula{font-size:12px;color:#566677}\n.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}\n.report-metric{background:#edf2f4;padding:12px}\n.report-metric small{display:block;color:#6a7d8b;font-size:9px}\n.report-metric strong{display:block;font-size:17px;margin-top:5px}\n.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}\n.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}\n.report-reasons p{margin:6px 0;font-size:12px}\n.report-team-timeline{break-before:auto;page-break-inside:auto}\n.report-team-timeline h4{font-size:20px;margin:24px 0 12px}\n.report-episodes{display:grid;gap:9px}\n.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}\n.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}\n.report-episode-top strong{font-size:17px}\n.report-missed{color:#a43d31;font-size:11px;font-weight:900}\n.report-choice-line{font-size:14px;margin:8px 0}\n.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}\n.report-fallout{font-size:12px;color:#435360}\n.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}\n.report-foot strong{color:#263a47}\n@media(max-width:650px){body{padding:0}.report-sheet{padding:15px;box-shadow:none}.report-head{padding:22px}.report-head h2{font-size:33px}.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-rank-row h4{font-size:20px}}\n@media print{@page{size:A4;margin:13mm}body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report-sheet{max-width:none;box-shadow:none;padding:0}.report-team{break-inside:avoid}.report-head{break-inside:avoid}}";
   const ADV = [
     ["MARA VALE", "GENERAL COUNSEL"], ["DANIEL ROOK", "OPERATIONS DIRECTOR"],
     ["INES PARK", "CLIENT PARTNER"], ["ELI MERCER", "FINANCE CONTROLLER"],
@@ -23,6 +24,7 @@
   let draftPicks = null;
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
+  let draftRunoffOrdinal = 0;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -103,9 +105,71 @@
       const status = state.phase === "lobby" ? (team.ready ? "READY" : "WAITING") :
         (team.timedOut ? "TIMEOUT" : team.locked ? "LOCKED" : "CHOOSING");
       const rhs = node("span", status, "meta");
+      if (state.phase === "advisers" && !team.locked)
+        rhs.append(node("small", (team.votesSubmitted || 0) + "/" + count + " VOTED"));
       if (team.penaltyPoints) rhs.append(node("small", "−" + team.penaltyPoints + " TIME PTS"));
+      if (state.phase === "advisers") {
+        const clock = node("small","");
+        clock.dataset.teamClock = String(i);
+        clock.classList.add("team-clock");
+        lhs.append(clock);
+      }
       card.append(lhs, rhs);
       $("team-list").append(card);
+    });
+  }
+  function renderReadyNotice() {
+    const banner = $("ready-notice");
+    if (state.phase !== "advisers") {
+      banner.hidden = true;banner.textContent = "";return;
+    }
+    const allFinished = state.teams.every(t => t.locked);
+    const ready = state.teams.filter(t => t.locked && !t.timedOut);
+    const waiting = state.teams.filter(t => !t.locked);
+    let text = "";
+    if (state.viewer.role === "host" && allFinished) {
+      text = state.teams.some(t => t.timedOut) ?
+        "ALL TEAMS FINISHED — START NEXT EPISODE (ONE OR MORE TEAMS TIMED OUT)" :
+        "ALL TEAMS READY — START NEXT EPISODE";
+    } else if (state.viewer.role === "host") {
+      if (ready.length) text = ready.map(t => t.name + " IS READY").join(" · ") +
+        " — WAITING FOR " + waiting.map(t => t.name).join(", ");
+    } else if (state.viewer.role === "player") {
+      const opposing = state.teams.filter((t,i) =>
+        i !== state.viewer.teamIndex && t.locked && !t.timedOut);
+      if (opposing.length) text = opposing.map(t => t.name + " IS READY").join(" · ");
+    } else if (state.viewer.role === "projector") {
+      if (ready.length) text = ready.map(t => t.name + " IS READY").join(" · ");
+      if (allFinished) text += (text ? " — " : "") + "ALL TEAMS FINISHED";
+    }
+    banner.hidden = !text;
+    banner.textContent = text;
+  }
+  function renderTeamClocks() {
+    if (!state || state.phase !== "advisers" || !state.clock) return;
+    const now = Date.now() + clockOffset, clock = state.clock;
+    const format = ms => {
+      const sec = Math.ceil(Math.max(0,ms) / 1000);
+      return String(Math.floor(sec/60)).padStart(2,"0") + ":" +
+        String(sec%60).padStart(2,"0");
+    };
+    const nodes = $("team-list").querySelectorAll("[data-team-clock]");
+    nodes.forEach(el => {
+      const i = Number(el.dataset.teamClock), team = state.teams[i];
+      if (!team) return;
+      if (team.timedOut) {
+        el.textContent = "TIME EXPIRED";return;
+      }
+      const lockedAt = team.lockedAtMs;
+      if (team.locked) {
+        const time = Number.isSafeInteger(lockedAt) ?
+          Math.max(0,(lockedAt < clock.normalEndsAt ? clock.normalEndsAt : clock.closesAt) - lockedAt) : 0;
+        el.textContent = "CLOCK STOPPED · " + format(time) + " LEFT";
+      } else {
+        const grace = now >= clock.normalEndsAt;
+        const remaining = Math.max(0,(grace ? clock.closesAt : clock.normalEndsAt) - now);
+        el.textContent = (grace ? "RESERVE · " : "DECIDING · ") + format(remaining);
+      }
     });
   }
   function renderRename() {
@@ -176,119 +240,155 @@
     target.replaceChildren();
     target.hidden = state.viewer.role !== "player";
     if (target.hidden) return;
-    const mine = state.teams[state.viewer.teamIndex],privateData=state.privateTeam;
+    const mine = state.teams[state.viewer.teamIndex], privateData = state.privateTeam;
     if (state.phase === "lobby") {
-      target.append(node("h3","YOUR TEAM / CHANGE BEFORE START","section-label"));
-      target.append(node("p", "You're currently on " + mine.name + ". You can switch freely until the host starts. The first member of a team becomes its captain."));
-      const form = node("div",null,"lobby-transfer");
-      const select = node("select"); select.id="change-team-select";
-      state.teams.forEach((team,index)=>{
-        const option=node("option",team.name+" · "+team.joined+" player"+(team.joined===1?"":"s"));
-        option.value=String(index);select.append(option);
+      target.append(node("h3", "YOUR TEAM / CHANGE BEFORE START", "section-label"));
+      target.append(node("p", "You're currently on " + mine.name +
+        ". You can switch until the host starts. Every member gets one vote in each episode."));
+      const form = node("div", null, "lobby-transfer");
+      const select = node("select"); select.id = "change-team-select";
+      state.teams.forEach((team, index) => {
+        const opt = node("option", team.name + " · " + team.joined + " player" + (team.joined === 1 ? "" : "s"));
+        opt.value = String(index); select.append(opt);
       });
-      select.value=String(state.viewer.teamIndex);
-      const move=button("SWITCH TEAM",()=>action({
-        type:"change_team",teamIndex:Number(select.value)
-      }).catch(e=>error(e.message)),"secondary",true);
-      move.id="change-team-button";
-      select.addEventListener("change",()=>{move.disabled=Number(select.value)===state.viewer.teamIndex;});
-      form.append(select,move);target.append(form);
-      target.append(node("p",state.viewer.captain?
-        "You are captain of this team and can rename it before the start.":
-        "You are a member of this team. Its captain will submit decisions."));
+      select.value = String(state.viewer.teamIndex);
+      const move = button("SWITCH TEAM", () => action({
+        type: "change_team", teamIndex: Number(select.value)
+      }).catch(e => error(e.message)), "secondary", true);
+      move.id = "change-team-button";
+      select.addEventListener("change", () => {
+        move.disabled = Number(select.value) === state.viewer.teamIndex;
+      });
+      form.append(select, move); target.append(form);
+      target.append(node("p", state.viewer.captain ?
+        "You are captain. Before each round of voting, choose two confidential advisers for your whole team." :
+        "Your captain chooses the advisers. Once selected, everyone votes independently."));
       return;
     }
     if (state.phase === "complete") {
-      target.append(node("p", "Final economic results and time deductions are displayed below."));
+      target.append(node("p", "The boardroom verdict and your team's decision history appear below."));
       return;
     }
-    target.append(node("p", "Your response fund: £" + privateData.economic.cash.toLocaleString("en-GB") +
+    const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
+    target.append(node("p", "Response fund: £" + privateData.economic.cash.toLocaleString("en-GB") +
       " · Client confidence: " + privateData.economic.trust + "/100", "private-cash"));
-    if (!state.viewer.captain || mine.locked) {
-      target.append(node("p", mine.locked ?
-        (mine.timedOut ? "No response was filed before the deadline. The business incurred mandatory costs and additional exposures." :
-        "Your team's strategy and statement are locked. Waiting for the host.") :
-        "Your captain is choosing the advisers and strategy."));
-      if (privateData.intelligence.length) {
-        const list = node("div", null, "intel-list");
-        for (const item of privateData.intelligence) {
-          const card=node("article",null,"intel-card");
-          card.append(node("strong",item.name),node("small",item.role),node("p",item.brief));
-          list.append(card);
-        }
-        target.append(list);
+    const progress = node("div", null, "ballot-progress");
+    progress.append(node("strong", mine.locked ?
+      (mine.timedOut ? "DEADLINE MISSED" : "TEAM DECISION LOCKED · CLOCK STOPPED") :
+      "YOUR TEAM / " + voting.lockedVotes + " OF " + voting.totalMembers + " VOTES LOCKED"));
+    progress.append(node("p", mine.locked ?
+      (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
+      "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
+      "Every team member locks one complete proposal. The most popular wins when all have voted; a tie triggers a private debate and revote."));
+    target.append(progress);
+    if (privateData.intelligence.length) {
+      target.append(node("h3", "CLASSIFIED / YOUR TEAM ONLY", "section-label"));
+      const intel = node("div", null, "intel-list");
+      for (const entry of privateData.intelligence) {
+        const card = node("article", null, "intel-card");
+        card.append(node("strong", entry.name), node("small", entry.role), node("p", entry.brief));
+        intel.append(card);
       }
+      target.append(intel);
+    }
+    if (mine.locked) return;
+    if (voting.myVote) {
+      target.append(node("p", "YOUR VOTE IS LOCKED. Keep discussing with your team. The timer stops when everyone votes and a winning proposal emerges."));
       return;
     }
-    target.append(node("h3", "01 / SELECT TWO ADVISERS", "section-label"));
-    target.append(node("p", "Choose two private sources. You can change the selection before the strategy is committed."));
-    const grid = node("div", null, "choice-grid");
-    for (let i = 0; i < ADV.length; i++) {
-      const item = button(ADV[i][0], () => {
-        if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
-        else if (draftPicks.length < 2) draftPicks.push(i);
-        renderPlayerActions();
-        target.querySelector('[data-choice="' + i + '"]')?.focus({preventScroll: true});
-      }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
-      item.dataset.choice = i; item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
-      item.append(node("small", ADV[i][1])); grid.append(item);
-    }
-    target.append(grid);
-    target.append(button("SAVE TWO PICKS", async () => {
-      try { await action({type: "select_advisers", advisers: draftPicks.slice()}); }
-      catch (e) { error(e.message); }
-    }, "secondary", draftPicks.length !== 2));
-    if (privateData.intelligence.length === 2) {
-      target.append(node("h3", "02 / CLASSIFIED BRIEFINGS", "section-label"));
-      const intelligence=node("div",null,"intel-list");
-      for(const entry of privateData.intelligence){
-        const card=node("article",null,"intel-card");
-        card.append(node("strong",entry.name),node("small",entry.role),node("p",entry.brief));
-        intelligence.append(card);
+    if (state.viewer.captain && !voting.runoff) {
+      target.append(node("h3", "01 / CAPTAIN — SELECT TWO ADVISERS", "section-label"));
+      target.append(node("p", "Once saved, the briefings are available privately to all your teammates."));
+      const grid = node("div", null, "choice-grid");
+      for (let i = 0; i < ADV.length; i++) {
+        const item = button(ADV[i][0], () => {
+          if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
+          else if (draftPicks.length < 2) draftPicks.push(i);
+          renderPlayerActions();
+          target.querySelector('[data-choice="' + i + '"]')?.focus({preventScroll: true});
+        }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
+        item.dataset.choice = i;
+        item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
+        item.append(node("small", ADV[i][1])); grid.append(item);
       }
-      target.append(intelligence);
+      target.append(grid);
+      target.append(button("SAVE TWO PICKS", async () => {
+        try {await action({type:"select_advisers", advisers:draftPicks.slice()});}
+        catch (e) {error(e.message);}
+      }, "secondary", draftPicks.length !== 2 || voting.lockedVotes > 0));
     }
     if (privateData.advisers.length !== 2) {
-      target.append(node("p", "Save two adviser picks to unlock the strategy and public statement."));
+      target.append(node("p", "Waiting for the captain to choose two advisers. The team clock is running."));
       return;
     }
-    const episode=state.episode;
-    target.append(node("h3", "03 / CHOOSE YOUR STRATEGY", "section-label"));
-    for (let i=0;i<episode.plans.length;i++){
-      const p=episode.plans[i], card=node("article",null,"strategy-choice"+(draftPlan===i?" chosen":""));
-      card.append(node("strong",String.fromCharCode(65+i)+" / "+p.name));
-      card.append(node("small",p.desc));
-      card.append(node("small","BENEFITS: "+p.benefits.join("; ")));
-      card.append(node("small","TRADE-OFF: "+p.cost+" · SPEND £"+p.spend.toLocaleString("en-GB")));
-      const choose=button(draftPlan===i?"SELECTED":"SELECT STRATEGY",()=>{
-        draftPlan=i;renderPlayerActions();target.querySelector('[data-plan="'+i+'"]')?.focus({preventScroll:true});
-      },"secondary");
-      choose.dataset.plan=i;choose.setAttribute("aria-pressed",String(draftPlan===i));card.append(choose);target.append(card);
-    }
-    if(episode.allocations.length){
-      target.append(node("h3","04 / OPTIONAL RESPONSE INVESTMENT","section-label"));
-      target.append(labelledSelect("Discretionary budget",[
-        {value:0,label:"£0 — keep cash available"},
-        {value:10000,label:"£10,000 additional investment"},
-        {value:20000,label:"£20,000 additional investment"}
-      ],draftAmount,v=>{draftAmount=Number(v);renderPlayerActions();}));
-      if(draftAmount>0){
-        target.append(labelledSelect("Investment channel",episode.allocations.map(x=>({value:x.id,label:x.name})),
-          draftRoute||episode.allocations[0].id,v=>draftRoute=v));
+    const ep = state.episode;
+    if (voting.runoff) {
+      target.append(node("h3", "PRIVATE TEAM DEBATE / TIE BREAK", "section-label"));
+      target.append(node("p", "Your votes were tied. Discuss the trade-offs, then choose between the two closest leading proposals. Everyone must vote again; your timer is still running."));
+      voting.runoff.choices.forEach((proposal, i) => {
+        const plan = ep.plans[proposal.planIndex], statement = ep.signals[proposal.signalIndex];
+        const selected = draftPlan === proposal.planIndex && draftSignal === proposal.signalIndex &&
+          draftAmount === proposal.allocation.amount && draftRoute === proposal.allocation.route;
+        const card = node("article", null, "strategy-choice" + (selected ? " chosen" : ""));
+        card.append(node("strong", "FINALIST " + (i + 1) + " / " + plan.name));
+        card.append(node("small", plan.desc));
+        card.append(node("small", "PUBLIC STATEMENT: " + statement.name + " — " + statement.line));
+        card.append(node("small", "ADDITIONAL INVESTMENT: £" +
+          proposal.allocation.amount.toLocaleString("en-GB") +
+          (proposal.allocation.route ? " / " + proposal.allocation.route : "")));
+        const choose = button(selected ? "SELECTED" : "VOTE FOR THIS PROPOSAL", () => {
+          draftPlan = proposal.planIndex; draftSignal = proposal.signalIndex;
+          draftAmount = proposal.allocation.amount; draftRoute = proposal.allocation.route;
+          renderPlayerActions();
+        }, "secondary");
+        choose.dataset.runoff = String(i); card.append(choose); target.append(card);
+      });
+    } else {
+      target.append(node("h3", "02 / CHOOSE YOUR STRATEGY", "section-label"));
+      for (let i = 0; i < ep.plans.length; i++) {
+        const p = ep.plans[i], card = node("article", null,
+          "strategy-choice" + (draftPlan === i ? " chosen" : ""));
+        card.append(node("strong", String.fromCharCode(65 + i) + " / " + p.name));
+        card.append(node("small", p.desc));
+        card.append(node("small", "BENEFITS: " + p.benefits.join("; ")));
+        card.append(node("small", "TRADE-OFF: " + p.cost +
+          " · SPEND £" + p.spend.toLocaleString("en-GB")));
+        const choose = button(draftPlan === i ? "SELECTED" : "SELECT STRATEGY", () => {
+          draftPlan = i; renderPlayerActions();
+          target.querySelector('[data-plan="' + i + '"]')?.focus({preventScroll:true});
+        }, "secondary");
+        choose.dataset.plan = i; choose.setAttribute("aria-pressed", String(draftPlan === i));
+        card.append(choose); target.append(card);
       }
-    }else{draftAmount=0;draftRoute=null;}
-    target.append(node("h3", "05 / ISSUE YOUR PUBLIC STATEMENT", "section-label"));
-    target.append(labelledSelect("Choose a statement",[
-      {value:"",label:"Select a statement"},
-      ...episode.signals.map((x,i)=>({value:String(i),label:x.name+" — "+x.line}))
-    ],draftSignal===null?"":String(draftSignal),v=>{draftSignal=v===""?null:Number(v);renderPlayerActions();}));
-    target.append(button("COMMIT STRATEGY & STATEMENT",async()=>{
-      try{
-        const allocation={amount:draftAmount,route:draftAmount?(draftRoute||episode.allocations[0]?.id):null};
-        await action({type:"submit_decision",planIndex:draftPlan,signalIndex:draftSignal,allocation});
-      }catch(e){error(e.message);}
-    },"primary submit-game",draftPlan===null||draftSignal===null));
-    target.append(node("p","This submission is final. Deadline penalties are assessed by the server, not your phone."));
+      if (ep.allocations.length) {
+        target.append(node("h3", "03 / OPTIONAL INVESTMENT", "section-label"));
+        target.append(labelledSelect("Discretionary budget", [
+          {value: 0,label:"£0 — keep cash available"},
+          {value: 10000,label:"£10,000 additional investment"},
+          {value: 20000,label:"£20,000 additional investment"}
+        ],draftAmount,v=>{draftAmount=Number(v);draftRoute=null;renderPlayerActions();}));
+        if (draftAmount > 0) {
+          target.append(labelledSelect("Investment channel",
+            ep.allocations.map(x=>({value:x.id,label:x.name})),
+            draftRoute || ep.allocations[0].id,v=>draftRoute=v));
+        }
+      } else {draftAmount=0;draftRoute=null;}
+      target.append(node("h3", "04 / ISSUE YOUR PUBLIC STATEMENT", "section-label"));
+      target.append(labelledSelect("Choose a statement",[
+        {value:"",label:"Select a statement"},
+        ...ep.signals.map((x,i)=>({value:String(i),label:x.name+" — "+x.line}))
+      ],draftSignal===null?"":String(draftSignal),
+        v=>{draftSignal=v===""?null:Number(v);renderPlayerActions();}));
+    }
+    const allocation = {amount:draftAmount,route:draftAmount?(draftRoute||ep.allocations[0]?.id):null};
+    const allowed = !voting.runoff || voting.runoff.choices.some(x=>
+      x.planIndex===draftPlan&&x.signalIndex===draftSignal&&
+      x.allocation.amount===allocation.amount&&x.allocation.route===allocation.route);
+    target.append(button("LOCK MY VOTE",async()=>{
+      try{await action({type:"lock_vote",planIndex:draftPlan,signalIndex:draftSignal,allocation});}
+      catch(e){error(e.message);}
+    },"primary submit-game",draftPlan===null||draftSignal===null||!allowed));
+    target.append(node("p","Your individual ballot is final unless there is a tie. A runoff is private to your team and uses the same uninterrupted deadline."));
   }
   function renderHostActions() {
     const target = $("host-actions");
@@ -306,47 +406,125 @@
       target.append(node("p","EPISODE "+(state.round+1)+" / 6 · "+state.episode.title));
       target.append(button(state.round===5?"REVEAL THE BOARDROOM VERDICT":"START NEXT EPISODE",
         ()=>action({type:"advance"}).catch(e=>error(e.message)),"primary",!ready));
-      if (!ready) target.append(node("p", "Waiting for every team to file its strategy, or for the four-minute deadline."));
+      if (!ready) target.append(node("p", "Teams still deciding or debating. Each team freezes its own clock after everyone votes and a winning proposal is confirmed."));
+      else target.append(node("p", "ALL TEAMS FINISHED. You can start the next episode now."));
     } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
   }
-  function renderResults(){
-    const target=$("results");
+  function renderResults() {
+    const target = $("results");
     target.replaceChildren();
-    target.hidden=state.phase!=="complete"||!state.verdict;
-    if(target.hidden)return;
-    const v=state.verdict;
-    target.append(node("h3",v.hasChampion?"BOARDROOM CHAMPION: "+v.champions.join(" & "):
-      "NO BOARDROOM CHAMPION","section-label"));
-    target.append(node("p",v.scoringNote));
-    v.ranked.forEach((team,i)=>{
-      const row=node("article",null,"score-line");
-      row.append(node("strong",(i+1)+". "+team.name+(team.eligible&&v.champions.includes(team.name)?" · CHAMPION":"")));
-      row.append(node("div",team.score+" / 100","score-mark"));
-      row.append(node("small","Economic score "+team.rawScore+" − timing penalties "+team.timingPenalty+
-        " = "+team.score+" · CONTRACT "+team.status));
-      row.append(node("small","Cash: £"+team.cash.toLocaleString("en-GB")+
-        " · Trust: "+team.trust+"/100 · Pending commitments: £"+team.unpaid.toLocaleString("en-GB")));
-      const details=node("details"),summary=node("summary","OPEN DECISION CASE FILE");
-      details.append(summary);
-      for(const reason of team.reasons)details.append(node("p",reason));
-      for(const h of team.decisions)details.append(node("p","EP "+h.round+" / "+h.episode+
-        " · "+h.plan+" / "+h.signal+" · £"+h.spent.toLocaleString("en-GB")+
-        " spent · cash £"+h.cash.toLocaleString("en-GB")+(h.timedOut?" · DEADLINE MISSED":"")));
-      row.append(details);
-      target.append(row);
+    target.hidden = state.phase !== "complete" || !state.verdict;
+    if (target.hidden) return;
+    const verdict = state.verdict;
+    const cash = amount => "£" + Number(amount).toLocaleString("en-GB");
+    const sheet = node("section", null, "report-sheet");
+    sheet.id = "boardroom-report";
+    const header = node("header", null, "report-head");
+    header.append(node("p", "BUSINESS CRISIS / THE 09:17 INCIDENT", "report-eyebrow"));
+    header.append(node("h2", "THE BOARDROOM VERDICT"));
+    header.append(node("p", "Six decisions. One crisis. Real consequences.", "report-subhead"));
+    const winner = node("div", null, "report-winner");
+    winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "NO TEAM QUALIFIED FOR THE CONTRACT", "report-kicker"));
+    winner.append(node("strong", verdict.hasChampion ? verdict.champions.join(" / ") :
+      "THE CONTRACT WAS LOST"));
+    winner.append(node("p", verdict.hasChampion ?
+      "The winning team combined an eligible business outcome with the strongest adjusted score." :
+      "The highest score alone does not guarantee victory. Teams must also meet the contract, cash and operational criteria."));
+    header.append(winner);
+    sheet.append(header);
+    sheet.append(node("h3", "FINAL TEAM RANKINGS", "report-section-title"));
+    sheet.append(node("p", "Ranking score = economic score − late / missed-deadline penalties (minimum 0). Renewal, solvent cash and viable operations remain separate champion requirements.", "report-explain"));
+    const ranks = node("div", null, "report-rankings");
+    verdict.ranked.forEach((team, index) => {
+      const card = node("article", null, "report-team");
+      if (team.eligible && verdict.champions.includes(team.name)) card.classList.add("winner");
+      const line = node("div", null, "report-rank-row");
+      const identity = node("div");
+      identity.append(node("span", "RANK " + String(index + 1).padStart(2, "0"), "report-rank-number"));
+      identity.append(node("h4", team.name));
+      identity.append(node("span", team.eligible && verdict.champions.includes(team.name) ?
+        "CHAMPION" : team.status, "report-status"));
+      const score = node("div", null, "report-final-score");
+      score.append(node("strong", team.score));
+      score.append(node("span", "/ 100"));
+      line.append(identity, score);card.append(line);
+      const track = node("div", null, "report-score-track");
+      const fill = node("div", null, "report-score-fill");
+      fill.style.width = Math.min(100, Math.max(0, team.score)) + "%";
+      track.append(fill);card.append(track);
+      card.append(node("p", "Economic " + team.rawScore + " − time penalties " +
+        team.timingPenalty + " = final score " + team.score, "report-formula"));
+      const metrics = node("div", null, "report-metrics");
+      for(const [label,value] of [
+        ["CASH REMAINING",cash(team.cash)],
+        ["CLIENT TRUST",team.trust + "/100"],
+        ["AVERAGE RISK",String(team.avgRisk)],
+        ["OUTSTANDING LIABILITIES",cash(team.unpaid)]
+      ]) {
+        const metric = node("div", null, "report-metric");
+        metric.append(node("small",label),node("strong",value));metrics.append(metric);
+      }
+      card.append(metrics);
+      if (team.reasons.length) {
+        const reasons=node("div",null,"report-reasons");
+        reasons.append(node("h5","WHY THIS OUTCOME"));
+        for(const reason of team.reasons)reasons.append(node("p",reason));
+        card.append(reasons);
+      }
+      ranks.append(card);
     });
-    if (state.viewer.role !== "host") return;
-    target.append(button("DOWNLOAD FINAL CASE FILE (JSON)",()=>{
-      const exported={roomCode:state.code,generatedAt:new Date().toISOString(),
-        note:"Illustrative game simulation; private advisers and participant information excluded.",
-        result:state.verdict};
-      const blob=new Blob([JSON.stringify(exported,null,2)],{type:"application/json"});
-      const href=URL.createObjectURL(blob),a=node("a");
-      a.href=href;a.download="business-crisis-results-"+roomCode+".json";
-      document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1000);
+    sheet.append(ranks);
+    sheet.append(node("h3", "THE DECISION TRAIL", "report-section-title"));
+    sheet.append(node("p", "Each episode records the actual team response and its operating cost. A missed deadline is shown as no response, never as a fabricated choice.", "report-explain"));
+    const timelines = node("div", null, "report-timelines");
+    for(const team of verdict.ranked){
+      const wrap=node("section",null,"report-team-timeline");
+      wrap.append(node("h4",team.name));
+      const cases=node("div",null,"report-episodes");
+      for(const round of team.decisions){
+        const item=node("article",null,"report-episode");
+        const top=node("div",null,"report-episode-top");
+        top.append(node("span","EPISODE "+String(round.round).padStart(2,"0"),"report-episode-number"));
+        top.append(node("strong",round.episode));
+        if(round.timedOut)top.append(node("span","DEADLINE MISSED","report-missed"));
+        item.append(top);
+        item.append(node("p",round.plan+" / "+round.signal,"report-choice-line"));
+        const figures=node("div",null,"report-episode-metrics");
+        figures.append(node("span","RESPONSE SPEND "+cash(round.spent)));
+        figures.append(node("span","CASH "+cash(round.cash)));
+        figures.append(node("span","TRUST "+round.trust+"/100"));
+        item.append(figures);
+        if(round.fallout)item.append(node("p",round.fallout,"report-fallout"));
+        cases.append(item);
+      }
+      wrap.append(cases);timelines.append(wrap);
+    }
+    sheet.append(timelines);
+    const footer=node("footer",null,"report-foot");
+    footer.append(node("strong","BUSINESS CRISIS / THE 09:17 INCIDENT"));
+    footer.append(node("p","Illustrative economic simulation for gameplay, not a financial projection. No individual ballots, confidential adviser choices, participant names or email addresses are included."));
+    sheet.append(footer);
+    target.append(sheet);
+
+    if (state.viewer.role === "projector") return;
+    const actions=node("div",null,"report-actions");
+    actions.append(button("PRINT / SAVE AS PDF",()=>window.print(),"primary"));
+    actions.append(button("SAVE VISUAL REPORT (.HTML)",()=>{
+      // Self-contained readable file; intentionally no JS, token, room code or user emails.
+      const html = "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">" +
+        "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
+        "<title>BUSINESS CRISIS — Boardroom Verdict</title><style>" +
+        REPORT_EXPORT_CSS + "</style></head><body>" + sheet.outerHTML + "</body></html>";
+      const file = new Blob([html],{type:"text/html;charset=utf-8"});
+      const href=URL.createObjectURL(file),a=node("a");
+      a.href=href;a.download="business-crisis-boardroom-verdict.html";
+      document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(href),1000);
     },"secondary"));
-    target.append(node("p","Email sending is disabled. No email addresses are collected."));
+    actions.append(node("p","Want a PDF? Choose Print, then Save as PDF in your browser. Email delivery is not enabled; no addresses are collected."));
+    target.append(actions);
   }
+
   function showRoom(next) {
     const prevRound = state?.round;
     state = next;
@@ -355,14 +533,21 @@
       draftRound = state.round;
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
+      draftRunoffOrdinal = 0;
+    }
+    const runoffOrdinal = state.privateTeam?.voting?.runoff?.ordinal || 0;
+    if (runoffOrdinal !== draftRunoffOrdinal) {
+      draftRunoffOrdinal = runoffOrdinal;
+      draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
     }
     if (draftPicks === null) draftPicks = state.privateTeam?.advisers?.slice() || [];
     show("room");
-    $("room-code").textContent = state.code;
+    $("room-code").textContent = state.phase === "lobby" ? state.code : "";
+    $("room-code").parentElement.hidden = state.phase !== "lobby";
     const projection = state.viewer.role === "projector";
     document.body.classList.toggle("projector-mode", projection);
     $("viewer-mode").hidden = !projection;
-    $("projector-invite").hidden = !projection;
+    $("projector-invite").hidden = !projection || state.phase !== "lobby";
     if (projection) {
       const link = location.origin + "/join?room=" + state.code;
       $("projector-invite-room").textContent = state.code;
@@ -373,32 +558,44 @@
         "SCAN TO JOIN · ENTER YOUR NAME & CHOOSE A TEAM" :
         "ROOM IN PROGRESS · JOINING CLOSED";
     }
-    $("host-share").hidden = state.viewer.role !== "host";
+    $("host-share").hidden = state.viewer.role !== "host" || state.phase !== "lobby";
     $("projector-share").hidden = state.viewer.role !== "host";
     if (state.viewer.role === "host") {
       const link = location.origin + "/join?room=" + state.code;
       $("join-link").textContent = link; $("join-link").href = link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
-    renderEpisode(); renderRecap(); renderTeams(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
     tick();
   }
   function tick() {
     if (!state || state.phase !== "advisers" || !state.clock) {
-      $("timer-wrap").hidden = true; return;
+      $("timer-wrap").hidden = true;return;
     }
     $("timer-wrap").hidden = false;
+    const teamClock = state.viewer.role === "player" ? state.privateTeam?.teamClock : null;
+    const clock = teamClock || state.clock;
     const now = Date.now() + clockOffset;
-    const grace = now >= state.clock.normalEndsAt;
-    const remaining = Math.max(0, (grace ? state.clock.closesAt : state.clock.normalEndsAt) - now);
-    const seconds = Math.ceil(remaining / 1000);
-    $("timer").textContent = String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
-    $("timer-phase").textContent = now >= state.clock.closesAt ? "TIME EXPIRED" : grace ? "RESERVE MINUTE / −5 PTS" : "STANDARD TIME / 3 MIN";
-    $("timer-note").textContent = now >= state.clock.closesAt ?
-      "Unanswered teams receive a 12-point timing penalty." : grace ?
-      "If your captain locks now, the team receives a 5-point timing penalty." :
-      "Every team has the same server-controlled deadline. Finish within 3 minutes to avoid a penalty.";
+    const stopped = clock.stage === "locked";
+    const finished = clock.stage === "closed" && state.viewer.role === "player";
+    const grace = !stopped && now >= clock.normalEndsAt;
+    const remain = stopped ? clock.remainingMs :
+      Math.max(0, (grace ? clock.closesAt : clock.normalEndsAt) - now);
+    const seconds = Math.ceil(remain / 1000);
+    $("timer").textContent = String(Math.floor(seconds / 60)).padStart(2, "0") +
+      ":" + String(seconds % 60).padStart(2, "0");
+    $("timer-phase").textContent = stopped ? "TEAM CLOCK STOPPED / RESPONSE LOCKED" :
+      finished || now >= clock.closesAt ? "TIME EXPIRED" :
+      grace ? "RESERVE MINUTE / −5 PTS" : "STANDARD TIME / 3 MIN";
+    $("timer-note").textContent = stopped ?
+      "Your team is finished. No more time penalty while the other teams deliberate." :
+      now >= clock.closesAt ?
+      "Unanswered teams receive 12 penalty points and economic consequences." :
+      grace ? "A winning team response confirmed now incurs 5 penalty points." :
+      "All teammates must vote and reach a winning response before your timer stops.";
     $("timer-wrap").classList.toggle("grace", grace);
+    $("timer-wrap").classList.toggle("stopped", stopped);
+    renderTeamClocks();
   }
   async function action(command) {
     error("");
@@ -416,9 +613,19 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision"].includes(command.type);
+          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
+          if (command.type === "lock_vote") {
+            const team = state.teams[state.viewer.teamIndex];
+            // The initial vote may already have landed before the revision conflict.
+            if (team.locked || state.privateTeam.voting.myVote) return;
+            const runoff = state.privateTeam.voting.runoff;
+            if (runoff && !runoff.choices.some(x => x.planIndex === command.planIndex &&
+              x.signalIndex === command.signalIndex &&
+              x.allocation.amount === command.allocation.amount &&
+              x.allocation.route === command.allocation.route)) throw e;
+          }
           if (command.type === "lock_advisers" || command.type === "submit_decision") {
             const team = state.teams[state.viewer.teamIndex];
             // If the previous lock already landed, never apply it twice.

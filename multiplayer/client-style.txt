@@ -143,3 +143,85 @@ footer{max-width:1500px;margin:auto;padding:22px 6vw 34px;display:flex;justify-c
 .lobby-transfer select{min-width:0;flex:1}
 .lobby-transfer button{flex:none}
 @media(max-width:750px){.projector-invite{grid-template-columns:1fr}.projector-invite img{width:240px;height:240px;max-width:100%}.lobby-transfer{flex-direction:column;align-items:stretch}}
+
+/* Final self-contained readable case study; same visual language as downloadable HTML. */
+.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}
+.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}
+.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}
+.report-eyebrow,.report-kicker{color:#efb17c}
+.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}
+.report-subhead{color:#bbcbd4;font-size:18px}
+.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}
+.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}
+.report-winner p{color:#c3d2dc}
+.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}
+.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}
+.report-rankings{display:grid;gap:16px}
+.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}
+.report-team.winner{border:2px solid #bb7e49}
+.report-rank-row{display:flex;justify-content:space-between;gap:20px}
+.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}
+.report-rank-number,.report-status,.report-episode-number{color:#b87842}
+.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+.report-final-score strong{font-size:49px;line-height:1}
+.report-final-score span{font-size:14px;color:#5b6975}
+.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}
+.report-score-fill{height:100%;background:#bf844f}
+.report-formula{font-size:12px;color:#566677}
+.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.report-metric{background:#edf2f4;padding:12px}
+.report-metric small{display:block;color:#6a7d8b;font-size:9px}
+.report-metric strong{display:block;font-size:17px;margin-top:5px}
+.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}
+.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}
+.report-reasons p{margin:6px 0;font-size:12px}
+.report-team-timeline{break-before:auto;page-break-inside:auto}
+.report-team-timeline h4{font-size:20px;margin:24px 0 12px}
+.report-episodes{display:grid;gap:9px}
+.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}
+.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}
+.report-episode-top strong{font-size:17px}
+.report-missed{color:#a43d31;font-size:11px;font-weight:900}
+.report-choice-line{font-size:14px;margin:8px 0}
+.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}
+.report-fallout{font-size:12px;color:#435360}
+.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}
+.report-foot strong{color:#263a47}
+
+.report-actions{padding:22px 4px;display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.report-actions button{min-width:200px}
+.report-actions p{flex-basis:100%;font-size:13px;color:#aabdc8}
+#results .report-sheet{color:#152330;text-align:left}
+#results .report-sheet .report-foot{background:#fff}
+@media(max-width:650px){
+ #results .report-sheet{padding:12px}
+ #results .report-head{padding:18px}
+ #results .report-head h2{font-size:32px}
+ #results .report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #results .report-rank-row h4{font-size:19px}
+ .report-actions button{width:100%}
+}
+@media print{
+ @page{size:A4;margin:13mm}
+ body{background:#fff!important;color:#152330!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .masthead,.lead-panel,.room-bar,.share-box,.projector-access,.projector-invite,#viewer-mode,#timer-wrap,#room-message,
+ #ready-notice,#episode-panel,#round-recap,#team-list,#captain-tools,#player-actions,#host-actions,
+ .privacy-note,body>footer,.error, .report-actions,.section-label{display:none!important}
+ .layout{display:block!important;max-width:none!important;padding:0!important}
+ .content-panel{max-width:none!important;width:100%!important;background:#fff!important;padding:0!important;border:0!important;box-shadow:none!important}
+ #room-screen,#results{display:block!important}
+ #results .report-sheet{max-width:none;padding:0;box-shadow:none}
+ #results .report-head{break-inside:avoid}
+ #results .report-team,#results .report-episode{break-inside:avoid}
+}
+
+/* Independent countdowns and team voting notifications. */
+.ready-notice{margin:16px 0;padding:18px 20px;border-left:4px solid #eaa975;background:#263f46;color:#ffe6be;font-size:clamp(14px,1.7vw,20px);line-height:1.45;font-weight:900;letter-spacing:.055em}
+.ballot-progress{margin:18px 0;padding:15px 18px;border-left:3px solid #eaa975;background:#1c3341}
+.ballot-progress strong{display:block;font-size:14px;letter-spacing:.09em}
+.ballot-progress p{font-size:13px;color:#c6d6df;margin:10px 0 0}
+.team-clock{font-weight:900;color:#efba89;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.timer-wrap.stopped{border-color:#8dd4ac;color:#a2e4c2}
+.timer-wrap.stopped span{color:#a2e4c2}
+.projector-mode .ready-notice{font-size:clamp(24px,3vw,46px);padding:28px 36px}
+.projector-mode .team-clock{font-size:clamp(13px,1.3vw,18px)}
