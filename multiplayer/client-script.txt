@@ -47,7 +47,7 @@
     const res = await fetch(path, {...opts, headers, cache: "no-store", credentials: "omit"});
     let payload = null;
     try { payload = await res.json(); } catch (_) {}
-    if (!res.ok) throw new Error(payload?.error || "Request failed (HTTP " + res.status + ")");
+    if (!res.ok) { const failure = new Error(payload?.error || "Request failed (HTTP " + res.status + ")"); failure.httpStatus = res.status; throw failure; }
     return payload;
   }
   function saveSession(token) {
@@ -252,17 +252,33 @@
   }
   async function action(command) {
     error("");
-    try {
-      const response = await request("/api/rooms/" + roomCode + "/actions", {
-        method: "POST", headers: {authorization: "Bearer " + credential},
-        body: JSON.stringify({...command, expectedRevision: state.revision})
-      });
-      if (command.type === "select_advisers") draftPicks = null;
-      showRoom(response.state);
-    } catch (e) {
-      // A stale revision is normal when two phones act at once; refresh before retrying.
-      try { showRoom((await getState()).state); } catch (_) {}
-      throw e;
+    // Other teams may act while this phone is selecting. A stale global revision is
+    // normal, not a failed player choice. Retry only these safe, single-team commands.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await request("/api/rooms/" + roomCode + "/actions", {
+          method: "POST", headers: {authorization: "Bearer " + credential},
+          body: JSON.stringify({...command, expectedRevision: state.revision})
+        });
+        if (command.type === "select_advisers") draftPicks = null;
+        showRoom(response.state);
+        return;
+      } catch (e) {
+        const retryable = e.httpStatus === 409 &&
+          e.message.includes("Room changed; refresh state and retry") &&
+          ["select_advisers", "rename_team", "lock_advisers"].includes(command.type);
+        try { showRoom((await getState()).state); } catch (_) { throw e; }
+        if (retryable && attempt === 0) {
+          if (command.type === "lock_advisers") {
+            const team = state.teams[state.viewer.teamIndex];
+            // If the previous lock already landed, never apply it twice.
+            if (team.locked) return;
+            if (state.privateTeam.advisers.length !== 2) throw e;
+          }
+          continue;
+        }
+        throw e;
+      }
     }
   }
   function setConnection(online) {
