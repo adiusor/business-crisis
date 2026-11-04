@@ -2,6 +2,7 @@
  * Cloudflare Worker + one Durable Object per room.
  * Rules run on the server. Never return unselected adviser intelligence.
  */
+import qrcode from "qrcode-generator";
 import "../../src/content.js";
 import "../../src/rules.js";
 
@@ -121,6 +122,14 @@ export class CrisisRoom {
     }
     if(!room) fail("Room not found",404);
     if(action==="projector" && req.method==="GET") return respond(publicRoom(room));
+    if(action==="qr" && req.method==="GET") {
+      const teamId=Number(url.searchParams.get("team"));
+      const invite=url.searchParams.get("invite");
+      if(!Number.isInteger(teamId)||teamId<0||teamId>=room.teams.length||!invite||room.teams[teamId].invite!==invite) fail("Valid team invitation required",403);
+      const target=url.origin+"/?room="+room.code+"&mode=join&team="+teamId+"&invite="+invite;
+      const qr=qrcode(0,"M");qr.addData(target);qr.make();
+      return new Response(qr.createSvgTag({cellSize:4,margin:4,scalable:true}),{headers:{"content-type":"image/svg+xml; charset=utf-8","cache-control":"private, no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer"}});
+    }
     if(action==="join" && req.method==="POST") {
       if(room.phase==="finished") fail("Session has finished",409);
       if(room.players.length>=MAX_PLAYERS) fail("Room player limit reached",409);
@@ -224,7 +233,7 @@ export default {
         }
         fail("Could not allocate a room",503);
       }
-      const match=/^\/api\/rooms\/([A-Z2-9]{8})\/(projector|join|state|advice|start|advisers|confirm|open-decisions|vote|resolve|advance)$/i.exec(url.pathname);
+      const match=/^\/api\/rooms\/([A-Z2-9]{8})\/(projector|qr|join|state|advice|start|advisers|confirm|open-decisions|vote|resolve|advance)$/i.exec(url.pathname);
       if(match) return env.ROOMS.get(env.ROOMS.idFromName(match[1].toUpperCase())).fetch(req);
       if(url.pathname.startsWith("/api/")) fail("API endpoint not found",404);
       if(env.ASSETS) return env.ASSETS.fetch(req);
