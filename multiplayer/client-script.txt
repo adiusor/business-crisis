@@ -302,7 +302,7 @@
   // Public, fixed fact-strip. Each label is grounded in the episode evidence
   // and is NOT a live score, private adviser clue or inferred outcome.
   const EPISODE_FACTS=[
-    [["600","STAFF RECIPIENTS"],["3","CLIENTS COPIED"],["UNKNOWN","SENDER"]],
+    [["600","STAFF"],["3","CLIENTS"],["UNKNOWN","SENDER"]],
     [["40","ROLES IN DRAFT"],["2","DEPOTS IN DRAFT"],["AT RISK","SHIFT COVERAGE"]],
     [["14:00","CLIENT DEADLINE"],["£240K","ANNUAL RENEWAL"],["REQUESTED","VERIFIABLE PLAN"]],
     [["30 MIN","PRESS DEADLINE"],["UNSIGNED","RESTRUCTURE DRAFT"],["PUBLIC","RUMOUR"]],
