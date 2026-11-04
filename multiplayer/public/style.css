@@ -101,3 +101,5 @@ select{appearance:auto}
 @media(max-width:800px){.hero{grid-template-columns:1fr;min-height:auto;padding:45px 0}.memo-art{display:none}.split{grid-template-columns:1fr}.masthead{height:66px}.live-indicator{font-size:0}.live-indicator span{margin:0}.choice-grid{grid-template-columns:1fr}.choice{min-height:95px}.clock{font-size:110px;top:25%}}
 @media(max-width:420px){h1,.display{font-size:clamp(49px,13vw,68px)}.stage{padding-top:22px}.brand-text{font-size:10px}.brand-text small{font-size:8px}.roster{grid-template-columns:1fr}.actions .btn{width:100%}.foot span:last-child{display:none}.stat{font-size:31px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+.qr{background:#fff;padding:9px;max-width:100%;height:auto;display:block;margin:14px 0;border:1px solid #e4d8c9}
