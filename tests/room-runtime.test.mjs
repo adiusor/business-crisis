@@ -612,6 +612,11 @@ try {
 
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
+    assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
+      "Previous consequence folds away so it does not delay the next timed vote");
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/CONTAIN THE LEAK/);
+    await phoneA.locator(".aftershock-summary").click();
+    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/client receives/i);
     await phoneA.locator(".recap-details summary").click();
     const publicAftershock=await phoneA.locator("#round-recap").innerText();
     assert.match(publicAftershock,/RESPONSE COST/);
