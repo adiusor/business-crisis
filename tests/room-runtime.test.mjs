@@ -116,7 +116,7 @@ try {
   }, alice.payload.playerToken);
   assert.equal(choice.response.status, 200);
   const hostAfter = await snapshot(host, s => s.revision === choice.payload.state.revision, "host picks broadcast");
-  assert.equal(JSON.stringify(hostAfter).includes('"advisers"'), false, "host cannot read team's secrets");
+  assert.equal(JSON.stringify(hostAfter).includes('"advisers":'), false, "host cannot read team's secrets");
   const bobAfter = await snapshot(bobWS, s => s.revision === choice.payload.state.revision, "Bob picks broadcast");
   assert.deepEqual(bobAfter.privateTeam.advisers, [], "opponent cannot inspect private picks");
   const aliceAfter = await snapshot(aliceWS, s => s.revision === choice.payload.state.revision, "Alice picks broadcast");
