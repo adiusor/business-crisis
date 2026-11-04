@@ -122,7 +122,67 @@ try {
   const aliceAfter = await snapshot(aliceWS, s => s.revision === choice.payload.state.revision, "Alice picks broadcast");
   assert.deepEqual(aliceAfter.privateTeam.advisers, [0, 4]);
   assert.equal((await req("/api/rooms/" + roomCode + "/state")).response.status, 401, "No unauthenticated state");
+  // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
+  const {chromium} = await import("playwright");
+  const browser = await chromium.launch({headless: true, args: ["--no-sandbox"]});
+  try {
+    const hostUI = await browser.newPage({viewport: {width: 1440, height: 900}, reducedMotion: "reduce"});
+    const phoneA = await browser.newPage({viewport: {width: 320, height: 720}, reducedMotion: "reduce"});
+    const phoneB = await browser.newPage({viewport: {width: 390, height: 820}, reducedMotion: "reduce"});
+    const browserErrors = [];
+    for (const page of [hostUI, phoneA, phoneB])
+      page.on("pageerror", err => browserErrors.push(err.message));
+    await hostUI.goto(base, {waitUntil: "load"});
+    await hostUI.locator("#create-key").fill(creationKey);
+    await hostUI.locator("#create-teams").selectOption("2");
+    await hostUI.locator("#create-form button.primary").click();
+    await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
+    const uiCode = (await hostUI.locator("#room-code").textContent()).trim();
+    assert.match(uiCode, /^[A-F0-9]{12}$/);
+    await hostUI.locator("#join-qr").evaluate(async image => {
+      if (image.complete && image.naturalWidth > 0) return;
+      await new Promise((resolve, reject) => {
+        image.addEventListener("load", resolve, {once: true});
+        image.addEventListener("error", () => reject(Error("QR image failed to load")), {once: true});
+      });
+    });
+    await phoneA.goto(base + "/join?room=" + uiCode);
+    await phoneA.locator("#join-name").fill("Mobile Alice");
+    await phoneA.locator("#join-team").selectOption("0");
+    await phoneA.locator("#join-form button.primary").click();
+    await phoneA.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
+    await phoneB.goto(base + "/join?room=" + uiCode);
+    await phoneB.locator("#join-name").fill("Mobile Bob");
+    await phoneB.locator("#join-team").selectOption("1");
+    await phoneB.locator("#join-form button.primary").click();
+    await phoneB.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
+    await hostUI.waitForFunction(() => document.querySelector("#team-list")?.textContent?.includes("Mobile Bob"));
+    const original = (await phoneA.locator(".team.mine strong").textContent()).trim();
+    const options = await phoneA.locator("#team-name-choice option").evaluateAll(xs => xs.map(x => x.value));
+    const newName = options.find(x => x !== original);
+    assert.ok(newName, "At least one alternative team name exists");
+    await phoneA.locator("#team-name-choice").selectOption(newName);
+    await phoneA.locator("#rename-team").click();
+    await hostUI.waitForFunction(name => document.querySelector("#team-list")?.textContent?.includes(name), newName);
+    await hostUI.locator("#host-actions button.primary").click();
+    await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
+    assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
+    await phoneA.locator('[data-choice="0"]').click();
+    await phoneA.locator('[data-choice="1"]').click();
+    await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    await phoneA.getByRole("button", {name: "LOCK FOR THIS ROUND"}).click();
+    await phoneB.locator('[data-choice="2"]').click();
+    await phoneB.locator('[data-choice="3"]').click();
+    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    await phoneB.getByRole("button", {name: "LOCK FOR THIS ROUND"}).click();
+    await hostUI.getByRole("button", {name: "START NEXT CHALLENGE"}).click();
+    await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("Challenge 2"));
+    const overflow = await phoneA.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
+    await phoneA.screenshot({path: path.join(root, "screenshots", "06-room-mobile-320.png"), fullPage: true});
+    assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
+  } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
-    qr: "SVG generated", websocketSync: "host and two players",
+    qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
     privacy: "role-filtered snapshots", serverClock: "3m + 1m", deployments: 0}, null, 2));
 } finally { await clean(); }
