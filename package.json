@@ -8,10 +8,14 @@
     "test:rules": "node tests/rules.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test": "npm run test:rules && npm run test:browser",
-    "test:multiplayer": "node tests/multiplayer.test.mjs"
+    "test:multiplayer": "node tests/multiplayer.test.mjs",
+    "test:multiplayer:browser": "node tests/multiplayer.browser.mjs"
   },
   "devDependencies": {
     "playwright": "^1.52.0",
     "wrangler": "^4.45.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^1.4.4"
   }
 }
