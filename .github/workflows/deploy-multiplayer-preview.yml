@@ -1,8 +1,8 @@
 name: Deploy isolated multiplayer preview
 on:
-  push:
+  pull_request:
     branches:
-      - feature/real-multiplayer-foundation
+      - redesign/cinematic-crisis-v2
     paths:
       - "multiplayer/**"
       - "src/content.js"
@@ -35,6 +35,8 @@ jobs:
         run: npx wrangler deploy --dry-run --config multiplayer/wrangler.toml --outdir /tmp/bc-preview-bundle
   deploy:
     needs: validate
+    # Only deploy the owner's isolated preview PR, never untrusted forks.
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'feature/real-multiplayer-foundation')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
