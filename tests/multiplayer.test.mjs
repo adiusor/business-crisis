@@ -298,6 +298,18 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.equal(NO_ANSWER_PENALTY,12);
   assert.match(script, /rules\.open=state\.phase==="lobby"/,"Briefing opens automatically only before play");
   assert.match(style, /projector-mode\.in-game \.game-rules/,"Projection stays uncluttered during play");
+  assert.match(style, /font-family:"Avenir Next","Segoe UI Variable","Segoe UI"/,
+    "Multiplayer uses a professional local system font stack");
+  assert.doesNotMatch(style, /font-family:Inter,/, "No unshipped Inter dependency");
+  assert.doesNotMatch(script, /fonts\.googleapis\.com|fonts\.gstatic\.com/,
+    "No external font requests or third-party image traffic");
+  assert.match(html, /ONE LEAK\./);
+  assert.match(html, /SIX CALLS\./);
+  assert.match(script, /EPISODE_FACTS/, "Every chapter has a concise public fact strip");
+  assert.match(script, /renderPublicFacts\(number\)/);
+  assert.match(style, /\.scene-film\{inset:-5%;opacity:\.49/,
+    "Original illustrated story art receives sufficient foreground visibility");
+
   assert.doesNotMatch(script, /localStorage/);
   assert.doesNotMatch(html, /type="email"/);
   assert.match(style, /max-width:430px/, "Narrow phones retain a responsive breakpoint");

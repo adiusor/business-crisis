@@ -289,6 +289,10 @@ try {
     });
     await phoneA.goto(base + "/join");
     await phoneA.locator("#join-code-form").waitFor({state: "visible"});
+    const landingOverflow=await phoneA.evaluate(()=>
+      document.documentElement.scrollWidth-innerWidth);
+    assert.ok(landingOverflow<=1,"Editorial opening hero must fit the 320px join screen");
+    assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE LEAK/);
     await phoneA.locator("#join-code").fill(uiCode.toLowerCase());
     await phoneA.locator("#join-code-form button.primary").click();
     await phoneA.locator("#join-form").waitFor({state: "visible"});
@@ -419,6 +423,28 @@ try {
 
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
+    assert.equal(await phoneA.locator(".scene-fact").count(),3,
+      "Every incident begins with three public, verifiable facts");
+    assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
+      ["600","3","UNKNOWN"],"The opening incident never pretends to know the sender");
+    const editorial=await phoneA.evaluate(()=>{
+      const body=getComputedStyle(document.body),
+        facts=[...document.querySelectorAll(".scene-fact dd")],
+        art=document.querySelector(".scene-film");
+      return {
+        bodyFont:body.fontFamily,
+        values:facts.map(x=>Number.parseFloat(getComputedStyle(x).fontSize)),
+        filmOpacity:Number.parseFloat(getComputedStyle(art).opacity),
+        overflow:document.documentElement.scrollWidth-innerWidth
+      };
+    });
+    assert.doesNotMatch(editorial.bodyFont,/^Inter,/,
+      "The type system must not depend on an undelivered Inter web font");
+    assert.ok(editorial.values.every(v=>v>=14),
+      "Even the 320px phone should display key incident numbers legibly");
+    assert.ok(editorial.filmOpacity>=0.4,
+      "The original cinematic artwork must be sufficiently visible");
+    assert.ok(editorial.overflow<=1,"Incident facts must fit a 320px phone");
     // Cinematic scene remains scannable: one hero, six chapter markers, and
     // evidence whose full source paragraphs are progressively disclosed.
     assert.equal(await phoneA.locator(".scene-art > svg").count(),1);
@@ -442,6 +468,16 @@ try {
     assert.equal(await projected.locator("#team-list").isVisible(),false,
       "Projector ticker replaces below-the-fold duplicate roster");
     assert.equal(await projected.locator(".evidence-item").count(),3);
+    assert.equal(await projected.locator(".scene-fact").count(),3,
+      "Projected incident facts accompany the illustrations");
+    assert.ok(await projected.locator(".scene-fact dd").first().evaluate(el=>
+      Number.parseFloat(getComputedStyle(el).fontSize)>=17),
+      "Public numbers are enlarged for a projector audience");
+    const projectedOverflow=await projected.evaluate(()=>
+      document.documentElement.scrollWidth-innerWidth);
+    assert.ok(projectedOverflow<=1,"1280px projector must avoid sideways scrolling");
+    await phoneA.screenshot({path:path.join(root,"screenshots","10-design-v4-player-320.png"),fullPage:true});
+    await projected.screenshot({path:path.join(root,"screenshots","11-design-v4-projection-1280.png"),fullPage:true});
 
     assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
       "Six original illustrated adviser portraits appear in multiplayer");
@@ -503,6 +539,8 @@ try {
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
       "Each episode uses the matching cinematic illustration");
+    assert.deepEqual(await phoneB.locator(".scene-fact dd").allTextContents(),
+      ["40","2","AT RISK"],"The workforce incident only displays facts from its evidence");
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
 
@@ -554,6 +592,10 @@ try {
     assert.doesNotMatch(html,new RegExp(hostToken));
     assert.doesNotMatch(html,new RegExp(roomCode));
     assert.doesNotMatch(html,/<script/i);
+    assert.match(html,/font-family:Segoe UI,Arial,Helvetica,sans-serif/,
+      "Exported report contains self-hosted system typography");
+    assert.doesNotMatch(html,/font-family:Inter,/,
+      "The exported report cannot depend on a missing web font");
     assert.doesNotMatch(html,/credentialHash/);
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }

@@ -57,6 +57,10 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Visual polish v4 — executive incident dossier
+
+See **[VISUAL_UX_AUDIT_V4.md](VISUAL_UX_AUDIT_V4.md)**. The staging multiplayer UI now uses professional local/system typography instead of an unloaded `Inter` placeholder; highlights the six original author-made SVG scenes with clearer cinematic colour grading; adds three verified public facts to each episode's hero; improves evidence, choice and mobile reading sizes; enlarges projection information; and keeps the exported verdict on a matching no-CDN font stack. No AI-generated stock artwork, outside tracking or gameplay rule modifications are introduced. Chromium checks cover 320px and 1280px layouts, scene facts, source confidentiality, report export and screenshots.
+
 ## Facilitator operating guide
 
 For your first real group playtest, use the one-page **[Facilitator Quick-Start](multiplayer/OPERATOR_GUIDE.md)**. It covers lobby setup, the read-only projector QR, six rules, private adviser picks, individual votes and tie-breaks, independent clock freezes, host rescue controls, the final printable case file and limitations. Keep this separate from the player screens so it does not add more in-game reading.

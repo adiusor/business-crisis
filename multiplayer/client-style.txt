@@ -1,4 +1,4 @@
-:root{font-family:Inter,"Avenir Next",Avenir,system-ui,sans-serif;color:#e9ecef;background:#091421;font-synthesis:none}
+:root{font-family:"Avenir Next","Segoe UI Variable","Segoe UI",system-ui,sans-serif;color:#e9ecef;background:#091421;font-synthesis:none;--bc-editorial:"Iowan Old Style",Baskerville,"Palatino Linotype",Georgia,serif;--bc-ink:#f2eee8;--bc-muted:#c7d8df;--bc-gold:#e8b483;--bc-frame:#54788b}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:radial-gradient(circle at 12% 26%,#173247 0,transparent 35%),#091421}
 button,input,select{font:inherit}
@@ -649,3 +649,92 @@ body{background:radial-gradient(ellipse at 15% -15%,#183a4b 0%,transparent 52%),
 .report-epilogue{padding:17px 20px;margin:27px 0 10px;border-left:3px solid #b77b48;background:#edf3f3;break-inside:avoid}
 .report-epilogue strong{display:block;letter-spacing:.12em;font-size:11px;color:#8a6547}
 .report-epilogue p{margin:7px 0 0;font-size:13px;line-height:1.55;color:#354550}
+
+
+/* DESIGN SYSTEM v4 — executive incident dossier, not a generic control panel.
+   All typography is local/system; no external font request, tracking or licensing. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{font-size:1rem;line-height:1.5;font-kerning:normal;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:var(--bc-editorial)}
+.lead-panel h1{font-family:var(--bc-editorial);letter-spacing:-.065em;line-height:.98}
+.brand{letter-spacing:.075em}
+.masthead{background:linear-gradient(180deg,#101d2a4d,transparent);border-bottom-color:#9db0bb35}
+.content-panel{border-color:#6b899367;background:linear-gradient(152deg,#142736f0,#0d1d29f0);box-shadow:0 24px 62px #020d1880}
+.episode-panel{border-color:#96795b;background:linear-gradient(148deg,#1b3341,#112430 64%,#101f2b);
+ box-shadow:inset 0 1px #d1c0a318}
+.section-label,.evidence-heading strong,.decision-label{letter-spacing:.085em;font-weight:850}
+.episode-panel .scene-copy h3{font-family:var(--bc-editorial)!important;letter-spacing:-.05em!important;
+ text-wrap:balance}
+.scene-headline{color:#eaf1f3;letter-spacing:-.005em}
+.scene-timestamp,.connection,.ticker-clock,.timer-wrap strong,.rule-index{
+ font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+.scene-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;
+ margin:19px 0 3px;padding:0;max-width:700px}
+.scene-fact{min-width:0;min-height:64px;padding:10px 12px;background:#0c2230b8;
+ border-top:2px solid #b89470;border-bottom:1px solid #57718159;display:flex;flex-direction:column}
+.scene-fact dt{font-size:.65rem;line-height:1.35;letter-spacing:.06em;color:#c9dce3;font-weight:750;
+ order:1;overflow-wrap:anywhere}
+.scene-fact dd{margin:0 0 3px;line-height:1.1;font-size:clamp(1rem,1.4vw,1.5rem);
+ letter-spacing:-.025em;color:#ffe1b8;font-weight:800;font-variant-numeric:tabular-nums}
+.scene-art{isolation:isolate;border-left-color:#b4a38c66;box-shadow:inset 0 0 0 1px #58717b22}
+.scene-film{inset:-5%;opacity:.49;filter:saturate(.95) contrast(1.08)}
+.scene-art > svg:not(.scene-film-svg){opacity:.77;filter:drop-shadow(0 0 8px #08172566)}
+.scene-art:after{opacity:.24}
+.evidence-item{border-color:#708e9b;background:#102a39;box-shadow:inset 0 1px #87a5b020}
+.evidence-summary strong{font-size:1rem;letter-spacing:-.01em}
+.evidence-finding{font-size:.92rem;line-height:1.48;color:#d3e3e7}
+.evidence-item .evidence-source p,.briefing-details .episode-intro{font-size:.96rem;line-height:1.65}
+.briefing-details summary,.intel-dossier summary,.recap-details summary{
+ font-size:.82rem;letter-spacing:.045em}
+.strategy-choice{border-color:#688797;background:linear-gradient(155deg,#1b3544,#142937);
+ box-shadow:inset 0 1px #8cabb122}
+.strategy-choice.chosen{background:linear-gradient(155deg,#374755,#243b48);border-color:#e3b584;
+ box-shadow:0 0 0 1px #e3b58466,inset 0 1px #ffe5bf22}
+#player-actions .choice{border-radius:2px;border-color:#648392;background:#173140;transition:border-color .12s ease,background .12s ease}
+#player-actions .choice small{font-size:.73rem;letter-spacing:.025em;line-height:1.4;color:#d0dce0}
+#player-actions .choice strong{font-size:.86rem;letter-spacing:.01em;line-height:1.3}
+.adviser-portrait{border-bottom:2px solid #d6a97860;background:#203949}
+.adviser-portrait svg{filter:contrast(1.08) saturate(.90)}
+.choice.selected .adviser-portrait{border-bottom-color:#f7cb96}
+.rule-card p,.host-roster-help,.recap-details p{font-size:.9rem;line-height:1.55}
+.rule-card strong{font-size:.8rem;letter-spacing:.04em}
+.rule-card{background:#0c2532df;border-color:#507283;padding:13px 14px}
+.rule-index{font-size:1.05rem}
+.projector-mode{font-family:"Segoe UI Variable","Segoe UI",Arial,system-ui,sans-serif}
+.projector-mode .episode-panel .scene-copy h3{font-family:var(--bc-editorial)!important}
+.projector-mode .scene-art .scene-film{opacity:.55}
+.projector-mode .scene-facts{max-width:800px;gap:11px}
+.projector-mode .scene-fact{padding:10px 13px;min-height:75px}
+.projector-mode .scene-fact dt{font-size:.78rem}
+.projector-mode .scene-fact dd{font-size:clamp(1.3rem,1.9vw,1.75rem)}
+.projector-mode .evidence-summary strong{font-size:clamp(1.15rem,1.6vw,1.5rem)}
+.projector-mode .evidence-finding{font-size:clamp(1.03rem,1.4vw,1.35rem)}
+.projector-mode .ticker-team strong{font-size:clamp(1rem,1.45vw,1.35rem)}
+.projector-mode .ticker-status,.projector-mode .ticker-clock{font-size:.9rem}
+.projector-mode .game-rules .rule-card p{font-size:clamp(.85rem,1.15vw,1.1rem)}
+@media(max-width:700px){
+ .scene-facts{gap:5px;margin:12px 0 4px}
+ .scene-fact{min-height:61px;padding:9px 7px}
+ .scene-fact dt{font-size:.58rem;letter-spacing:.035em}
+ .scene-fact dd{font-size:clamp(.88rem,3.5vw,1.1rem);overflow-wrap:anywhere}
+ .scene-film{opacity:.52}
+ #player-actions .choice small{font-size:.7rem}
+ #player-actions .choice strong{font-size:.78rem}
+ .lead-panel h1{font-size:clamp(3rem,12.5vw,5.25rem)}
+}
+@media(min-width:1000px) and (max-height:850px){
+ .projector-mode .scene-facts{margin:8px 0 0;gap:6px}
+ .projector-mode .scene-fact{min-height:52px;padding:5px 9px}
+ .projector-mode .scene-fact dt{font-size:.65rem}
+ .projector-mode .scene-fact dd{font-size:1.1rem;margin-bottom:0}
+ .projector-mode .scene-hero{min-height:200px}
+ .projector-mode .scene-art{min-height:185px;max-height:210px}
+}
+@media(prefers-reduced-motion:reduce){
+ #player-actions .choice{transition:none!important}
+}
+
+/* Printable verdict uses the same readable executive type hierarchy as the game. */
+.report-sheet{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15px}
+.report-head h2,.report-section-title,.report-team-timeline h4{font-family:var(--bc-editorial)}
+.report-explain,.report-reasons p{font-size:.88rem;line-height:1.56}
