@@ -219,12 +219,20 @@ export class CrisisRoom extends DurableObject {
         // Only a small fraction of connection slots may be unauthenticated.
         // Credentials are still validated by the first WebSocket message.
         const unauthenticated=sockets.filter(ws=>
-          ws.deserializeAttachment()?.role==="pending").length;
-        if(unauthenticated>=8)fail(429,"Too many pending connections");
+          ws.deserializeAttachment()?.role==="pending");
+        if(unauthenticated.length>=8){
+          // A hard reject would also lock out a legitimate host, since the
+          // first-message credential is not known at upgrade time. Displace
+          // the oldest pending socket instead; validated sessions are untouched.
+          const oldest=unauthenticated.reduce((a,b)=>
+            (a.deserializeAttachment()?.connectedAtMs??0)<=
+            (b.deserializeAttachment()?.connectedAtMs??0)?a:b);
+          try{oldest.close(1008,"Unverified connection displaced");}catch(_){}
+        }
         const pair = new WebSocketPair();
         const [client, server] = Object.values(pair);
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({role: "pending"});
+        server.serializeAttachment({role:"pending",connectedAtMs:Date.now()});
         return new Response(null, {status: 101, webSocket: client});
       }
       fail(404, "Not found");
