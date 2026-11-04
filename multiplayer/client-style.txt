@@ -523,3 +523,10 @@ body{background:radial-gradient(ellipse at 15% -15%,#183a4b 0%,transparent 52%),
  #player-actions .choice strong{font-size:11px;line-height:1.2;margin:7px 3px 0}
  #player-actions .choice small{font-size:9px;margin:4px 3px 4px}
 }
+
+/* Ensure complete cash values fit compact two-column 320px player displays. */
+@media(max-width:370px){
+ .exposure-metric{padding:10px 8px}
+ .exposure-metric strong{font-size:15px;letter-spacing:-.035em;white-space:nowrap;overflow-wrap:normal}
+ .exposure-metric small{font-size:9px}
+}
