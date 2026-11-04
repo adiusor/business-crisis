@@ -6,10 +6,27 @@
   "workers_dev": false,
   "durable_objects": {
     "bindings": [
-      {"name": "CRISIS_ROOMS", "class_name": "CrisisRoom"}
+      {
+        "name": "CRISIS_ROOMS",
+        "class_name": "CrisisRoom"
+      }
     ]
   },
   "migrations": [
-    {"tag": "room-v1", "new_sqlite_classes": ["CrisisRoom"]}
+    {
+      "tag": "room-v1",
+      "new_sqlite_classes": [
+        "CrisisRoom"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "**/*.html",
+        "**/*.txt"
+      ]
+    }
   ]
 }

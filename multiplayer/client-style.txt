@@ -1,0 +1,69 @@
+:root{font-family:Inter,"Avenir Next",Avenir,system-ui,sans-serif;color:#e9ecef;background:#091421;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(circle at 12% 26%,#173247 0,transparent 35%),#091421}
+button,input,select{font:inherit}
+button{cursor:pointer;min-height:48px;border:0;border-radius:3px;font-weight:800;letter-spacing:.055em}
+button:disabled{cursor:not-allowed;opacity:.48}
+a{color:inherit}
+:focus-visible{outline:3px solid #f5ad68;outline-offset:3px}
+[hidden]{display:none!important}
+.masthead{max-width:1500px;margin:auto;padding:28px 6vw;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #ffffff24}
+.brand{display:flex;align-items:center;gap:16px;text-decoration:none;font-size:16px;font-weight:900;letter-spacing:.1em}
+.brand-mark{padding:13px 10px;background:#e99a5b;color:#101923;transform:skew(-7deg);font-weight:1000;font-size:20px}
+.brand small{display:block;font-size:10px;letter-spacing:.18em;margin-top:5px;color:#9cabb9}
+.status-dot{font-size:11px;letter-spacing:.12em;color:#f6b988;font-weight:700}
+.layout{max-width:1500px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,560px);gap:clamp(32px,6vw,90px);padding:clamp(42px,8vw,96px) 6vw 70px}
+.lead-panel h1{margin:14px 0 28px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(64px,8.4vw,132px);letter-spacing:-.085em;line-height:.9;font-weight:800}
+.lead-panel h1 em{color:#e99a5b;font-weight:400}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.17em;color:#eaa975}
+.intro-copy{font-size:clamp(19px,2vw,27px);line-height:1.4;max-width:620px;color:#d4dde2}
+.rules{display:flex;flex-wrap:wrap;gap:14px;margin:35px 0}
+.rules span{border-left:2px solid #e99a5b;padding:5px 13px;font-size:11px;letter-spacing:.08em;font-weight:800}
+.disclaimer{max-width:530px;font-size:13px;line-height:1.6;color:#a8b5bf}
+.content-panel{border:1px solid #53637166;background:#111e2ae8;padding:clamp(22px,3vw,44px);align-self:start;min-width:0}
+h2{font-family:Georgia,"Times New Roman",serif;font-size:clamp(30px,4vw,47px);letter-spacing:-.04em;margin:12px 0 18px}
+p{line-height:1.5}
+.content-panel>section>p,.content-panel form label small{color:#acbbc5}
+form{display:grid;gap:13px}
+label{font-size:12px;color:#d8e3eb;letter-spacing:.07em;font-weight:800;margin-top:11px}
+input,select{width:100%;min-width:0;min-height:48px;color:#fff;background:#1a2d3a;border:1px solid #658195;border-radius:3px;padding:11px 13px}
+option{background:#122a38}
+.primary{color:#15232a;background:#e99a5b;padding:13px 20px;margin-top:10px}
+.secondary{color:#e2eaf0;background:#294456;border:1px solid #55748a;padding:10px 15px}
+.room-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.room-bar h2{font-family:ui-monospace,monospace;font-size:clamp(24px,3vw,34px);letter-spacing:.14em;overflow-wrap:anywhere;margin:4px 0 20px}
+.connection{font-size:10px;border:1px solid #667a87;border-radius:100px;padding:8px 10px;letter-spacing:.1em}
+.connection.live{color:#81d5aa;border-color:#81d5aa}
+.share-box{display:grid;grid-template-columns:1fr auto;gap:13px;align-items:center;background:#1b3040;padding:18px;margin-bottom:24px}
+.share-box strong{font-size:13px;letter-spacing:.12em}
+.share-box p{font-size:12px;color:#adc0cd}
+.share-box img{grid-row:span 2;max-width:100%;height:auto;background:#fff;padding:6px}
+.share-box a{font-size:12px;overflow-wrap:anywhere;text-decoration:underline;color:#f5c193}
+.share-box button{justify-self:start}
+.timer-wrap{border-top:1px solid #658195;border-bottom:1px solid #658195;margin:18px 0 26px;padding:17px 0;text-align:center}
+.timer-wrap strong{display:block;font-family:ui-monospace,monospace;font-size:clamp(58px,8vw,92px);line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:-.08em}
+.timer-wrap span{font-weight:800;font-size:12px;letter-spacing:.15em;color:#eaa975}
+.timer-wrap p{font-size:13px;color:#b3c2ca;margin:0}
+.timer-wrap.grace{color:#ffbf80;border-color:#ffbf80}
+.section-label{margin:25px 0 12px;color:#eaa975;font-size:13px;letter-spacing:.18em}
+.team-list{display:grid;gap:10px}
+.team{padding:13px;background:#1a2b38;border-left:3px solid #59798a;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.team.mine{border-color:#e99a5b}
+.team strong{font-size:15px;overflow-wrap:anywhere}
+.team small{display:block;color:#a8bac6;font-size:12px;margin-top:5px}
+.team .meta{font-weight:800;color:#b8cad4;font-size:11px;text-align:right;white-space:nowrap}
+#captain-tools,#player-actions,#host-actions,#results{margin-top:24px;border-top:1px solid #344c5c;padding-top:20px}
+.inline-actions{display:flex;gap:10px;margin-top:10px}
+.inline-actions select{flex:1}
+.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0 18px}
+.choice{display:block;text-align:left;background:#1e3342;color:#e7edf1;min-height:74px;padding:13px;font-size:12px;letter-spacing:0;line-height:1.4;border:1px solid #547185;overflow-wrap:anywhere}
+.choice.selected{border:2px solid #e99a5b;background:#293b47}
+.choice small{display:block;margin-top:4px;color:#a8bac6}
+.action-row{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+#room-message{font-size:13px;min-height:18px;color:#bbd3da;line-height:1.5}
+.error{background:#562e35;color:#fff;padding:14px;border:1px solid #e88b85}
+.privacy-note{margin-top:28px;font-size:11px;line-height:1.6;color:#a4b3be}
+footer{max-width:1500px;margin:auto;padding:22px 6vw 34px;display:flex;justify-content:space-between;gap:12px;border-top:1px solid #ffffff22;font-size:10px;letter-spacing:.11em;color:#899ba7}
+@media(max-width:900px){.layout{grid-template-columns:1fr;gap:26px}.lead-panel h1{font-size:clamp(59px,12vw,90px)}.masthead{padding:20px 5vw}.layout{padding:38px 5vw}.intro-copy{max-width:620px}.rules{margin:20px 0}footer{padding:20px 5vw}}
+@media(max-width:430px){.brand{font-size:13px}.brand small{font-size:8px}.brand-mark{font-size:16px;padding:10px 7px}.status-dot{font-size:9px;max-width:100px}.lead-panel h1{font-size:clamp(56px,15vw,72px)}.layout{padding:30px 4vw}.content-panel{padding:18px}.share-box{grid-template-columns:1fr}.share-box img{grid-row:auto;width:170px}.choice-grid{grid-template-columns:1fr}footer{display:block;line-height:2}.inline-actions{flex-direction:column} .inline-actions button{width:100%}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

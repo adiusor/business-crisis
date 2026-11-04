@@ -8,9 +8,14 @@
     "test:rules": "node tests/rules.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test": "npm run test:rules && npm run test:multiplayer && npm run test:browser",
-    "test:multiplayer": "node --test tests/multiplayer.test.mjs"
+    "test:multiplayer": "node --test tests/multiplayer.test.mjs",
+    "check:room-bundle": "wrangler deploy --dry-run --config multiplayer/wrangler.jsonc --outdir /tmp/business-crisis-rooms-build"
   },
   "devDependencies": {
-    "playwright": "^1.52.0"
+    "playwright": "^1.52.0",
+    "wrangler": "4.156.2"
+  },
+  "dependencies": {
+    "qrcode-svg": "1.1.0"
   }
 }

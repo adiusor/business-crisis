@@ -1,0 +1,348 @@
+"use strict";
+// A narrow prototype client: lobby, private two-adviser choices, host clock controls.
+// Never stores or transmits an email address. Room bearer tokens remain in sessionStorage.
+(() => {
+  const $ = id => document.getElementById(id);
+  const ADV = [
+    ["MARA VALE", "GENERAL COUNSEL"], ["DANIEL ROOK", "OPERATIONS DIRECTOR"],
+    ["INES PARK", "CLIENT PARTNER"], ["ELI MERCER", "FINANCE CONTROLLER"],
+    ["NOOR SHAH", "SECURITY LEAD"], ["RUTH BELL", "PEOPLE DIRECTOR"]
+  ];
+  const EPISODES = ["THE SEND", "THE FLOOR", "THE CLIENT", "THE BOARD",
+    "THE OPERATION", "THE VERDICT"];
+  const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
+  let roomCode = /^[A-F0-9]{12}$/.test(codeFromUrl) ? codeFromUrl : "";
+  let credential = null;
+  let state = null;
+  let socket = null;
+  let retryHandle = null;
+  let retryDelay = 1000;
+  let clockOffset = 0;
+  let draftPicks = null;
+  let draftRound = -1;
+  const roleKey = code => "bc-preview-session-" + code;
+  function node(tag, text, className) {
+    const el = document.createElement(tag);
+    if (text !== undefined && text !== null) el.textContent = String(text);
+    if (className) el.className = className;
+    return el;
+  }
+  function button(text, callback, className = "secondary", disabled = false) {
+    const el = node("button", text, className);
+    el.type = "button"; el.disabled = disabled;
+    el.addEventListener("click", callback);
+    return el;
+  }
+  function error(message = "") {
+    $("error").hidden = !message;
+    $("error").textContent = message;
+  }
+  function notice(message) { $("room-message").textContent = message || ""; }
+  function show(which) {
+    for (const key of ["create", "join", "room"]) $(key + "-screen").hidden = key !== which;
+    error("");
+  }
+  async function request(path, opts = {}) {
+    const headers = {"accept": "application/json", ...(opts.body ? {"content-type": "application/json"} : {}), ...opts.headers};
+    const res = await fetch(path, {...opts, headers, cache: "no-store", credentials: "omit"});
+    let payload = null;
+    try { payload = await res.json(); } catch (_) {}
+    if (!res.ok) throw new Error(payload?.error || "Request failed (HTTP " + res.status + ")");
+    return payload;
+  }
+  function saveSession(token) {
+    try { sessionStorage.setItem(roleKey(roomCode), token); } catch (_) { /* non-persistent preview */ }
+    credential = token;
+  }
+  function dropSession() {
+    try { sessionStorage.removeItem(roleKey(roomCode)); } catch (_) {}
+    credential = null;
+  }
+  async function getState() {
+    return request("/api/rooms/" + roomCode + "/state", {headers: {authorization: "Bearer " + credential}});
+  }
+  async function lobby() {
+    if (!roomCode) { show("create"); return; }
+    try {
+      const data = await request("/api/rooms/" + roomCode + "/lobby");
+      if (data.phase !== "lobby") {
+        show("join"); $("join-form").hidden = true;
+        $("join-caption").textContent = "This room already started. Late joining is not available in the prototype.";
+        return;
+      }
+      $("join-form").hidden = false;
+      $("join-caption").textContent = "Choose a nickname and the group you want to join. You can join without an account.";
+      const target = $("join-team"), old = target.value;
+      target.replaceChildren();
+      data.teams.forEach((team, index) => {
+        const opt = node("option", team.name + " · " + team.joined + " joined");
+        opt.value = String(index);
+        target.append(opt);
+      });
+      if ([...target.options].some(o => o.value === old)) target.value = old;
+      show("join");
+    } catch (e) { show("join"); error(e.message); }
+  }
+  function renderTeams() {
+    $("team-list").replaceChildren();
+    state.teams.forEach((team, i) => {
+      const card = node("div", null, "team" + (state.viewer.role === "player" && state.viewer.teamIndex === i ? " mine" : ""));
+      const lhs = node("div");
+      lhs.append(node("strong", team.name));
+      const people = state.players.filter(p => p.teamIndex === i).map(p => p.nickname);
+      lhs.append(node("small", people.length ? people.join(", ") : "No players yet"));
+      const status = state.phase === "lobby" ? (team.ready ? "READY" : "WAITING") :
+        (team.timedOut ? "TIMEOUT" : team.locked ? "LOCKED" : "CHOOSING");
+      const rhs = node("span", status, "meta");
+      if (team.penaltyPoints) rhs.append(node("small", "−" + team.penaltyPoints + " TIME PTS"));
+      card.append(lhs, rhs);
+      $("team-list").append(card);
+    });
+  }
+  function renderRename() {
+    const own = state.viewer.role === "player" ? state.teams[state.viewer.teamIndex] : null;
+    const active = state.phase === "lobby" && !!state.viewer.captain;
+    $("captain-tools").hidden = !active;
+    if (!active) return;
+    const select = $("team-name-choice");
+    const previous = select.value;
+    select.replaceChildren();
+    for (const name of state.teamNameOptions) {
+      if (state.teams.some(t => t.name === name && t !== own)) continue;
+      const opt = node("option", name);
+      opt.value = name;
+      select.append(opt);
+    }
+    select.value = [...select.options].some(x => x.value === previous) ? previous : own.name;
+    $("rename-team").disabled = !select.value || select.value === own.name;
+  }
+  function renderPlayerActions() {
+    const target = $("player-actions");
+    target.replaceChildren();
+    target.hidden = state.viewer.role !== "player";
+    if (target.hidden) return;
+    const mine = state.teams[state.viewer.teamIndex];
+    if (state.phase === "lobby") {
+      target.append(node("p", state.viewer.captain ?
+        "You are the first player on your team and its captain. You can rename the team and lock its choices." :
+        "You joined successfully. Your captain will choose the team's response."));
+      return;
+    }
+    if (state.phase === "complete") { target.append(node("p", "Room complete. The host can export the timing report.")); return; }
+    if (state.viewer.captain && !mine.locked) {
+      target.append(node("h3", "SELECT TWO ADVISERS", "section-label"));
+      target.append(node("p", "Change your picks until you lock them. Unselected sources remain unavailable."));
+      const grid = node("div", null, "choice-grid");
+      for (let i = 0; i < ADV.length; i++) {
+        const item = button(ADV[i][0], () => {
+          if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
+          else if (draftPicks.length < 2) draftPicks.push(i);
+          renderPlayerActions();
+          const replacement = target.querySelector('[data-choice="' + i + '"]');
+          if (replacement) replacement.focus({preventScroll: true});
+        }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
+        item.dataset.choice = i;
+        item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
+        item.append(node("small", ADV[i][1]));
+        grid.append(item);
+      }
+      target.append(grid);
+      const controls = node("div", null, "action-row");
+      controls.append(button("SAVE TWO PICKS", async () => {
+        try { await action({type: "select_advisers", advisers: draftPicks.slice()}); }
+        catch (e) { error(e.message); }
+      }, "secondary", draftPicks.length !== 2));
+      controls.append(button("LOCK FOR THIS ROUND", async () => {
+        try { await action({type: "lock_advisers"}); }
+        catch (e) { error(e.message); }
+      }, "primary", state.privateTeam.advisers.length !== 2));
+      target.append(controls);
+      if (state.privateTeam.advisers.length) target.append(node("p",
+        "Saved: " + state.privateTeam.advisers.map(i => ADV[i][0]).join(" + ") + ". Lock when ready."));
+    } else {
+      target.append(node("p", mine.locked ?
+        (mine.timedOut ? "The time window closed without a confirmed answer." :
+         "Your team's choices are locked. Waiting for the host.") :
+        "The captain is choosing the two advisers for your team."));
+      if (state.privateTeam.advisers.length) {
+        target.append(node("p", "Your team's private picks: " +
+          state.privateTeam.advisers.map(i => ADV[i][0]).join(" + ")));
+      }
+    }
+  }
+  function renderHostActions() {
+    const target = $("host-actions");
+    target.replaceChildren();
+    target.hidden = state.viewer.role !== "host";
+    if (target.hidden) return;
+    if (state.phase === "lobby") {
+      const ready = state.teams.every(t => t.ready);
+      target.append(node("p", "You are the host. Scan the QR on each phone, or share the link."));
+      target.append(button("START THE FIRST 3-MINUTE WINDOW", () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
+      if (!ready) target.append(node("p", "Every team needs at least one participant before starting."));
+    } else if (state.phase === "advisers") {
+      const ready = state.teams.every(t => t.locked);
+      target.append(node("p", "Challenge " + (state.round + 1) + " / 6 · " + EPISODES[state.round]));
+      target.append(button(state.round === 5 ? "END THE ROOM" : "START NEXT CHALLENGE",
+        () => action({type: "advance"}).catch(e => error(e.message)), "primary", !ready));
+      if (!ready) target.append(node("p", "Waiting for all teams to lock, or for the four-minute deadline."));
+    } else {
+      target.append(node("p", "All six windows have finished."));
+    }
+  }
+  function renderResults() {
+    const target = $("results");
+    target.replaceChildren();
+    target.hidden = state.phase !== "complete";
+    if (target.hidden) return;
+    target.append(node("h3", "TIMING REPORT ONLY", "section-label"));
+    for (const team of state.teams) {
+      target.append(node("p", team.name + ": −" + team.penaltyPoints +
+        " timing points. This is NOT a final economic game score."));
+    }
+    if (state.viewer.role === "host") {
+      target.append(button("DOWNLOAD TIME-PENALTY REPORT", () => {
+        const exported = {roomCode: state.code, generatedAt: new Date().toISOString(),
+          note: "Timing only. No economic results, advisers or player identifiers included.",
+          teams: state.teams.map(x => ({name: x.name, penaltyPoints: x.penaltyPoints}))};
+        const blob = new Blob([JSON.stringify(exported, null, 2)], {type: "application/json"});
+        const href = URL.createObjectURL(blob);
+        const a = node("a"); a.href = href; a.download = "business-crisis-timing-" + roomCode + ".json";
+        document.body.append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(href), 1000);
+      }, "secondary"));
+    }
+  }
+  function showRoom(next) {
+    const prevRound = state?.round;
+    state = next;
+    clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
+    if (draftRound !== state.round || prevRound !== state.round) {
+      draftRound = state.round;
+      draftPicks = null;
+    }
+    if (draftPicks === null) draftPicks = state.privateTeam?.advisers?.slice() || [];
+    show("room");
+    $("room-code").textContent = state.code;
+    $("host-share").hidden = state.viewer.role !== "host";
+    if (state.viewer.role === "host") {
+      const link = location.origin + "/join?room=" + state.code;
+      $("join-link").textContent = link; $("join-link").href = link;
+      $("join-qr").src = "/api/rooms/" + state.code + "/qr";
+    }
+    renderTeams(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    tick();
+  }
+  function tick() {
+    if (!state || state.phase !== "advisers" || !state.clock) {
+      $("timer-wrap").hidden = true; return;
+    }
+    $("timer-wrap").hidden = false;
+    const now = Date.now() + clockOffset;
+    const grace = now >= state.clock.normalEndsAt;
+    const remaining = Math.max(0, (grace ? state.clock.closesAt : state.clock.normalEndsAt) - now);
+    const seconds = Math.ceil(remaining / 1000);
+    $("timer").textContent = String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(seconds % 60).padStart(2, "0");
+    $("timer-phase").textContent = now >= state.clock.closesAt ? "TIME EXPIRED" : grace ? "RESERVE MINUTE / −5 PTS" : "STANDARD TIME / 3 MIN";
+    $("timer-note").textContent = now >= state.clock.closesAt ?
+      "Unanswered teams receive a 12-point timing penalty." : grace ?
+      "If your captain locks now, the team receives a 5-point timing penalty." :
+      "Every team has the same server-controlled deadline. Finish within 3 minutes to avoid a penalty.";
+    $("timer-wrap").classList.toggle("grace", grace);
+  }
+  async function action(command) {
+    error("");
+    try {
+      const response = await request("/api/rooms/" + roomCode + "/actions", {
+        method: "POST", headers: {authorization: "Bearer " + credential},
+        body: JSON.stringify({...command, expectedRevision: state.revision})
+      });
+      if (command.type === "select_advisers") draftPicks = null;
+      showRoom(response.state);
+    } catch (e) {
+      // A stale revision is normal when two phones act at once; refresh before retrying.
+      try { showRoom((await getState()).state); } catch (_) {}
+      throw e;
+    }
+  }
+  function setConnection(online) {
+    $("connection").textContent = online ? "LIVE SYNC" : "RECONNECTING";
+    $("connection").classList.toggle("live", online);
+  }
+  function connect() {
+    if (!credential || !roomCode || socket?.readyState === WebSocket.OPEN) return;
+    clearTimeout(retryHandle);
+    try {
+      socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") +
+        location.host + "/api/rooms/" + roomCode + "/socket");
+      socket.addEventListener("open", () => {
+        retryDelay = 1000; setConnection(true);
+        socket.send(JSON.stringify({type: "authenticate", token: credential}));
+      });
+      socket.addEventListener("message", event => {
+        let data;
+        try { data = JSON.parse(event.data); } catch (_) { return; }
+        if (data.type === "snapshot") showRoom(data.state);
+        else if (data.type === "error") error(data.error);
+      });
+      socket.addEventListener("close", () => {
+        setConnection(false);
+        if (!credential) return;
+        retryHandle = setTimeout(async () => {
+          try { showRoom((await getState()).state); } catch (_) {}
+          connect();
+        }, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 15000);
+      });
+      socket.addEventListener("error", () => setConnection(false));
+    } catch (e) { setConnection(false); error("Live connection unavailable: " + e.message); }
+  }
+  async function authenticateSession() {
+    try {
+      showRoom((await getState()).state);
+      connect();
+    } catch (e) {
+      dropSession();
+      if (location.pathname === "/join") await lobby();
+      else { show("create"); error("Host session could not be restored. " + e.message); }
+    }
+  }
+  $("create-form").addEventListener("submit", async e => {
+    e.preventDefault(); error("");
+    const key = $("create-key").value;
+    $("create-key").value = ""; // Do not persist the founder's room-creation credential.
+    try {
+      const data = await request("/api/rooms", {method: "POST", headers: {authorization: "Bearer " + key},
+        body: JSON.stringify({teamCount: Number($("create-teams").value)})});
+      roomCode = data.roomCode;
+      history.replaceState(null, "", "/?room=" + roomCode);
+      saveSession(data.hostToken);
+      await authenticateSession();
+    } catch (e) { error(e.message); }
+  });
+  $("join-form").addEventListener("submit", async e => {
+    e.preventDefault(); error("");
+    try {
+      const data = await request("/api/rooms/" + roomCode + "/join", {method: "POST",
+        body: JSON.stringify({nickname: $("join-name").value, teamIndex: Number($("join-team").value)})});
+      saveSession(data.playerToken); showRoom(data.state); connect();
+    } catch (e) { error(e.message); }
+  });
+  $("rename-team").addEventListener("click", () => action({type: "rename_team", name: $("team-name-choice").value}).catch(e => error(e.message)));
+  $("team-name-choice").addEventListener("change", () => {
+    const mine = state?.teams[state.viewer.teamIndex];
+    $("rename-team").disabled = !mine || mine.name === $("team-name-choice").value;
+  });
+  $("copy-link").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("join-link").href); notice("Join link copied."); }
+    catch (_) { notice("Copy the link displayed above."); }
+  });
+  setInterval(tick, 250); // Only updates the local visual clock; deadlines are server-owned.
+  if (roomCode) {
+    try { credential = sessionStorage.getItem(roleKey(roomCode)); } catch (_) {}
+    if (credential) authenticateSession();
+    else if (location.pathname === "/join") lobby();
+    else { show("create"); error("Host login is not available on this tab. Use the original host tab or create a new room."); }
+  } else if (location.pathname === "/join") { show("join"); error("The invitation link is missing its room code."); }
+  else show("create");
+})();

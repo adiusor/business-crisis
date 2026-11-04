@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#091421">
+  <meta name="description" content="BUSINESS CRISIS — multiplayer room preview">
+  <title>BUSINESS CRISIS / LIVE ROOM PREVIEW</title>
+  <link rel="stylesheet" href="/room-style.css">
+  <script src="/room-script.js" defer></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="BUSINESS CRISIS room preview home">
+      <span class="brand-mark">09:17</span>
+      <span>BUSINESS CRISIS <small>ROOM PROTOCOL / DEVELOPMENT PREVIEW</small></span>
+    </a>
+    <span class="status-dot">DRAFT / NOT THE PUBLIC GAME</span>
+  </header>
+  <main class="layout">
+    <section class="lead-panel">
+      <p class="eyebrow">A CLOSED-DOOR INCIDENT / ONE SHARED CLOCK</p>
+      <h1>THE ROOM<br><em>IS LIVE.</em></h1>
+      <p class="intro-copy">One host. Rival teams. Three minutes to make the call. The fourth minute costs five points. Silence costs twelve.</p>
+      <div class="rules"><span>02–04 TEAMS</span><span>01 CAPTAIN PER TEAM</span><span>06 CHALLENGE WINDOWS</span></div>
+      <p class="disclaimer">This is a lobby, selection and timing prototype. The six economic decisions, real scoring and public game are not yet connected. Do not use it with paying clients.</p>
+    </section>
+
+    <section class="content-panel">
+      <section id="create-screen" hidden>
+        <div class="eyebrow">01 / FACILITATOR SETUP</div>
+        <h2>Open the war room.</h2>
+        <p>Rooms start with random team callsigns. Captains may select a different available name before the session starts.</p>
+        <form id="create-form">
+          <label for="create-teams">Teams</label>
+          <select id="create-teams"><option value="2">2 teams</option><option value="3">3 teams</option><option value="4">4 teams</option></select>
+          <label for="create-key">Room creation key <small>(founder-managed secret, never stored in the browser)</small></label>
+          <input id="create-key" type="password" autocomplete="off" required placeholder="Required to create a preview room">
+          <button type="submit" class="primary">CREATE PRIVATE ROOM</button>
+        </form>
+      </section>
+
+      <section id="join-screen" hidden>
+        <div class="eyebrow">02 / TEAM ARRIVAL</div>
+        <h2>Step inside.</h2>
+        <p id="join-caption">Enter your nickname and choose your team.</p>
+        <form id="join-form">
+          <label for="join-name">Your nickname</label>
+          <input id="join-name" maxlength="24" required autocomplete="nickname" placeholder="How should your team know you?">
+          <label for="join-team">Join a team</label>
+          <select id="join-team" required></select>
+          <button type="submit" class="primary">JOIN THE INCIDENT</button>
+        </form>
+      </section>
+
+      <section id="room-screen" hidden>
+        <div class="room-bar">
+          <div><div class="eyebrow">ROOM CODE</div><h2 id="room-code">—</h2></div>
+          <span id="connection" class="connection">CONNECTING</span>
+        </div>
+        <div id="host-share" hidden class="share-box">
+          <div><strong>INVITE THE PLAYERS</strong><p>Send the link or scan the code. No participant account needed.</p></div>
+          <img id="join-qr" width="152" height="152" alt="QR code to join this room" />
+          <a id="join-link" target="_blank" rel="noopener noreferrer"></a>
+          <button id="copy-link" type="button" class="secondary">COPY JOIN LINK</button>
+        </div>
+        <div id="timer-wrap" hidden class="timer-wrap" role="timer" aria-live="off">
+          <span id="timer-phase">TIME LEFT</span>
+          <strong id="timer">03:00</strong>
+          <p id="timer-note">Every team has the same server-controlled clock.</p>
+        </div>
+        <div id="room-message" role="status" aria-live="polite"></div>
+        <h3 class="section-label">THE TEAMS</h3>
+        <div id="team-list" class="team-list"></div>
+        <div id="captain-tools" hidden>
+          <label for="team-name-choice">Change your team callsign before the start</label>
+          <div class="inline-actions"><select id="team-name-choice"></select><button id="rename-team" type="button" class="secondary">USE NAME</button></div>
+        </div>
+        <div id="player-actions" hidden></div>
+        <div id="host-actions" hidden></div>
+        <div id="results" hidden></div>
+        <p class="privacy-note">Nicknames are visible to participants in this room. Email addresses are not collected. Room data expires automatically after 24 hours. Do not share the host credential.</p>
+      </section>
+      <p id="error" class="error" role="alert" hidden></p>
+    </section>
+  </main>
+  <footer>BUSINESS CRISIS / THE 09:17 INCIDENT <span>ISOLATED EXPERIMENT — NO PAYMENTS · NO EMAIL SENDING</span></footer>
+</body>
+</html>

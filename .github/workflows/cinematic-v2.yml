@@ -41,6 +41,10 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
+      - name: Bundle isolated Cloudflare Worker (dry-run only, no deploy)
+        run: npm run check:room-bundle
+      - name: Exercise local Worker HTTP, QR and live WebSocket room sync (no deploy)
+        run: node tests/room-runtime.test.mjs
       - name: Play 2-, 3- and 4-team games in Chromium
         run: node tests/browser.mjs
       - name: Upload actual browser screenshots

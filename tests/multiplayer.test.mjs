@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, createRoom, authorize, joinRoom, applyRoomAction, viewFor} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -129,4 +129,149 @@ test("six host-controlled rounds terminate with no hidden opponent data", () => 
   assert.throws(() => act(room, host, "advance"), /not awaiting choices/);
   assert.equal(JSON.stringify(viewFor(room, host)).includes("credentialHash"), false);
   assert.equal(room.players.length, 2);
+});
+
+
+test("random fictional team names are unique, reproducible and selectable from the pool", () => {
+  const params = {code: "A1B2C3D4E5F6", hostHash: hash("host"), teamCount: 4, nameSeed: 12345, createdAtMs: 1000};
+  const room = createRoom(params);
+  assert.equal(room.teams.length, 4);
+  assert.deepEqual(room.teams.map(t => t.name), createRoom(params).teams.map(t => t.name));
+  assert.equal(new Set(room.teams.map(t => t.name)).size, 4);
+  assert.ok(room.teams.every(t => TEAM_NAME_POOL.includes(t.name)));
+  assert.equal(room.expiresAtMs, 1000 + ROOM_TTL_MS);
+  assert.notDeepEqual(room.teams.map(t => t.name), createRoom({...params, nameSeed: 67890}).teams.map(t => t.name));
+});
+
+test("captain can rename before start from unused names, not arbitrary strings", () => {
+  let room = createRoom({code: "A1B2C3D4E5F6", hostHash: hash("host"), teamCount: 2, nameSeed: 99});
+  const a = enter(room, "Alice", 0, 1); room = a.room;
+  const b = enter(room, "Bob", 1, 2); room = b.room;
+  const teammate = enter(room, "Eve", 0, 3); room = teammate.room;
+  const unused = TEAM_NAME_POOL.find(n => room.teams.every(t => t.name !== n));
+  assert.throws(() => act(room, teammate.actor, "rename_team", {name: unused}), /captain/);
+  assert.throws(() => act(room, a.actor, "rename_team", {name: "BAD<TEAM>"}), /name from the list/);
+  assert.throws(() => act(room, a.actor, "rename_team", {name: room.teams[1].name}), /already taken/);
+  const before = room;
+  room = act(room, a.actor, "rename_team", {name: unused});
+  assert.equal(room.teams[0].name, unused);
+  assert.notEqual(room, before);
+  assert.equal(before.teams[0].name === unused, false);
+  room = act(room, {role: "host"}, "start");
+  assert.throws(() => act(room, a.actor, "rename_team", {name: TEAM_NAME_POOL[0]}), /lobby participant/);
+});
+
+test("lobby discovery does not expose tokens, nicknames or team-private choices", () => {
+  let {room, host} = fixture();
+  const a = enter(room, "ALICE_PRIVATE", 0, 1); room = a.room;
+  const b = enter(room, "BOB_PRIVATE", 1, 2); room = b.room;
+  const publicView = viewLobby(room);
+  assert.equal(publicView.teams[0].joined, 1);
+  assert.equal(JSON.stringify(publicView).includes("ALICE_PRIVATE"), false);
+  assert.equal(JSON.stringify(publicView).includes("credentialHash"), false);
+  room = act(room, host, "start");
+  room = act(room, a.actor, "select_advisers", {advisers: [0, 4]});
+  assert.equal(JSON.stringify(viewFor(room, host)).includes('"advisers"'), false);
+  assert.deepEqual(viewFor(room, a.actor).privateTeam.advisers, [0, 4]);
+  assert.deepEqual(viewFor(room, b.actor).privateTeam.advisers, []);
+});
+
+test("3m on-time, 1m grace with exactly 5 points, and no clock client override", () => {
+  let {room, host} = fixture();
+  const a = enter(room, "Alice", 0, 1); room = a.room;
+  const b = enter(room, "Bob", 1, 2); room = b.room;
+  const started = 1_700_000_000_000;
+  room = applyRoomAction(room, host, {type: "start", expectedRevision: room.revision}, started);
+  assert.equal(clockFor(room, started + ROUND_MS - 1).stage, "normal");
+  assert.equal(clockFor(room, started + ROUND_MS).stage, "grace");
+  assert.equal(clockFor(room, started + ROUND_MS + GRACE_MS).stage, "closed");
+  room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
+    expectedRevision: room.revision, nowMs: 0}, started + ROUND_MS - 10);
+  room = applyRoomAction(room, a.actor, {type: "lock_advisers",
+    expectedRevision: room.revision, nowMs: 0}, started + ROUND_MS - 1);
+  assert.equal(room.teams[0].penaltyPoints, 0);
+  room = applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [2,3],
+    expectedRevision: room.revision}, started + ROUND_MS);
+  room = applyRoomAction(room, b.actor, {type: "lock_advisers",
+    expectedRevision: room.revision}, started + ROUND_MS + 1500);
+  assert.equal(room.teams[1].penaltyPoints, GRACE_PENALTY);
+  assert.equal(room.teams[1].roundPenalty, 5);
+  assert.equal(room.teams[0].roundPenalty, 0);
+  room = applyRoomAction(room, host, {type: "advance", expectedRevision: room.revision}, started + ROUND_MS + 1501);
+  assert.deepEqual(room.teams.map(t => t.roundResults[0].penalty), [0, 5]);
+  assert.equal(room.teams[1].penaltyPoints, 5);
+  assert.equal(room.startedAtMs, started + ROUND_MS + 1501);
+});
+
+test("four-minute deadline is enforced by server, survives disconnects and is idempotent", () => {
+  let {room, host} = fixture();
+  const a = enter(room, "Alice", 0, 1); room = a.room;
+  const b = enter(room, "Bob", 1, 2); room = b.room;
+  const start = 100_000;
+  room = applyRoomAction(room, host, {type: "start", expectedRevision: room.revision}, start);
+  room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
+    expectedRevision: room.revision}, start + 10);
+  room = applyRoomAction(room, a.actor, {type: "lock_advisers", expectedRevision: room.revision}, start + 11);
+  assert.throws(() => applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [1,2],
+    expectedRevision: room.revision}, start + ROUND_MS + GRACE_MS), /four-minute/);
+  assert.equal(room.teams[1].locked, false);
+  const expired = expireRoom(room, start + ROUND_MS + GRACE_MS);
+  assert.equal(expired.teams[1].timedOut, true);
+  assert.equal(expired.teams[1].locked, true);
+  assert.deepEqual(expired.teams[1].advisers, []);
+  assert.equal(expired.teams[1].penaltyPoints, NO_ANSWER_PENALTY);
+  assert.equal(expireRoom(expired, start + ROUND_MS + GRACE_MS + 90000), expired);
+  assert.equal(expired.revision, room.revision + 1);
+  room = applyRoomAction(expired, host, {type: "advance", expectedRevision: expired.revision}, start + ROUND_MS + GRACE_MS + 1);
+  assert.equal(room.teams[1].roundResults[0].timedOut, true);
+  assert.equal(room.teams[1].roundResults[0].penalty, 12);
+  assert.equal(room.teams[1].penaltyPoints, 12);
+  assert.equal(room.teams[1].locked, false);
+  assert.equal(room.round, 1);
+});
+
+test("points remain cumulative over six windows without leaking other teams' answers", () => {
+  let {room, host} = fixture();
+  const a = enter(room, "Alice", 0, 1); room = a.room;
+  const b = enter(room, "Bob", 1, 2); room = b.room;
+  let now = 1_000_000;
+  room = applyRoomAction(room, host, {type: "start", expectedRevision: room.revision}, now);
+  for (let i = 0; i < 6; i++) {
+    room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
+      expectedRevision: room.revision}, now + 30_000);
+    room = applyRoomAction(room, a.actor, {type: "lock_advisers",
+      expectedRevision: room.revision}, now + 30_001);
+    room = applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [2,3],
+      expectedRevision: room.revision}, now + 180_001);
+    room = applyRoomAction(room, b.actor, {type: "lock_advisers",
+      expectedRevision: room.revision}, now + 180_002);
+    now += 190_000;
+    room = applyRoomAction(room, host, {type: "advance",
+      expectedRevision: room.revision}, now);
+  }
+  assert.equal(room.phase, "complete");
+  assert.equal(room.teams[0].penaltyPoints, 0);
+  assert.equal(room.teams[1].penaltyPoints, 30);
+  assert.equal(room.teams[1].roundResults.length, 6);
+  assert.equal(room.teams[1].roundResults.every(r => r.penalty === 5), true);
+  const hostView = viewFor(room, host);
+  assert.equal(JSON.stringify(hostView).includes('"advisers"'), false);
+  assert.equal(JSON.stringify(viewFor(room, a.actor)).includes('"advisers":[2,3]'), false);
+});
+
+test("UI is a separate no-email preview with a real QR route and no inline credentials", async () => {
+  const fs = await import("node:fs/promises");
+  const html = await fs.readFile(new URL("../multiplayer/client.html", import.meta.url), "utf8");
+  const script = await fs.readFile(new URL("../multiplayer/client-script.txt", import.meta.url), "utf8");
+  const style = await fs.readFile(new URL("../multiplayer/client-style.txt", import.meta.url), "utf8");
+  assert.match(html, /\/room-script\.js/);
+  assert.match(html, /\/room-style\.css/);
+  assert.match(script, /\/api\/rooms\//);
+  assert.match(script, /new WebSocket/);
+  assert.match(script, /sessionStorage/);
+  assert.match(html, /id="join-qr"/);
+  assert.doesNotMatch(script, /localStorage/);
+  assert.doesNotMatch(html, /type="email"/);
+  assert.ok(style.includes("320px") === false && style.includes("max-width:430px"));
+  assert.doesNotThrow(() => new Function(script), "Client JS has valid syntax");
 });
