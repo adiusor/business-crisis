@@ -41,6 +41,16 @@ check(withAlloc.risks.legal===withoutAlloc.risks.legal-7,"allocation reduces sel
 check(withAlloc.history[2].allocation.amount===10000,"allocation recorded in decision trail");
 assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:5000,route:"audit"}),/Allocation must/);checks++;
 assert.throws(()=>R.applyTurn(beforeAlloc,2,0,0,[0,1],0,{amount:10000,route:"invalid"}),/Invalid allocation/);checks++;
+// Timeout advances the same economic ledger without pretending the team chose a plan.
+const silent=R.applyTimeout(t0,0,0);
+check(silent.nextRound===1&&silent.history[0].timedOut&&silent.history[0].planIndex===null,"silent team records no plan or statement");
+check(silent.cash===C.initialCash-C.episodes[0].base,"mandatory costs still land on timeout");
+check(silent.trust<t0.trust&&silent.risks.customer>t0.risks.customer,"silence worsens client exposure");
+check(silent.ledger.reduce((sum,x)=>sum+x.amount,0)===C.initialCash-silent.cash,"timeout ledger reconciles");
+check(t0.nextRound===0,"timeout does not mutate input");
+assert.throws(()=>R.applyTimeout(silent,0,0),/already committed|out of order/);checks++;
+const afterSilence=R.applyTurn(silent,1,0,0,[0,1],0);
+check(afterSilence.history.length===2&&afterSilence.ledger.reduce((sum,x)=>sum+x.amount,0)===C.initialCash-afterSilence.cash,"normal decisions follow timeout deterministically");
 // The highest performance score is not automatically a business victory.
 function modelTeam(id,name,cash,trust,legal,ops,customer){
 const t=R.createTeam(id,name);

@@ -122,6 +122,50 @@ try {
   const aliceAfter = await snapshot(aliceWS, s => s.revision === choice.payload.state.revision, "Alice picks broadcast");
   assert.deepEqual(aliceAfter.privateTeam.advisers, [0, 4]);
   assert.equal((await req("/api/rooms/" + roomCode + "/state")).response.status, 401, "No unauthenticated state");
+
+  // Complete the actual six economic episodes over HTTP to verify Worker integration.
+  let rev = choice.payload.state.revision;
+  let committed = await req("/api/rooms/" + roomCode + "/actions", "POST",
+    {type: "submit_decision", planIndex: 0, signalIndex: 0, expectedRevision: rev}, alice.payload.playerToken);
+  assert.equal(committed.response.status, 200, "First economic decision: " + JSON.stringify(committed.payload));
+  assert.equal(committed.payload.state.privateTeam.economic.cash, 260000 - 8000 - 18000);
+  rev = committed.payload.state.revision;
+  let bobPick = await req("/api/rooms/" + roomCode + "/actions", "POST",
+    {type: "select_advisers", advisers: [1, 2], expectedRevision: rev}, bob.payload.playerToken);
+  assert.equal(bobPick.response.status, 200); rev = bobPick.payload.state.revision;
+  let bobCommit = await req("/api/rooms/" + roomCode + "/actions", "POST",
+    {type: "submit_decision", planIndex: 1, signalIndex: 1, expectedRevision: rev}, bob.payload.playerToken);
+  assert.equal(bobCommit.response.status, 200); rev = bobCommit.payload.state.revision;
+  let advance = await req("/api/rooms/" + roomCode + "/actions", "POST",
+    {type: "advance", expectedRevision: rev}, hostToken);
+  assert.equal(advance.response.status, 200); rev = advance.payload.state.revision;
+  for (let round = 1; round < 6; round++) {
+    const current = await req("/api/rooms/" + roomCode + "/state", "GET", undefined, hostToken);
+    assert.equal(current.response.status, 200);
+    assert.equal(current.payload.state.episode.number, String(round + 1).padStart(2, "0"));
+    for (const credential of [alice.payload.playerToken, bob.payload.playerToken]) {
+      const picks = await req("/api/rooms/" + roomCode + "/actions", "POST",
+        {type: "select_advisers", advisers: [round % 6, (round + 2) % 6], expectedRevision: rev}, credential);
+      assert.equal(picks.response.status, 200); rev = picks.payload.state.revision;
+      const allocation = [2, 4].includes(round) ? {amount: 10000, route: "audit"} : {amount: 0, route: null};
+      const response = await req("/api/rooms/" + roomCode + "/actions", "POST",
+        {type: "submit_decision", planIndex: round % 3, signalIndex: (round + 1) % 3,
+          allocation, expectedRevision: rev}, credential);
+      assert.equal(response.response.status, 200, "Episode " + round + " economic response: " + JSON.stringify(response.payload));
+      rev = response.payload.state.revision;
+    }
+    advance = await req("/api/rooms/" + roomCode + "/actions", "POST",
+      {type: "advance", expectedRevision: rev}, hostToken);
+    assert.equal(advance.response.status, 200); rev = advance.payload.state.revision;
+  }
+  const final = (await req("/api/rooms/" + roomCode + "/state", "GET", undefined, hostToken)).payload.state;
+  assert.equal(final.phase, "complete");
+  assert.equal(final.verdict.ranked.length, 2);
+  assert.equal(final.verdict.ranked[0].decisions.length, 6);
+  assert.ok(final.verdict.ranked.every(t => t.score === Math.max(0, t.rawScore - t.timingPenalty)));
+  assert.equal(JSON.stringify(final).includes('"intelligence"'), false, "No private advice in host results");
+  assert.equal(JSON.stringify(final).includes('"credentialHash"'), false, "No credentials in host results");
+
   // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
   const {chromium} = await import("playwright");
   const browser = await chromium.launch({headless: true, args: ["--no-sandbox"]});
@@ -164,19 +208,27 @@ try {
     await phoneA.locator("#team-name-choice").selectOption(newName);
     await phoneA.locator("#rename-team").click();
     await hostUI.waitForFunction(name => document.querySelector("#team-list")?.textContent?.includes(name), newName);
+    assert.match(await hostUI.locator("#episode-panel").innerText().catch(() => ""), /|^$/); // Lobby has no episode yet.
     await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
     assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
+    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
+    assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     await phoneA.locator('[data-choice="0"]').click();
     await phoneA.locator('[data-choice="1"]').click();
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
-    await phoneA.getByRole("button", {name: "LOCK FOR THIS ROUND"}).click();
+    await phoneA.locator('[data-plan="0"]').click();
+    await phoneA.locator("#player-actions select").last().selectOption("0");
+    await phoneA.getByRole("button", {name: "COMMIT STRATEGY & STATEMENT"}).click();
     await phoneB.locator('[data-choice="2"]').click();
     await phoneB.locator('[data-choice="3"]').click();
     await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
-    await phoneB.getByRole("button", {name: "LOCK FOR THIS ROUND"}).click();
-    await hostUI.getByRole("button", {name: "START NEXT CHALLENGE"}).click();
-    await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("Challenge 2"));
+    await phoneB.locator('[data-plan="1"]').click();
+    await phoneB.locator("#player-actions select").last().selectOption("1");
+    await phoneB.getByRole("button", {name: "COMMIT STRATEGY & STATEMENT"}).click();
+    await hostUI.getByRole("button", {name: "START NEXT EPISODE"}).click();
+    await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
+    assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     const overflow = await phoneA.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
     await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});

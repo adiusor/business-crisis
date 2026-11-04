@@ -13,7 +13,7 @@ function enter(room, name, teamIndex, suffix) {
   const result = joinRoom(room, {nickname: name, teamIndex, playerId, credentialHash: hash("participant-" + suffix)});
   return {room: result, actor: {role: "player", playerId}};
 }
-const act = (room, actor, type, extras = {}) => applyRoomAction(room, actor, {type, expectedRevision: room.revision, ...extras});
+const act = (room, actor, type, extras = {}) => applyRoomAction(room, actor, {type, expectedRevision: room.revision, ...(type === "lock_advisers" ? {planIndex: 0, signalIndex: 0} : {}), ...extras});
 
 test("validates team count, team labels and room credentials", () => {
   assert.throws(() => fixture(["ONLY"]), /2–4 teams/);
@@ -187,12 +187,12 @@ test("3m on-time, 1m grace with exactly 5 points, and no clock client override",
   assert.equal(clockFor(room, started + ROUND_MS + GRACE_MS).stage, "closed");
   room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
     expectedRevision: room.revision, nowMs: 0}, started + ROUND_MS - 10);
-  room = applyRoomAction(room, a.actor, {type: "lock_advisers",
+  room = applyRoomAction(room, a.actor, {type: "lock_advisers", planIndex: 0, signalIndex: 0,
     expectedRevision: room.revision, nowMs: 0}, started + ROUND_MS - 1);
   assert.equal(room.teams[0].penaltyPoints, 0);
   room = applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [2,3],
     expectedRevision: room.revision}, started + ROUND_MS);
-  room = applyRoomAction(room, b.actor, {type: "lock_advisers",
+  room = applyRoomAction(room, b.actor, {type: "lock_advisers", planIndex: 0, signalIndex: 0,
     expectedRevision: room.revision}, started + ROUND_MS + 1500);
   assert.equal(room.teams[1].penaltyPoints, GRACE_PENALTY);
   assert.equal(room.teams[1].roundPenalty, 5);
@@ -211,7 +211,7 @@ test("four-minute deadline is enforced by server, survives disconnects and is id
   room = applyRoomAction(room, host, {type: "start", expectedRevision: room.revision}, start);
   room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
     expectedRevision: room.revision}, start + 10);
-  room = applyRoomAction(room, a.actor, {type: "lock_advisers", expectedRevision: room.revision}, start + 11);
+  room = applyRoomAction(room, a.actor, {type: "lock_advisers", planIndex: 0, signalIndex: 0, expectedRevision: room.revision}, start + 11);
   assert.throws(() => applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [1,2],
     expectedRevision: room.revision}, start + ROUND_MS + GRACE_MS), /four-minute/);
   assert.equal(room.teams[1].locked, false);
@@ -239,11 +239,11 @@ test("points remain cumulative over six windows without leaking other teams' ans
   for (let i = 0; i < 6; i++) {
     room = applyRoomAction(room, a.actor, {type: "select_advisers", advisers: [0,1],
       expectedRevision: room.revision}, now + 30_000);
-    room = applyRoomAction(room, a.actor, {type: "lock_advisers",
+    room = applyRoomAction(room, a.actor, {type: "lock_advisers", planIndex: 0, signalIndex: 0,
       expectedRevision: room.revision}, now + 30_001);
     room = applyRoomAction(room, b.actor, {type: "select_advisers", advisers: [2,3],
       expectedRevision: room.revision}, now + 180_001);
-    room = applyRoomAction(room, b.actor, {type: "lock_advisers",
+    room = applyRoomAction(room, b.actor, {type: "lock_advisers", planIndex: 0, signalIndex: 0,
       expectedRevision: room.revision}, now + 180_002);
     now += 190_000;
     room = applyRoomAction(room, host, {type: "advance",
@@ -274,4 +274,102 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.doesNotMatch(html, /type="email"/);
   assert.ok(style.includes("320px") === false && style.includes("max-width:430px"));
   assert.doesNotThrow(() => new Function(script), "Client JS has valid syntax");
+});
+
+
+test("all six real episodes commit server-side and preserve the cash ledger", () => {
+ let {room, host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ let now=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},now);
+ for(let round=0;round<6;round++){
+  const ep=viewFor(room,host).episode;
+  assert.ok(ep.brief&&ep.evidence.length===3&&ep.plans.length===3&&ep.signals.length===3);
+  assert.equal(typeof ep.plans[0].cost,"string");
+  assert.equal(Object.hasOwn(ep,"advice"),false);
+  for(const actor of [a.actor,b.actor]){
+   room=applyRoomAction(room,actor,{type:"select_advisers",advisers:[0,3],expectedRevision:room.revision},now+5000);
+   const privateView=viewFor(room,actor).privateTeam;
+   assert.equal(privateView.intelligence.length,2,"only two sources of advice");
+   const allocation=round===2||round===4?{amount:10000,route:"audit"}:{amount:0,route:null};
+   room=applyRoomAction(room,actor,{type:"submit_decision",planIndex:round%3,signalIndex:(round+1)%3,
+     allocation,expectedRevision:room.revision},now+20000);
+   const t=room.teams[actor.playerId===a.actor.playerId?0:1];
+   assert.equal(t.economic.nextRound,round+1);
+   assert.equal(t.economic.history.length,round+1);
+   assert.equal(t.economic.cash,260000-t.economic.ledger.reduce((sum,x)=>sum+x.amount,0));
+   assert.equal(t.penaltyPoints,0);
+  }
+  const raw=room.teams[0].economic;
+  assert.throws(()=>applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,
+    expectedRevision:room.revision},now+21000),/locked/);
+  room=applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},now+25000);
+  assert.equal(room.lastRecap.round,round+1);
+  assert.equal(JSON.stringify(viewFor(room,host)).includes('"intelligence"'),false);
+  assert.equal(room.teams[0].economic.history.length,round+1);
+  assert.equal(room.teams[0].economic.cash,raw.cash);
+  now+=30000;
+ }
+ assert.equal(room.phase,"complete");
+ const verdict=viewFor(room,host).verdict;
+ assert.equal(verdict.ranked.length,2);
+ assert.equal(verdict.ranked[0].decisions.length,6);
+ assert.equal(verdict.ranked[0].score,verdict.ranked[0].rawScore);
+ assert.equal(JSON.stringify(verdict).includes('"advisers"'),false);
+ assert.equal(JSON.stringify(verdict).includes('"credentialHash"'),false);
+ assert.throws(()=>applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},now),/not awaiting choices/);
+});
+
+test("timeout has real economic consequences and timing points alter final ranking", () => {
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ let now=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},now);
+ for(let round=0;round<6;round++){
+  room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},now+1);
+  room=applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,
+    expectedRevision:room.revision},now+2);
+  if(round%2===0){
+   // B submits after the on-time window and loses five final ranking points.
+   room=applyRoomAction(room,b.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},now+1);
+   room=applyRoomAction(room,b.actor,{type:"submit_decision",planIndex:0,signalIndex:0,
+     expectedRevision:room.revision},now+ROUND_MS+1);
+  }else{
+   room=expireRoom(room,now+ROUND_MS+GRACE_MS);
+   const silent=room.teams[1].economic.history[round];
+   assert.equal(silent.timedOut,true);
+   assert.equal(silent.planIndex,null);
+   assert.equal(silent.plan,"NO RESPONSE");
+  }
+  now+=ROUND_MS+GRACE_MS+1000;
+  room=applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},now);
+  now+=1000;
+ }
+ assert.equal(room.phase,"complete");
+ const verdict=viewFor(room,host).verdict;
+ const alice=verdict.ranked.find(x=>x.name==="ALPHA");
+ const bob=verdict.ranked.find(x=>x.name==="BRAVO");
+ assert.equal(alice.timingPenalty,0);
+ assert.equal(bob.timingPenalty,3*GRACE_PENALTY+3*NO_ANSWER_PENALTY);
+ assert.equal(bob.score,Math.max(0,bob.rawScore-bob.timingPenalty));
+ assert.ok(bob.cash<=260000&&bob.decisions.filter(x=>x.timedOut).length===3);
+ assert.equal(verdict.hasChampion,verdict.champions.length>0);
+ assert.equal(room.teams[1].economic.cash,
+  260000-room.teams[1].economic.ledger.reduce((sum,l)=>sum+l.amount,0));
+});
+test("cannot submit client-provided score, cash or adviser list after the clock",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},1000);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,2],expectedRevision:room.revision},1001);
+ assert.throws(()=>applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:9,signalIndex:0,expectedRevision:room.revision},1002),/Invalid strategic/);
+ assert.throws(()=>applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,allocation:{amount:20000,route:"audit"},expectedRevision:room.revision},1002),/Invalid allocation/);
+ assert.throws(()=>applyRoomAction(room,b.actor,{type:"submit_decision",planIndex:0,signalIndex:0,expectedRevision:room.revision},1002),/Choose two advisers/);
+ assert.throws(()=>applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,expectedRevision:room.revision},1000+ROUND_MS+GRACE_MS),/four-minute/);
+ room=applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,expectedRevision:room.revision,
+    cash:999999,score:100},1002);
+ assert.equal(room.teams[0].economic.cash,260000-8000-18000);
 });

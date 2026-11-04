@@ -20,6 +20,7 @@
   let clockOffset = 0;
   let draftPicks = null;
   let draftRound = -1;
+  let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   const roleKey = code => "bc-preview-session-" + code;
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -116,59 +117,155 @@
     select.value = [...select.options].some(x => x.value === previous) ? previous : own.name;
     $("rename-team").disabled = !select.value || select.value === own.name;
   }
+  function renderEpisode() {
+    const box = $("episode-panel");
+    box.replaceChildren();
+    const e = state.episode;
+    box.hidden = !e;
+    if (!e) return;
+    box.append(node("div", "EPISODE " + e.number + " / " + e.time + " / " + e.kicker, "eyebrow"));
+    box.append(node("h3", e.title));
+    box.append(node("p", e.brief, "episode-intro"));
+    box.append(node("div", "THE EVIDENCE / THREE EXHIBITS", "section-label"));
+    const list = node("div", null, "evidence-list");
+    for (const d of e.evidence) {
+      const card = node("article", null, "evidence-item");
+      card.append(node("small", d.type + " / " + d.time));
+      card.append(node("strong", d.title));
+      card.append(node("p", d.body));
+      card.append(node("p", "KEY FINDING: " + d.clue));
+      list.append(card);
+    }
+    box.append(list);
+  }
+  function renderRecap() {
+    const box = $("round-recap");
+    box.replaceChildren();
+    box.hidden = !state.lastRecap;
+    if (!state.lastRecap) return;
+    box.append(node("h3", "PREVIOUS EPISODE / DECISIONS & CONSEQUENCES"));
+    for (const team of state.lastRecap.teams) {
+      box.append(node("p", team.name + ": " + team.plan + " / " + team.signal +
+        ". Cash remaining: £" + team.cash.toLocaleString("en-GB") +
+        ". Trust: " + team.trust + ". Time penalty: −" + team.timingPenalty + "."));
+    }
+  }
+  function labelledSelect(labelText, options, value, onChange, className = "decision-select") {
+    const wrap = node("div");
+    wrap.append(node("label", labelText, "decision-label"));
+    const select = node("select", null, className);
+    for (const {value: v, label} of options) {
+      const opt = node("option", label);
+      opt.value = String(v); select.append(opt);
+    }
+    select.value = String(value);
+    select.addEventListener("change", () => onChange(select.value));
+    wrap.append(select);
+    return wrap;
+  }
   function renderPlayerActions() {
     const target = $("player-actions");
     target.replaceChildren();
     target.hidden = state.viewer.role !== "player";
     if (target.hidden) return;
-    const mine = state.teams[state.viewer.teamIndex];
+    const mine = state.teams[state.viewer.teamIndex],privateData=state.privateTeam;
     if (state.phase === "lobby") {
       target.append(node("p", state.viewer.captain ?
-        "You are the first player on your team and its captain. You can rename the team and lock its choices." :
-        "You joined successfully. Your captain will choose the team's response."));
+        "You are your team's captain. You may rename it and submit its decisions." :
+        "You joined successfully. Your captain will confirm the team's decisions."));
       return;
     }
-    if (state.phase === "complete") { target.append(node("p", "Room complete. The host can export the timing report.")); return; }
-    if (state.viewer.captain && !mine.locked) {
-      target.append(node("h3", "SELECT TWO ADVISERS", "section-label"));
-      target.append(node("p", "Change your picks until you lock them. Unselected sources remain unavailable."));
-      const grid = node("div", null, "choice-grid");
-      for (let i = 0; i < ADV.length; i++) {
-        const item = button(ADV[i][0], () => {
-          if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
-          else if (draftPicks.length < 2) draftPicks.push(i);
-          renderPlayerActions();
-          const replacement = target.querySelector('[data-choice="' + i + '"]');
-          if (replacement) replacement.focus({preventScroll: true});
-        }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
-        item.dataset.choice = i;
-        item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
-        item.append(node("small", ADV[i][1]));
-        grid.append(item);
-      }
-      target.append(grid);
-      const controls = node("div", null, "action-row");
-      controls.append(button("SAVE TWO PICKS", async () => {
-        try { await action({type: "select_advisers", advisers: draftPicks.slice()}); }
-        catch (e) { error(e.message); }
-      }, "secondary", draftPicks.length !== 2));
-      controls.append(button("LOCK FOR THIS ROUND", async () => {
-        try { await action({type: "lock_advisers"}); }
-        catch (e) { error(e.message); }
-      }, "primary", state.privateTeam.advisers.length !== 2));
-      target.append(controls);
-      if (state.privateTeam.advisers.length) target.append(node("p",
-        "Saved: " + state.privateTeam.advisers.map(i => ADV[i][0]).join(" + ") + ". Lock when ready."));
-    } else {
-      target.append(node("p", mine.locked ?
-        (mine.timedOut ? "The time window closed without a confirmed answer." :
-         "Your team's choices are locked. Waiting for the host.") :
-        "The captain is choosing the two advisers for your team."));
-      if (state.privateTeam.advisers.length) {
-        target.append(node("p", "Your team's private picks: " +
-          state.privateTeam.advisers.map(i => ADV[i][0]).join(" + ")));
-      }
+    if (state.phase === "complete") {
+      target.append(node("p", "Final economic results and time deductions are displayed below."));
+      return;
     }
+    target.append(node("p", "Your response fund: £" + privateData.economic.cash.toLocaleString("en-GB") +
+      " · Client confidence: " + privateData.economic.trust + "/100", "private-cash"));
+    if (!state.viewer.captain || mine.locked) {
+      target.append(node("p", mine.locked ?
+        (mine.timedOut ? "No response was filed before the deadline. The business incurred mandatory costs and additional exposures." :
+        "Your team's strategy and statement are locked. Waiting for the host.") :
+        "Your captain is choosing the advisers and strategy."));
+      if (privateData.intelligence.length) {
+        const list = node("div", null, "intel-list");
+        for (const item of privateData.intelligence) {
+          const card=node("article",null,"intel-card");
+          card.append(node("strong",item.name),node("small",item.role),node("p",item.brief));
+          list.append(card);
+        }
+        target.append(list);
+      }
+      return;
+    }
+    target.append(node("h3", "01 / SELECT TWO ADVISERS", "section-label"));
+    target.append(node("p", "Choose two private sources. You can change the selection before the strategy is committed."));
+    const grid = node("div", null, "choice-grid");
+    for (let i = 0; i < ADV.length; i++) {
+      const item = button(ADV[i][0], () => {
+        if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
+        else if (draftPicks.length < 2) draftPicks.push(i);
+        renderPlayerActions();
+        target.querySelector('[data-choice="' + i + '"]')?.focus({preventScroll: true});
+      }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
+      item.dataset.choice = i; item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
+      item.append(node("small", ADV[i][1])); grid.append(item);
+    }
+    target.append(grid);
+    target.append(button("SAVE TWO PICKS", async () => {
+      try { await action({type: "select_advisers", advisers: draftPicks.slice()}); }
+      catch (e) { error(e.message); }
+    }, "secondary", draftPicks.length !== 2));
+    if (privateData.intelligence.length === 2) {
+      target.append(node("h3", "02 / CLASSIFIED BRIEFINGS", "section-label"));
+      const intelligence=node("div",null,"intel-list");
+      for(const entry of privateData.intelligence){
+        const card=node("article",null,"intel-card");
+        card.append(node("strong",entry.name),node("small",entry.role),node("p",entry.brief));
+        intelligence.append(card);
+      }
+      target.append(intelligence);
+    }
+    if (privateData.advisers.length !== 2) {
+      target.append(node("p", "Save two adviser picks to unlock the strategy and public statement."));
+      return;
+    }
+    const episode=state.episode;
+    target.append(node("h3", "03 / CHOOSE YOUR STRATEGY", "section-label"));
+    for (let i=0;i<episode.plans.length;i++){
+      const p=episode.plans[i], card=node("article",null,"strategy-choice"+(draftPlan===i?" chosen":""));
+      card.append(node("strong",String.fromCharCode(65+i)+" / "+p.name));
+      card.append(node("small",p.desc));
+      card.append(node("small","BENEFITS: "+p.benefits.join("; ")));
+      card.append(node("small","TRADE-OFF: "+p.cost+" · SPEND £"+p.spend.toLocaleString("en-GB")));
+      const choose=button(draftPlan===i?"SELECTED":"SELECT STRATEGY",()=>{
+        draftPlan=i;renderPlayerActions();target.querySelector('[data-plan="'+i+'"]')?.focus({preventScroll:true});
+      },"secondary");
+      choose.dataset.plan=i;choose.setAttribute("aria-pressed",String(draftPlan===i));card.append(choose);target.append(card);
+    }
+    if(episode.allocations.length){
+      target.append(node("h3","04 / OPTIONAL RESPONSE INVESTMENT","section-label"));
+      target.append(labelledSelect("Discretionary budget",[
+        {value:0,label:"£0 — keep cash available"},
+        {value:10000,label:"£10,000 additional investment"},
+        {value:20000,label:"£20,000 additional investment"}
+      ],draftAmount,v=>{draftAmount=Number(v);renderPlayerActions();}));
+      if(draftAmount>0){
+        target.append(labelledSelect("Investment channel",episode.allocations.map(x=>({value:x.id,label:x.name})),
+          draftRoute||episode.allocations[0].id,v=>draftRoute=v));
+      }
+    }else{draftAmount=0;draftRoute=null;}
+    target.append(node("h3", "05 / ISSUE YOUR PUBLIC STATEMENT", "section-label"));
+    target.append(labelledSelect("Choose a statement",[
+      {value:"",label:"Select a statement"},
+      ...episode.signals.map((x,i)=>({value:String(i),label:x.name+" — "+x.line}))
+    ],draftSignal===null?"":String(draftSignal),v=>draftSignal=v===""?null:Number(v)));
+    target.append(button("COMMIT STRATEGY & STATEMENT",async()=>{
+      try{
+        const allocation={amount:draftAmount,route:draftAmount?(draftRoute||episode.allocations[0]?.id):null};
+        await action({type:"submit_decision",planIndex:draftPlan,signalIndex:draftSignal,allocation});
+      }catch(e){error(e.message);}
+    },"primary submit-game",draftPlan===null||draftSignal===null));
+    target.append(node("p","This submission is final. Deadline penalties are assessed by the server, not your phone."));
   }
   function renderHostActions() {
     const target = $("host-actions");
@@ -177,41 +274,54 @@
     if (target.hidden) return;
     if (state.phase === "lobby") {
       const ready = state.teams.every(t => t.ready);
-      target.append(node("p", "You are the host. Scan the QR on each phone, or share the link."));
-      target.append(button("START THE FIRST 3-MINUTE WINDOW", () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
-      if (!ready) target.append(node("p", "Every team needs at least one participant before starting."));
+      target.append(node("p", "You are the host. Share the QR code or link with players."));
+      target.append(button("START THE FIRST 3-MINUTE WINDOW",
+        () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
+      if (!ready) target.append(node("p", "Every team must have a participant before the first episode."));
     } else if (state.phase === "advisers") {
       const ready = state.teams.every(t => t.locked);
-      target.append(node("p", "Challenge " + (state.round + 1) + " / 6 · " + EPISODES[state.round]));
-      target.append(button(state.round === 5 ? "END THE ROOM" : "START NEXT CHALLENGE",
-        () => action({type: "advance"}).catch(e => error(e.message)), "primary", !ready));
-      if (!ready) target.append(node("p", "Waiting for all teams to lock, or for the four-minute deadline."));
-    } else {
-      target.append(node("p", "All six windows have finished."));
-    }
+      target.append(node("p","EPISODE "+(state.round+1)+" / 6 · "+state.episode.title));
+      target.append(button(state.round===5?"REVEAL THE BOARDROOM VERDICT":"START NEXT EPISODE",
+        ()=>action({type:"advance"}).catch(e=>error(e.message)),"primary",!ready));
+      if (!ready) target.append(node("p", "Waiting for every team to file its strategy, or for the four-minute deadline."));
+    } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
   }
-  function renderResults() {
-    const target = $("results");
+  function renderResults(){
+    const target=$("results");
     target.replaceChildren();
-    target.hidden = state.phase !== "complete";
-    if (target.hidden) return;
-    target.append(node("h3", "TIMING REPORT ONLY", "section-label"));
-    for (const team of state.teams) {
-      target.append(node("p", team.name + ": −" + team.penaltyPoints +
-        " timing points. This is NOT a final economic game score."));
-    }
-    if (state.viewer.role === "host") {
-      target.append(button("DOWNLOAD TIME-PENALTY REPORT", () => {
-        const exported = {roomCode: state.code, generatedAt: new Date().toISOString(),
-          note: "Timing only. No economic results, advisers or player identifiers included.",
-          teams: state.teams.map(x => ({name: x.name, penaltyPoints: x.penaltyPoints}))};
-        const blob = new Blob([JSON.stringify(exported, null, 2)], {type: "application/json"});
-        const href = URL.createObjectURL(blob);
-        const a = node("a"); a.href = href; a.download = "business-crisis-timing-" + roomCode + ".json";
-        document.body.append(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(href), 1000);
-      }, "secondary"));
-    }
+    target.hidden=state.phase!=="complete"||!state.verdict;
+    if(target.hidden)return;
+    const v=state.verdict;
+    target.append(node("h3",v.hasChampion?"BOARDROOM CHAMPION: "+v.champions.join(" & "):
+      "NO BOARDROOM CHAMPION","section-label"));
+    target.append(node("p",v.scoringNote));
+    v.ranked.forEach((team,i)=>{
+      const row=node("article",null,"score-line");
+      row.append(node("strong",(i+1)+". "+team.name+(team.eligible&&v.champions.includes(team.name)?" · CHAMPION":"")));
+      row.append(node("div",team.score+" / 100","score-mark"));
+      row.append(node("small","Economic score "+team.rawScore+" − timing penalties "+team.timingPenalty+
+        " = "+team.score+" · CONTRACT "+team.status));
+      row.append(node("small","Cash: £"+team.cash.toLocaleString("en-GB")+
+        " · Trust: "+team.trust+"/100 · Pending commitments: £"+team.unpaid.toLocaleString("en-GB")));
+      const details=node("details"),summary=node("summary","OPEN DECISION CASE FILE");
+      details.append(summary);
+      for(const reason of team.reasons)details.append(node("p",reason));
+      for(const h of team.decisions)details.append(node("p","EP "+h.round+" / "+h.episode+
+        " · "+h.plan+" / "+h.signal+" · £"+h.spent.toLocaleString("en-GB")+
+        " spent · cash £"+h.cash.toLocaleString("en-GB")+(h.timedOut?" · DEADLINE MISSED":"")));
+      row.append(details);
+      target.append(row);
+    });
+    target.append(button("DOWNLOAD FINAL CASE FILE (JSON)",()=>{
+      const exported={roomCode:state.code,generatedAt:new Date().toISOString(),
+        note:"Illustrative game simulation; private advisers and participant information excluded.",
+        result:state.verdict};
+      const blob=new Blob([JSON.stringify(exported,null,2)],{type:"application/json"});
+      const href=URL.createObjectURL(blob),a=node("a");
+      a.href=href;a.download="business-crisis-results-"+roomCode+".json";
+      document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1000);
+    },"secondary"));
+    target.append(node("p","Email sending is disabled. No email addresses are collected."));
   }
   function showRoom(next) {
     const prevRound = state?.round;
@@ -220,6 +330,7 @@
     if (draftRound !== state.round || prevRound !== state.round) {
       draftRound = state.round;
       draftPicks = null;
+      draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
     }
     if (draftPicks === null) draftPicks = state.privateTeam?.advisers?.slice() || [];
     show("room");
@@ -230,7 +341,7 @@
       $("join-link").textContent = link; $("join-link").href = link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
-    renderTeams(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    renderEpisode(); renderRecap(); renderTeams(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
     tick();
   }
   function tick() {
@@ -266,10 +377,10 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "lock_advisers"].includes(command.type);
+          ["select_advisers", "rename_team", "lock_advisers", "submit_decision"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
-          if (command.type === "lock_advisers") {
+          if (command.type === "lock_advisers" || command.type === "submit_decision") {
             const team = state.teams[state.viewer.teamIndex];
             // If the previous lock already landed, never apply it twice.
             if (team.locked) return;

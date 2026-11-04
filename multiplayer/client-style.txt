@@ -67,3 +67,40 @@ footer{max-width:1500px;margin:auto;padding:22px 6vw 34px;display:flex;justify-c
 @media(max-width:900px){.layout{grid-template-columns:1fr;gap:26px}.lead-panel h1{font-size:clamp(59px,12vw,90px)}.masthead{padding:20px 5vw}.layout{padding:38px 5vw}.intro-copy{max-width:620px}.rules{margin:20px 0}footer{padding:20px 5vw}}
 @media(max-width:430px){.brand{font-size:13px}.brand small{font-size:8px}.brand-mark{font-size:16px;padding:10px 7px}.status-dot{font-size:9px;max-width:100px}.lead-panel h1{font-size:clamp(56px,15vw,72px)}.layout{padding:30px 4vw}.content-panel{padding:18px}.share-box{grid-template-columns:1fr}.share-box img{grid-row:auto;width:170px}.choice-grid{grid-template-columns:1fr}footer{display:block;line-height:2}.inline-actions{flex-direction:column} .inline-actions button{width:100%}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+.episode-panel{margin:24px 0 28px;padding:20px;border:1px solid #8a6d58;background:linear-gradient(140deg,#162c3b,#152330)}
+.episode-panel h3{margin:8px 0 12px;font-family:Georgia,"Times New Roman",serif;line-height:1.14;font-size:clamp(24px,3vw,36px);color:#eac6a7}
+.episode-panel .episode-intro{font-size:17px;line-height:1.48;color:#e3ebef}
+.evidence-list{display:grid;gap:11px}
+.evidence-item{padding:13px;border-left:2px solid #e99a5b;background:#122431}
+.evidence-item strong,.evidence-item small{display:block}
+.evidence-item strong{font-size:13px;line-height:1.45}
+.evidence-item small{margin:4px 0;color:#e1b18b;font-size:11px;letter-spacing:.09em}
+.evidence-item p{margin:5px 0;font-size:13px;line-height:1.5;color:#bacbd6}
+.intel-list{display:grid;gap:10px;margin:12px 0}
+.intel-card{background:#1b3441;border-left:3px solid #eaa975;padding:14px 15px}
+.intel-card strong,.intel-card small{display:block}
+.intel-card small{font-size:10px;color:#b8d0df;letter-spacing:.13em;margin:4px 0 8px}
+.intel-card p{margin:0;line-height:1.45;font-size:14px}
+.decision-label{display:block;margin:17px 0 8px;color:#e6c3a4;font-size:12px;letter-spacing:.11em}
+.strategy-choice{padding:13px 15px;border:1px solid #5a798b;background:#1a3242;border-radius:3px;margin-bottom:9px}
+.strategy-choice strong{display:block;font-size:14px;margin-bottom:6px}
+.strategy-choice small{display:block;font-size:12px;color:#bdd0da;line-height:1.5}
+.strategy-choice.chosen{border-color:#e99a5b;background:#304351}
+.strategy-choice button{width:100%;margin-top:9px}
+.round-recap{border-top:1px solid #eaa975;padding:16px 0;margin:18px 0}
+.round-recap h3{font-size:16px;letter-spacing:.08em;color:#f3ba88}
+.round-recap p{font-size:13px;line-height:1.55;color:#d6e1e8}
+.score-line{border-bottom:1px solid #ffffff26;padding:12px 0}
+.score-line strong{font-size:18px}
+.score-line .score-mark{font-size:26px;font-weight:900;color:#e99a5b}
+.score-line small{display:block;color:#aec0c9;font-size:12px}
+.score-line details{margin-top:10px}
+.score-line details summary{cursor:pointer;padding:7px 0;color:#eab68b}
+.score-line details p{font-size:12px}
+#player-actions label{display:block}
+#player-actions .decision-select{margin:7px 0 12px}
+#player-actions .submit-game{width:100%;margin-top:12px}
+#player-actions .private-cash{font-weight:800;color:#f0ba88}
+@media(max-width:430px){.episode-panel{padding:14px}.episode-panel .episode-intro{font-size:18px}.strategy-choice button{width:100%}}
