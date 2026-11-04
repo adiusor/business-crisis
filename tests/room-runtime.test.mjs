@@ -333,7 +333,10 @@ try {
     await hostUI.waitForFunction(()=>
       document.querySelector("#facilitator-log")?.hidden===false &&
       document.querySelectorAll("#facilitator-log-items li").length===1);
-    assert.match(await hostUI.locator("#facilitator-log").innerText(),/TRANSFERRED CAPTAINSHIP/);
+    assert.equal(await hostUI.locator("#facilitator-log").evaluate(el=>el.open),false,
+      "Facilitator actions must remain collapsed by default");
+    assert.match(await hostUI.locator("#facilitator-log-items li").first().textContent(),
+      /TRANSFERRED CAPTAINSHIP/);
     await phoneA.waitForFunction(()=>document.querySelector("#facilitator-log")?.hidden===false);
     assert.doesNotMatch(await phoneA.locator("#facilitator-log").innerText(),/Mobile Bob/);
 
