@@ -1,5 +1,5 @@
 "use strict";
-// A narrow prototype client: lobby, private two-adviser choices, host clock controls.
+// Staging UI: separate team clocks, private individual ballots and a readable Boardroom Verdict.
 // Never stores or transmits an email address. Room bearer tokens remain in sessionStorage.
 (() => {
   const $ = id => document.getElementById(id);
