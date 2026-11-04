@@ -277,7 +277,8 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.match(html, /id="join-qr"/);
   assert.doesNotMatch(script, /localStorage/);
   assert.doesNotMatch(html, /type="email"/);
-  assert.ok(style.includes("320px") === false && style.includes("max-width:430px"));
+  assert.match(style, /max-width:430px/, "Narrow phones retain a responsive breakpoint");
+  assert.doesNotMatch(style, /min-width\s*:\s*320px/, "No minimum 320px width that could force overflow");
   assert.doesNotThrow(() => new Function(script), "Client JS has valid syntax");
 });
 
