@@ -47,3 +47,16 @@
 - Isolated Cloudflare staging only; **no** merge, `main` write, production Worker change, email sending or payment activation.
 
 See also `EXPERIENCE_RESEARCH_STORY_AUDIT.md` for the research sources, visual-design choices and six-scene analysis.
+
+
+## Facilitator recovery follow-up — practical team failures
+
+A real 2–4-team session can stall if a player leaves after the host starts, or if the designated captain loses connectivity before selecting advisers. Added a **collapsed, host-only participant roster** with a captain transfer command and a carefully restricted emergency removal command.
+
+- **Captain transfer:** the host can nominate any current member of that team in lobby or an unfinished episode. It never changes the member's own vote, the team's prior result or another team's leadership.
+- **Lobby correction:** remove an accidental participant and revoke their credential; if that participant was captain, the oldest remaining teammate inherits the role. The affected team cannot start empty.
+- **In-play absence:** the host may remove an **unvoted** participant only at least 90 seconds into the 3+1-minute episode, and only when at least one teammate remains and the team has not already locked. This cannot erase already locked ballots, and the operation requires an explicit confirmation prompt.
+- **Fairness:** remaining votes are evaluated exactly once on the server after removing an absent participant. A tie still triggers the private runoff and the normal captain casting-vote rule. The server timestamp determines whether the team earns a normal finish, five-point reserve deduction, or misses the deadline. There is no fabricated ballot or skipped mandatory cost.
+- **Privacy:** only the host receives stable participant IDs and per-person **has-voted status**; rival teams and the projector do not. Vote selections stay private to their own team. A removed player's HTTP credential is rejected, and existing sockets are disconnected on room notification.
+
+**Limitations:** the host cannot remove a sole remaining player during an active round. An organiser could abuse administrative removal, so the panel is deliberately collapsed and in-round removal restricted to after 90 seconds and only nonvoters. This is an emergency facilitator tool, not an automatic voting policy or a replacement for session/device recovery. The verified ceiling remains 30 total participants.

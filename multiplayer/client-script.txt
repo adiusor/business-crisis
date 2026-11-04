@@ -29,6 +29,7 @@
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   let draftRunoffOrdinal = 0;
   let playerRenderKey = null;
+  let hostManageOpen = false;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -651,6 +652,55 @@
     },"primary submit-game",draftPlan===null||draftSignal===null||!allowed));
     target.append(node("p","Your individual ballot is final unless there is a tie. A runoff is private to your team and uses the same uninterrupted deadline."));
   }
+  function renderHostRoster(target){
+    if(state.phase==="complete")return;
+    const roster=state.hostRoster||[];
+    if(!roster.length)return;
+    const details=node("details",null,"host-roster");
+    details.open=hostManageOpen;
+    details.addEventListener("toggle",()=>{hostManageOpen=details.open;});
+    details.append(node("summary","FACILITATOR · MANAGE "+roster.length+" PARTICIPANTS"));
+    const note=node("p",state.phase==="lobby"?
+      "Correct accidental joins or hand over captainship before starting.":
+      "If a player disappears, transfer captainship. After 90 seconds you may remove a member who has not voted; locked votes cannot be discarded.",
+      "host-roster-help");
+    details.append(note);
+    for(const p of roster){
+      const team=state.teams[p.teamIndex],entry=node("div",null,"roster-entry");
+      const info=node("div",null,"roster-entry-info");
+      const title=node("strong",p.nickname);
+      title.append(node("span",p.captain?" · CAPTAIN":"",p.captain?"roster-captain":""));
+      info.append(title,node("small",team.name+(state.phase==="advisers"?
+        (p.hasVoted?" · VOTED":" · NOT VOTED"):"")));
+      entry.append(info);
+      const buttons=node("div",null,"roster-buttons");
+      if(!p.captain){
+        const promote=button("MAKE CAPTAIN",async()=>{
+          if(!window.confirm("Transfer captainship to "+p.nickname+" on "+team.name+"?"))return;
+          try{await action({type:"set_captain",playerId:p.id});}
+          catch(e){error(e.message);}
+        },"secondary");
+        promote.dataset.hostPromote=p.id;
+        buttons.append(promote);
+      }
+      const eligible=state.phase==="lobby"||
+        (state.phase==="advisers"&&!team.locked&&!p.hasVoted&&team.joined>1&&state.clock?.stage!=="closed");
+      const remove=button("REMOVE",async()=>{
+        if(!window.confirm("Remove "+p.nickname+" from "+team.name+
+          "? Their session will be revoked. Only remove someone who has left the game."))return;
+        try{await action({type:"remove_player",playerId:p.id});}
+        catch(e){error(e.message);}
+      },"secondary roster-remove",!eligible);
+      remove.dataset.hostRemove=p.id;
+      if(state.phase==="advisers"&&eligible){
+        remove.dataset.removeAfter=String(state.clock.normalEndsAt-90000);
+        remove.disabled=Date.now()+clockOffset<Number(remove.dataset.removeAfter);
+        remove.title="Available after 90 seconds if the participant has not voted";
+      }
+      buttons.append(remove);entry.append(buttons);details.append(entry);
+    }
+    target.append(details);
+  }
   function renderHostActions() {
     const target = $("host-actions");
     target.replaceChildren();
@@ -670,6 +720,7 @@
       if (!ready) target.append(node("p", "Teams still deciding or debating. Each team freezes its own clock after everyone votes and a winning proposal is confirmed."));
       else target.append(node("p", "ALL TEAMS FINISHED. You can start the next episode now."));
     } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
+    renderHostRoster(target);
   }
   function renderCashTrajectory(team) {
     const wrap=node("section",null,"cash-trajectory");
@@ -911,6 +962,10 @@
     $("timer-wrap").classList.toggle("grace", grace);
     $("timer-wrap").classList.toggle("stopped", stopped);
     renderTeamClocks();
+    if(state.viewer.role==="host"){
+      for(const el of document.querySelectorAll("[data-remove-after]"))
+        el.disabled=now<Number(el.dataset.removeAfter);
+    }
   }
   async function action(command) {
     error("");
@@ -928,9 +983,11 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote", "start", "advance"].includes(command.type);
+          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote", "start", "advance", "set_captain", "remove_player"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
+          if (["set_captain","remove_player"].includes(command.type) &&
+              !state.hostRoster?.some(p=>p.id===command.playerId))throw e;
           if (command.type === "advance" &&
             !(state.phase === "advisers" && state.teams.every(t=>t.locked))) throw e;
           if (command.type === "start" &&

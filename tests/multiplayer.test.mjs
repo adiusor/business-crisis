@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, ROOM_CODE_ALPHABET, SHORT_ROOM_CODE, LEGACY_ROOM_CODE, validRoomCode, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor, finalVerdict} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, EMERGENCY_REMOVAL_AFTER_MS, TEAM_NAME_POOL, ROOM_CODE_ALPHABET, SHORT_ROOM_CODE, LEGACY_ROOM_CODE, validRoomCode, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor, finalVerdict} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -671,4 +671,85 @@ test("final championship score ties break on cash; exact ties share, deductions 
  const penalized=verdict.ranked.find(x=>x.name==="ALPHA");
  assert.equal(penalized.score,0,"Final score does not go negative");
  assert.ok(verdict.scoringNote.includes("max(0"));
+});
+
+
+test("host can clean lobby joins and reassign captain without changing another team's leadership",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const b=enter(room,"Bob",0,2);room=b.room;
+ const c=enter(room,"Charlie",1,3);room=c.room;
+ assert.equal(viewFor(room,host).hostRoster.length,3);
+ assert.equal(viewFor(room,host).hostRoster.filter(x=>x.captain).length,2);
+ for(const viewer of [a.actor,b.actor,c.actor,{role:"projector"}]){
+  assert.equal(Object.hasOwn(viewFor(room,viewer),"hostRoster"),false);
+  assert.equal(JSON.stringify(viewFor(room,viewer)).includes('"player-001"'),false);
+ }
+ assert.throws(()=>act(room,b.actor,"set_captain",{playerId:b.actor.playerId}),/Only the host/);
+ assert.throws(()=>act(room,host,"set_captain",{playerId:"unknown-player"}),/Participant not found/);
+ room=act(room,host,"set_captain",{playerId:b.actor.playerId});
+ assert.equal(room.teams[0].captainId,b.actor.playerId);
+ assert.equal(room.teams[1].captainId,c.actor.playerId);
+ assert.equal(viewFor(room,b.actor).viewer.captain,true);
+ assert.equal(viewFor(room,a.actor).viewer.captain,false);
+ assert.throws(()=>act(room,host,"set_captain",{playerId:b.actor.playerId}),/Already the team captain/);
+ assert.throws(()=>act(room,a.actor,"remove_player",{playerId:b.actor.playerId}),/Only the host/);
+ room=act(room,host,"remove_player",{playerId:b.actor.playerId});
+ assert.equal(room.players.length,2);
+ assert.equal(room.teams[0].captainId,a.actor.playerId,"oldest teammate becomes captain");
+ assert.equal(room.teams[1].captainId,c.actor.playerId);
+ assert.throws(()=>authorize(room,hash("participant-2")) ,/Unauthorized/);
+ assert.throws(()=>viewFor(room,b.actor),/Unauthorized/);
+ assert.equal(viewFor(room,host).hostRoster.length,2);
+ room=act(room,host,"start");
+ assert.equal(room.phase,"advisers");
+});
+
+test("facilitator can rescue a team after 90 seconds without discarding votes or stopping other clocks",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const inactive=enter(room,"Absent",0,2);room=inactive.room;
+ const b=enter(room,"Bob",1,3);room=b.room;
+ const at=1000000;
+ assert.equal(EMERGENCY_REMOVAL_AFTER_MS,90000);
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},at+5);
+ room=applyRoomAction(room,a.actor,{type:"lock_vote",planIndex:1,signalIndex:2,expectedRevision:room.revision},at+10000);
+ const before=structuredClone(room);
+ assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:inactive.actor.playerId,expectedRevision:room.revision},at+89999),/90 seconds/);
+ assert.deepEqual(room,before);
+ assert.equal(room.teams[0].locked,false);
+ room=applyRoomAction(room,host,{type:"remove_player",playerId:inactive.actor.playerId,expectedRevision:room.revision},at+90000);
+ assert.equal(room.teams[0].locked,true,"remaining participant's ballot resolves once");
+ assert.equal(room.teams[0].lockedAtMs,at+90000);
+ assert.equal(room.teams[0].economic.history.length,1);
+ assert.equal(room.teams[0].economic.history[0].planIndex,1);
+ assert.equal(room.teams[0].economic.history[0].signalIndex,2);
+ assert.equal(room.teams[0].roundPenalty,0,"no late penalty after eligible rescue");
+ assert.equal(room.teams[1].locked,false,"opponent keeps deciding");
+ assert.equal(viewFor(room,a.actor,at+120000).privateTeam.teamClock.remainingMs,90000);
+ assert.throws(()=>authorize(room,hash("participant-2")) ,/Unauthorized/);
+ assert.throws(()=>act(room,host,"remove_player",{playerId:inactive.actor.playerId}),/Participant not found/);
+ assert.throws(()=>act(room,host,"set_captain",{playerId:inactive.actor.playerId}),/Participant not found/);
+});
+
+test("emergency removal cannot delete submitted ballots or leave a team empty",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const teammate=enter(room,"Eve",0,2);room=teammate.room;
+ const b=enter(room,"Bob",1,3);room=b.room;
+ const at=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},at+1);
+ room=applyRoomAction(room,a.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+1000);
+ assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:a.actor.playerId,expectedRevision:room.revision},at+95000),/submitted vote/);
+ assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:b.actor.playerId,expectedRevision:room.revision},at+95000),/last member/);
+ assert.equal(room.players.length,3);
+ room=applyRoomAction(room,host,{type:"set_captain",playerId:teammate.actor.playerId,expectedRevision:room.revision},at+5000);
+ assert.equal(room.teams[0].captainId,teammate.actor.playerId);
+ assert.equal(viewFor(room,teammate.actor).viewer.captain,true);
+ assert.equal(viewFor(room,host).hostRoster.find(x=>x.id===a.actor.playerId).hasVoted,true);
+ room=applyRoomAction(room,teammate.actor,{type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+6000);
+ assert.equal(room.teams[0].locked,true);
+ assert.throws(()=>applyRoomAction(room,host,{type:"remove_player",playerId:teammate.actor.playerId,expectedRevision:room.revision},at+100000),/already finished/);
 });

@@ -7,6 +7,7 @@ export const MAX_PLAYERS=30; // Input ceiling; NOT a verified load capacity.
 export const ROOM_TTL_MS=24*60*60*1000;
 export const ROUND_MS=180000, GRACE_MS=60000;
 export const GRACE_PENALTY=5, NO_ANSWER_PENALTY=12;
+export const EMERGENCY_REMOVAL_AFTER_MS=90000;
 export const TEAM_NAME_POOL=Object.freeze([
  "THE NIGHT SHIFT","BOARDROOM BANDITS","CRISIS CONTROL","THE FIXERS",
  "PANIC DEPARTMENT","THE DAMAGE LIMITERS","PLAN B","DEADLINE DIVISION",
@@ -254,7 +255,37 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  const next=clone(room),isHost=actor&&actor.role==="host";
  const player=!isHost&&actor&&actor.role==="player"&&next.players.find(p=>p.id===actor.playerId);
  const type=command.type;
- if(type==="change_team"){
+ if(type==="set_captain"){
+  requireState(isHost,403,"Only the host can transfer captainship");
+  requireState(next.phase==="lobby"||next.phase==="advisers",409,"Captainship changes are closed");
+  const target=next.players.find(p=>p.id===command.playerId);
+  requireState(!!target,404,"Participant not found");
+  const team=next.teams[target.teamIndex];
+  requireState(team.captainId!==target.id,409,"Already the team captain");
+  team.captainId=target.id;
+ }else if(type==="remove_player"){
+  requireState(isHost,403,"Only the host can remove a participant");
+  requireState(next.phase==="lobby"||next.phase==="advisers",409,"Participant removal is closed");
+  const target=next.players.find(p=>p.id===command.playerId);
+  requireState(!!target,404,"Participant not found");
+  const team=next.teams[target.teamIndex];
+  if(next.phase==="advisers"){
+   requireState(nowMs-next.startedAtMs>=EMERGENCY_REMOVAL_AFTER_MS,409,
+    "Emergency removal opens 90 seconds after the episode starts");
+   requireState(clockFor(next,nowMs).stage!=="closed",409,"Episode deadline passed");
+   requireState(!team.locked,409,"The team has already finished");
+   requireState(!team.votes?.[target.id]?.locked,409,"An already submitted vote cannot be removed");
+   requireState(next.players.filter(p=>p.teamIndex===target.teamIndex).length>1,409,
+    "Cannot remove the last member of a team during an episode");
+  }
+  next.players=next.players.filter(p=>p.id!==target.id);
+  if(team.captainId===target.id)
+   team.captainId=next.players.find(p=>p.teamIndex===target.teamIndex)?.id||null;
+  // During play, removing a missing (unvoted) participant can reveal a
+  // definitive winning vote among the remaining members. Resolve precisely
+  // once using the unchanged server-authoritative economics and clock.
+  if(next.phase==="advisers")resolveVotes(next,target.teamIndex,nowMs);
+ }else if(type==="change_team"){
   requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can change teams");
   const destination=command.teamIndex;
   requireState(Number.isInteger(destination)&&destination>=0&&destination<next.teams.length,400,"Invalid destination team");
@@ -361,6 +392,11 @@ export function viewFor(room,actor,nowMs=Date.now()){
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
   lastRecap:publicRecap(room.lastRecap),teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
+  ...(actor.role==="host"?{hostRoster:room.players.map(p=>({
+    id:p.id,nickname:p.nickname,teamIndex:p.teamIndex,
+    captain:room.teams[p.teamIndex].captainId===p.id,
+    hasVoted:!!room.teams[p.teamIndex].votes?.[p.id]?.locked
+  }))}:{}),
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,
    ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
    roundPenalty:t.roundPenalty,votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,

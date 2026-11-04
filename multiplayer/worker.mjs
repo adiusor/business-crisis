@@ -149,6 +149,11 @@ export class CrisisRoom extends DurableObject {
     for (const ws of this.ctx.getWebSockets()) {
       const attachment = ws.deserializeAttachment();
       if (!attachment || attachment.role === "pending") continue;
+      if(attachment.role==="player" &&
+         !room.players.some(p=>p.id===attachment.playerId)){
+        try{ws.close(1008,"Participant access revoked");}catch(_){}
+        continue;
+      }
       if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){
         try { ws.close(1008, "Projector access revoked"); } catch (_) {}
         continue;
@@ -240,6 +245,10 @@ export class CrisisRoom extends DurableObject {
           {...actor, credentialHash: await sha256(input.token)} : actor);
         ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, actor)}));
         return;
+      }
+      if(attachment.role==="player" &&
+         !room.players.some(p=>p.id===attachment.playerId)){
+        ws.close(1008,"Participant access revoked");return;
       }
       if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){
         ws.close(1008, "Projector access revoked"); return;

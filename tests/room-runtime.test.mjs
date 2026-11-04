@@ -186,6 +186,38 @@ try {
   assert.equal(JSON.stringify(final).includes('"intelligence"'), false, "No private advice in host results");
   assert.equal(JSON.stringify(final).includes('"credentialHash"'), false, "No credentials in host results");
 
+  // Test the facilitator recovery actions through real Durable Object storage:
+  // move captainship to a teammate, then remove that (unvoted) teammate from
+  // the lobby. Revoked credentials must not access the new room state.
+  const admin=await req("/api/rooms","POST",{teamCount:2},creationKey);
+  assert.equal(admin.response.status,201);
+  const adminCode=admin.payload.roomCode,adminToken=admin.payload.hostToken;
+  const anna=await req("/api/rooms/"+adminCode+"/join","POST",{nickname:"Anna",teamIndex:0});
+  const ben=await req("/api/rooms/"+adminCode+"/join","POST",{nickname:"Ben",teamIndex:0});
+  const cleo=await req("/api/rooms/"+adminCode+"/join","POST",{nickname:"Cleo",teamIndex:1});
+  assert.equal(anna.response.status,201);
+  assert.equal(ben.response.status,201);
+  assert.equal(cleo.response.status,201);
+  const adminView=(await req("/api/rooms/"+adminCode+"/state","GET",undefined,adminToken)).payload.state;
+  assert.equal(adminView.hostRoster.length,3);
+  assert.equal(JSON.stringify(anna.payload.state).includes("hostRoster"),false,
+    "Players cannot see facilitator-only participant identifiers");
+  const benId=adminView.hostRoster.find(p=>p.nickname==="Ben").id;
+  const transferred=await req("/api/rooms/"+adminCode+"/actions","POST",
+    {type:"set_captain",playerId:benId,expectedRevision:adminView.revision},adminToken);
+  assert.equal(transferred.response.status,200);
+  assert.equal(transferred.payload.state.hostRoster.find(p=>p.nickname==="Ben").captain,true);
+  const removed=await req("/api/rooms/"+adminCode+"/actions","POST",
+    {type:"remove_player",playerId:benId,expectedRevision:transferred.payload.state.revision},adminToken);
+  assert.equal(removed.response.status,200);
+  assert.equal(removed.payload.state.hostRoster.length,2);
+  assert.equal(removed.payload.state.hostRoster.find(p=>p.nickname==="Anna").captain,true,
+    "Original member inherits leadership after the captain leaves");
+  assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,ben.payload.playerToken)).response.status,401,
+    "Removed user's bearer token is revoked");
+  assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,anna.payload.playerToken)).response.status,200);
+  assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,cleo.payload.playerToken)).response.status,200);
+
   // Projector-only credentials: HTTP and WebSocket must expose no player identities or controls.
   const grant=await req("/api/rooms/" + roomCode + "/projector-access","POST",{},hostToken);
   assert.equal(grant.response.status,200);
@@ -262,6 +294,19 @@ try {
     await hostUI.waitForFunction(() => document.querySelector("#team-list")?.textContent?.includes("Mobile Bob"));
     assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
       "No start when all players join the same team");
+    await hostUI.locator(".host-roster summary").click();
+    assert.equal(await hostUI.locator(".roster-entry").count(),2,
+      "Host sees a compact, collapsed-by-default participant management panel");
+    assert.equal(await phoneA.locator(".host-roster").count(),0,
+      "Player devices must never see host management controls");
+    hostUI.once("dialog",dialog=>dialog.accept());
+    await hostUI.locator(".roster-entry").filter({hasText:"Mobile Bob"})
+      .getByRole("button",{name:"MAKE CAPTAIN"}).click();
+    await hostUI.waitForFunction(()=>
+      document.querySelector(".roster-entry")?.textContent?.includes("CAPTAIN") &&
+      [...document.querySelectorAll(".roster-entry")].some(x=>
+        x.textContent.includes("Mobile Bob")&&x.textContent.includes("CAPTAIN")));
+
     // Host can issue a projection link without revealing their own host bearer token.
     await hostUI.locator("#rotate-projector").click();
     await hostUI.locator("#projector-link").waitFor({state:"visible"});
@@ -301,6 +346,11 @@ try {
       "Rebalancing 2 devices enables game start");
     assert.equal(await phoneB.locator("#captain-tools").isVisible(),true,
       "First participant on destination team becomes captain");
+    await phoneA.waitForFunction(()=>document.querySelector("#captain-tools") &&
+      !document.querySelector("#captain-tools").hidden,
+      null,{timeout:12000});
+    assert.equal(await hostUI.locator(".roster-entry").count(),2);
+
 
     const original = (await phoneA.locator(".team.mine strong").textContent()).trim();
     const options = await phoneA.locator("#team-name-choice option").evaluateAll(xs => xs.map(x => x.value));
@@ -313,6 +363,9 @@ try {
     await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
     assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
+    assert.equal(await hostUI.locator(".roster-entry button.roster-remove:disabled").count(),2,
+      "Facilitator may not remove a team's only member during a live round");
+
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     // Cinematic scene remains scannable: one hero, six chapter markers, and

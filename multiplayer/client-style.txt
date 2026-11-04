@@ -545,3 +545,27 @@ body{background:radial-gradient(ellipse at 15% -15%,#183a4b 0%,transparent 52%),
 .pulse-footnote{display:block;color:#aec5cc;font-size:9px;letter-spacing:.04em}
 @media(max-width:610px){.pulse-rows{grid-template-columns:1fr;gap:11px}}
 @media(prefers-reduced-motion:reduce){.pulse-fill{transition:none!important}}
+
+
+/* Host-only facilitator tools, collapsed to keep the live incident uncluttered. */
+.host-roster{border:1px solid #4b6c78;background:#0e2934;margin:17px 0;padding:0}
+.host-roster summary{cursor:pointer;padding:14px 17px;font-size:12px;letter-spacing:.08em;
+ font-weight:900;color:#f3bc8b;list-style:none}
+.host-roster summary::-webkit-details-marker{display:none}
+.host-roster summary:after{content:"  +"}
+.host-roster[open] summary:after{content:"  −"}
+.host-roster-help{margin:0;padding:0 17px 14px;font-size:13px;line-height:1.45;color:#c4d5da}
+.roster-entry{display:flex;justify-content:space-between;align-items:center;gap:12px;
+ padding:10px 17px;border-top:1px solid #315665}
+.roster-entry-info{min-width:0;display:grid;gap:4px}
+.roster-entry-info strong{font-size:13px;color:#f2efea}
+.roster-entry-info small{font-size:11px;color:#bbd4dc;overflow-wrap:anywhere}
+.roster-captain{color:#efba8d;font-size:10px;letter-spacing:.08em}
+.roster-buttons{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.roster-buttons button{min-height:38px;font-size:11px;margin:0;padding:8px 11px}
+.roster-buttons button:disabled{opacity:.42;cursor:not-allowed}
+.roster-buttons .roster-remove:not(:disabled){border-color:#a97972;color:#f9c0b5}
+@media(max-width:520px){
+ .roster-entry{align-items:flex-start;flex-direction:column}
+ .roster-buttons{justify-content:flex-start}
+}
