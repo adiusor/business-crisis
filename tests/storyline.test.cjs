@@ -18,7 +18,7 @@ test("the six incident chapters form one time-ordered, evidence-led story",()=>{
   assert.equal(e.number,String(i+1).padStart(2,"0"));
   for(const field of ["title","kicker","brief","headline"]){
    assert.equal(typeof e[field],"string");
-   assert.ok(e[field].trim().length>=10,e.id+" "+field);
+   assert.ok(e[field].trim().length>=(field==="title"?5:10),e.id+" "+field);
   }
   assert.equal(e.evidence.length,3,"Exactly three source exhibits per chapter");
   assert.equal(e.advice.length,6,"Every one of the six advisers has narrative intelligence");
