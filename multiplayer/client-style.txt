@@ -715,8 +715,9 @@ h1,h2,h3{font-family:var(--bc-editorial)}
 @media(max-width:700px){
  .scene-facts{gap:5px;margin:12px 0 4px}
  .scene-fact{min-height:61px;padding:9px 7px}
- .scene-fact dt{font-size:.58rem;letter-spacing:.035em}
- .scene-fact dd{font-size:clamp(.88rem,3.5vw,1.1rem);overflow-wrap:anywhere}
+ .scene-fact dt{font-size:.68rem;letter-spacing:.015em;overflow-wrap:normal;word-break:normal}
+ .scene-fact dd{font-size:clamp(.79rem,3.3vw,1.08rem);letter-spacing:-.035em;
+  overflow-wrap:normal;word-break:normal;white-space:nowrap}
  .scene-film{opacity:.52}
  #player-actions .choice small{font-size:.7rem}
  #player-actions .choice strong{font-size:.78rem}
