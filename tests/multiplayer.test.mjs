@@ -545,8 +545,10 @@ test("2-player tie triggers private runoff and only the final winning complete b
  assert.equal(room.teams[0].runoff.ordinal,1);
  assert.equal(viewFor(room,a.actor,start+3000).privateTeam.voting.runoff.choices.length,2);
  assert.equal(viewFor(room,a.actor,start+3000).privateTeam.teamClock.stage,"normal");
- for(const viewer of [host,b.actor,{role:"projector"}])
-  assert.equal(JSON.stringify(viewFor(room,viewer,start+3000)).includes('"runoff"'),false,"No opposing-runoff disclosure");
+ assert.equal(Object.hasOwn(viewFor(room,host,start+3000),"privateTeam"),false);
+ assert.equal(Object.hasOwn(viewFor(room,{role:"projector"},start+3000),"privateTeam"),false);
+ assert.equal(viewFor(room,b.actor,start+3000).privateTeam.voting.runoff,null,
+  "Opponent has no runoff details");
  assert.throws(()=>applyRoomAction(room,a.actor,
   {type:"lock_vote",planIndex:2,signalIndex:2,expectedRevision:room.revision},start+3001),/two runoff proposals/);
  room=applyRoomAction(room,a.actor,{type:"lock_vote",...a1,expectedRevision:room.revision},start+4000);
@@ -574,7 +576,8 @@ test("three player majority applies a complete proposal once, without disclosing
  assert.equal(room.teams[0].locked,true);
  assert.equal(room.teams[0].economic.history[0].planIndex,1);
  assert.equal(room.teams[0].economic.history.length,1);
- assert.equal(JSON.stringify(viewFor(room,host)).includes('"myVote"'),false);
- assert.equal(JSON.stringify(viewFor(room,b.actor)).includes('"myVote"'),false);
+ assert.equal(Object.hasOwn(viewFor(room,host),"privateTeam"),false);
+ assert.equal(viewFor(room,b.actor).privateTeam.voting.myVote,null);
+ assert.equal(viewFor(room,b.actor).privateTeam.voting.runoff,null);
  assert.equal(viewFor(room,host).teams[0].votesSubmitted,3);
 });
