@@ -395,6 +395,17 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  next.revision++;
  return next;
 }
+// Consequences are delivered only to the team that made the choice. The boardroom
+// and rival teams never receive private financial snapshots during play.
+function lastTeamImpact(economic){
+ const history=economic.history;
+ if(!history.length)return null;
+ const last=history[history.length-1],previous=history[history.length-2];
+ return {round:last.round,plan:last.plan,fallout:last.fallout,
+  roundSpent:last.roundSpent,trustChange:last.trust-(previous?previous.trust:45),
+  pendingLiability:last.pendingLiability,paidDeferred:last.paidDeferred.slice(),
+  timedOut:!!last.timedOut};
+}
 export function viewLobby(room){
  return {code:room.code,phase:room.phase,revision:room.revision,teamNameOptions:TEAM_NAME_POOL.slice(),
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length}))};
@@ -439,5 +450,6 @@ export function viewFor(room,actor,nowMs=Date.now()){
    intelligence:room.phase==="advisers"?t.advisers.map(i=>({name:C.advisers[i].name,role:C.advisers[i].role,brief:episode.advice[i]})):[],
    economic:{cash:eco.cash,trust:eco.trust,risks:clone(eco.risks),
     pendingLiability:eco.pending.reduce((sum,x)=>sum+x.cost,0),nextRound:eco.nextRound},
-   roundResults:t.roundResults.map(x=>({...x}))}};
+   roundResults:t.roundResults.map(x=>({...x})),
+    lastImpact:lastTeamImpact(eco)}};
 }
