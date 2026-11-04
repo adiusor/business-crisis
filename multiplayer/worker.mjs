@@ -227,8 +227,14 @@ export class CrisisRoom extends DurableObject {
         const pair = new WebSocketPair();
         const [client, server] = Object.values(pair);
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({role:"pending",createdAtMs:Date.now()});
-        await this.schedule(room);
+        const connectedAtMs=Date.now();
+        server.serializeAttachment({role:"pending",createdAtMs:connectedAtMs});
+        // A newly accepted socket might not appear in getWebSockets() before
+        // the upgrade response is returned. Schedule its initial expiry now.
+        const scheduled=await this.ctx.storage.getAlarm();
+        await this.ctx.storage.setAlarm(Math.min(
+          Number.isSafeInteger(scheduled)?scheduled:Infinity,
+          connectedAtMs+PENDING_SOCKET_TTL_MS));
         return new Response(null, {status: 101, webSocket: client});
       }
       fail(404, "Not found");
