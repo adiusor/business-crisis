@@ -442,10 +442,14 @@
     }
     panel.append(list);return panel;
   }
+  let nextSelectId = 0;
   function labelledSelect(labelText, options, value, onChange, className = "decision-select") {
     const wrap = node("div");
-    wrap.append(node("label", labelText, "decision-label"));
+    const label = node("label", labelText, "decision-label");
     const select = node("select", null, className);
+    select.id = "decision-select-" + (++nextSelectId);
+    label.htmlFor = select.id;
+    wrap.append(label);
     for (const {value: v, label} of options) {
       const opt = node("option", label);
       opt.value = String(v); select.append(opt);
@@ -474,6 +478,31 @@
         Math.min(100,Math.round(count/voting.totalMembers*100))+"%";
     }
   }
+  function renderTeamAftershock(impact) {
+    const report = node("section", null, "aftershock-report");
+    report.setAttribute("aria-label", "Private consequence of your last team decision");
+    report.append(node("small", "AFTERSHOCK / YOUR EPISODE " +
+      String(impact.round).padStart(2,"0"), "aftershock-eyebrow"));
+    report.append(node("h3", impact.timedOut ? "NO RESPONSE FILED" : impact.plan,
+      "aftershock-title"));
+    report.append(node("p", impact.fallout, "aftershock-fallout"));
+    const ledger = node("div", null, "aftershock-ledger");
+    const trust = impact.trustChange;
+    for (const [label,value] of [
+      ["TOTAL PAID THIS EPISODE","£" + impact.roundSpent.toLocaleString("en-GB")],
+      ["CLIENT TRUST CHANGE",(trust>0?"+":"") + trust + " pts"],
+      ["REMAINING COMMITMENTS","£" + impact.pendingLiability.toLocaleString("en-GB")]
+    ]) {
+      const entry=node("div",null,"aftershock-stat");
+      entry.append(node("small",label),node("strong",value));ledger.append(entry);
+    }
+    report.append(ledger);
+    if(impact.paidDeferred.length){
+      report.append(node("p","PREVIOUS PROMISES PAID THIS EPISODE: "+
+        impact.paidDeferred.join("; "),"aftershock-deferred"));
+    }
+    return report;
+  }
   function renderPlayerActions(force = false) {
     const target = $("player-actions");
     target.hidden = state.viewer.role !== "player";
@@ -485,7 +514,7 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.voting?.myVote,privateData.voting?.runoff,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
     if(!force && playerRenderKey===snapshotKey){
@@ -529,6 +558,7 @@
     }
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
     target.append(renderPrivateExposure(privateData.economic));
+    if (privateData.lastImpact) target.append(renderTeamAftershock(privateData.lastImpact));
     const progress = node("div", null, "ballot-progress");
     const voteHeadline=node("strong", mine.locked ?
       (mine.timedOut ? "DEADLINE MISSED" : "TEAM DECISION LOCKED · CLOCK STOPPED") :
