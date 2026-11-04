@@ -1,0 +1,71 @@
+name: Deploy isolated multiplayer preview
+on:
+  push:
+    branches:
+      - feature/real-multiplayer-foundation
+    paths:
+      - "multiplayer/**"
+      - "src/content.js"
+      - "src/rules.js"
+      - "tests/multiplayer.test.mjs"
+      - ".github/workflows/deploy-multiplayer-preview.yml"
+      - "package.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: business-crisis-multiplayer-preview
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Syntax and integration tests
+        run: |
+          node --check multiplayer/src/worker.mjs
+          node --check multiplayer/public/app.js
+          node tests/multiplayer.test.mjs
+      - name: Dry-run preview Worker bundle
+        run: npx wrangler deploy --dry-run --config multiplayer/wrangler.toml --outdir /tmp/bc-preview-bundle
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN || secrets.CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || vars.CLOUDFLARE_ACCOUNT_ID || secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check for existing Cloudflare deployment credentials
+        shell: bash
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Preview deployment is blocked: set repository Actions secret CLOUDFLARE_API_TOKEN and Actions secret or variable CLOUDFLARE_ACCOUNT_ID. No Cloudflare account credentials were accessed or created."
+            echo "## Preview deployment blocked" >> "$GITHUB_STEP_SUMMARY"
+            echo "Missing GitHub Actions Cloudflare API token or account ID. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (secret or variable) in the repository's Actions settings, then rerun this workflow." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - run: npm install --no-audit --no-fund
+      - name: Deploy ONLY the isolated preview Worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config multiplayer/wrangler.toml | tee /tmp/bc-preview-deploy.log
+          url=$(grep -Eo 'https://[A-Za-z0-9.-]+\.workers\.dev' /tmp/bc-preview-deploy.log | tail -n1 || true)
+          if [[ -z "$url" ]]; then
+            echo "::error::Wrangler did not return a verifiable workers.dev preview URL"
+            exit 1
+          fi
+          echo "## Isolated preview deployment" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview URL: $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Existing production Worker remains unchanged." >> "$GITHUB_STEP_SUMMARY"
+          curl --fail --silent --show-error --retry 8 --retry-delay 3 "$url/api/content" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{const d=JSON.parse(s);if(d.episodes?.length!==6)process.exit(1);console.log("Preview API smoke test PASS: six episodes");})'
