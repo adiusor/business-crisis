@@ -270,6 +270,12 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   const script = await fs.readFile(new URL("../multiplayer/client-script.txt", import.meta.url), "utf8");
   const style = await fs.readFile(new URL("../multiplayer/client-style.txt", import.meta.url), "utf8");
   assert.match(html, /\/room-script\.js/);
+  assert.match(html, /\/room-art\.js/);
+  assert.match(script, /BCPreviewArt\.portrait/, "Adviser portraits use isolated graphic assets");
+  const art = await fs.readFile(new URL("../multiplayer/client-art.txt", import.meta.url), "utf8");
+  assert.match(art, /BCPreviewArt/);
+  assert.doesNotMatch(art, /g\.BCContent|privateTeam|roomToken|credentialHash/,
+    "Shared illustration bundle must not contain private story or room tokens");
   assert.match(html, /\/room-style\.css/);
   assert.match(script, /\/api\/rooms\//);
   assert.match(script, /new WebSocket/);

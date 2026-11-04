@@ -312,7 +312,9 @@ try {
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     // Cinematic scene remains scannable: one hero, six chapter markers, and
     // evidence whose full source paragraphs are progressively disclosed.
-    assert.equal(await phoneA.locator(".scene-art svg").count(),1);
+    assert.equal(await phoneA.locator(".scene-art > svg").count(),1);
+    assert.equal(await phoneA.locator(".scene-film svg").count(),1,
+      "Each cinematic incident contains its original illustration layer");
     assert.equal(await phoneA.locator(".episode-progress li").count(),6);
     assert.equal(await phoneA.locator(".evidence-item[open]").count(),0);
     assert.equal(await phoneA.locator(".briefing-details[open]").count(),0);
@@ -325,8 +327,18 @@ try {
     assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
 
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
+    await projected.locator("#projector-ticker").waitFor({state:"visible",timeout:12000});
+    assert.equal(await projected.locator(".ticker-team").count(),2);
+    assert.equal(await projected.locator(".ticker-clock").count(),2);
+    assert.equal(await projected.locator("#team-list").isVisible(),false,
+      "Projector ticker replaces below-the-fold duplicate roster");
     assert.equal(await projected.locator(".evidence-item").count(),3);
 
+    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
+      "Six original illustrated adviser portraits appear in multiplayer");
+    assert.equal(await phoneA.locator(".jump-decision").count(),1);
+    assert.equal(await phoneA.locator("#room-screen").evaluate(el=>getComputedStyle(el).display),"flex",
+      "Player decisions are prioritised over long rosters");
     await phoneA.locator('[data-choice="0"]').click();
     await phoneA.locator('[data-choice="1"]').click();
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
@@ -343,6 +355,8 @@ try {
     await phoneA.locator('[data-plan="0"]').click();
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
+    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
+      null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
     const frozen=await phoneA.locator("#timer").textContent();
     await delay(1200);

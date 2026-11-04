@@ -7,6 +7,7 @@
   <meta name="description" content="BUSINESS CRISIS — multiplayer room preview">
   <title>BUSINESS CRISIS / LIVE ROOM PREVIEW</title>
   <link rel="stylesheet" href="/room-style.css">
+  <script src="/room-art.js" defer></script>
   <script src="/room-script.js" defer></script>
 </head>
 <body>
@@ -93,9 +94,10 @@
         </div>
         <div id="room-message" role="status" aria-live="polite"></div>
         <div id="ready-notice" class="ready-notice" role="status" aria-live="polite" hidden></div>
+        <div id="projector-ticker" class="projector-ticker" aria-label="Live status of all teams" hidden></div>
         <div id="episode-panel" class="episode-panel" hidden></div>
         <div id="round-recap" class="round-recap" hidden></div>
-        <h3 class="section-label">THE TEAMS</h3>
+        <h3 class="section-label" id="team-heading">THE TEAMS</h3>
         <div id="team-list" class="team-list"></div>
         <div id="captain-tools" hidden>
           <label for="team-name-choice">Change your team callsign before the start</label>

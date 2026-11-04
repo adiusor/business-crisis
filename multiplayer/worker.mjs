@@ -4,6 +4,7 @@ import QRCode from "qrcode-svg";
 import CLIENT_HTML from "./client.html";
 import CLIENT_STYLE from "./client-style.txt";
 import CLIENT_SCRIPT from "./client-script.txt";
+import CLIENT_ART from "./client-art.txt";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
   clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
 
@@ -52,6 +53,8 @@ export default {
           return htmlResponse(CLIENT_STYLE, "text/css; charset=utf-8");
         if (url.pathname === "/room-script.js")
           return htmlResponse(CLIENT_SCRIPT, "text/javascript; charset=utf-8");
+        if (url.pathname === "/room-art.js")
+          return htmlResponse(CLIENT_ART, "text/javascript; charset=utf-8");
         if (url.pathname === "/healthz")
           return json({ok: true, service: "room-prototype", deployedGame: false});
       }

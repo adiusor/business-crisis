@@ -150,6 +150,21 @@
     banner.hidden = !text;
     banner.textContent = text;
   }
+  function renderProjectorTicker(){
+    const target=$("projector-ticker");
+    const show=state.viewer.role==="projector"&&state.phase==="advisers";
+    target.hidden=!show;
+    target.replaceChildren();
+    if(!show)return;
+    for(const [i,t] of state.teams.entries()){
+      const item=node("div",null,"ticker-team"+(t.locked?" is-ready":""));
+      item.append(node("strong",t.name));
+      item.append(node("span",t.timedOut?"MISSED DEADLINE":t.locked?
+        "TEAM READY":(t.votesSubmitted||0)+"/"+t.joined+" VOTED","ticker-status"));
+      const clock=node("small",null,"ticker-clock");
+      clock.dataset.teamClock=String(i);item.append(clock);target.append(item);
+    }
+  }
   function renderTeamClocks() {
     if (!state || state.phase !== "advisers" || !state.clock) return;
     const now = Date.now() + clockOffset, clock = state.clock;
@@ -158,7 +173,7 @@
       return String(Math.floor(sec/60)).padStart(2,"0") + ":" +
         String(sec%60).padStart(2,"0");
     };
-    const nodes = $("team-list").querySelectorAll("[data-team-clock]");
+    const nodes = document.querySelectorAll("[data-team-clock]");
     nodes.forEach(el => {
       const i = Number(el.dataset.teamClock), team = state.teams[i];
       if (!team) return;
@@ -246,6 +261,15 @@
       p("M97 171 L244 171 M126 38 L217 38");
       add("circle",{cx:171,cy:103,r:83,class:"scene-ring"});
     }
+    if(window.BCPreviewArt && typeof window.BCPreviewArt.scene==="function"){
+      const film=node("div",null,"scene-film");
+      film.setAttribute("aria-hidden","true");
+      const names=["mail","floor","client","press","warehouse","board"];
+      // Audited project illustration: static SVG only, no participant data.
+      film.innerHTML=window.BCPreviewArt.scene(names[n-1]||"mail")
+        .replace('class="scene-art"','class="scene-film-svg"');
+      wrap.append(film);
+    }
     wrap.append(svg);
     const num = node("span",String(number).padStart(2,"0"),"scene-watermark");
     num.setAttribute("aria-hidden","true");wrap.append(num);
@@ -284,6 +308,10 @@
     });
     progress.setAttribute("aria-label","Six episode storyline");
     box.append(progress);
+    if(state.viewer.role==="player"){
+      const jump=node("a","GO TO YOUR TEAM DECISION ↓","jump-decision");
+      jump.href="#player-actions";box.append(jump);
+    }
     const brief=node("details",null,"briefing-details");
     brief.open=briefingOpen;
     brief.addEventListener("toggle",()=>{briefingOpen=brief.open;});
@@ -450,7 +478,7 @@
       target.append(node("p", "Once saved, the briefings are available privately to all your teammates."));
       const grid = node("div", null, "choice-grid");
       for (let i = 0; i < ADV.length; i++) {
-        const item = button(ADV[i][0], () => {
+        const item = button("", () => {
           if (draftPicks.includes(i)) draftPicks = draftPicks.filter(n => n !== i);
           else if (draftPicks.length < 2) draftPicks.push(i);
           renderPlayerActions();
@@ -458,7 +486,14 @@
         }, "choice" + (draftPicks.includes(i) ? " selected" : ""));
         item.dataset.choice = i;
         item.setAttribute("aria-pressed", String(draftPicks.includes(i)));
-        item.append(node("small", ADV[i][1])); grid.append(item);
+        if(window.BCPreviewArt && typeof window.BCPreviewArt.portrait==="function"){
+          const portrait=node("span",null,"adviser-portrait");
+          portrait.setAttribute("aria-hidden","true");
+          portrait.innerHTML=window.BCPreviewArt.portrait(i);
+          item.append(portrait);
+        }
+        item.append(node("strong",ADV[i][0]),node("small",ADV[i][1]));
+        grid.append(item);
       }
       target.append(grid);
       target.append(button("SAVE TWO PICKS", async () => {
@@ -758,6 +793,7 @@
     $("room-code").parentElement.hidden = state.phase !== "lobby";
     const projection = state.viewer.role === "projector";
     document.body.classList.toggle("projector-mode", projection);
+    document.body.classList.toggle("player-view", state.viewer.role === "player");
     document.body.classList.toggle("in-game", state.phase === "advisers");
     document.body.classList.toggle("game-complete", state.phase === "complete");
     $("viewer-mode").hidden = !projection;
@@ -779,7 +815,7 @@
       $("join-link").textContent = link; $("join-link").href = link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
-    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
     tick();
   }
   function tick() {

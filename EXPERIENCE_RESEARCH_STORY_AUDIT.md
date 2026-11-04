@@ -13,6 +13,8 @@
 ## Applied in staging
 
 - Episode-first cinematic hero with distinct vector artwork for all six situations, dramatic but readable typography and a six-step timeline.
+- Original authored scene illustrations and six illustrated adviser portraits are reused from a **visual-only** client asset, preserving the standalone game's strongest visual identity without revealing server-private narrative advice.
+- A projector-only public readiness ticker stays above the scene, and player vote controls move ahead of roster details. On narrow phones, six adviser portraits use a compact two-column gallery and a jump-to-decision link.
 - Three *immediately readable* evidence findings per episode. The full source paragraphs remain behind clearly labelled, keyboard-operable disclosures. The complete narrative brief remains accessible.
 - Strategy cards show name and proposal at first glance; benefits, price and tradeoffs remain accessible behind “Reveal trade-offs.” No strategy, public statement, adviser, or economic consequence has been deleted.
 - The two private adviser briefings are grouped into one collapsible dossier.
