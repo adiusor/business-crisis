@@ -71,6 +71,35 @@ test("selections are team-private; host can see readiness but not adviser picks"
   assert.equal(viewFor(room, a.actor).viewer.captain, true);
 });
 
+test("team-private aftershock is grounded in its ledger and withheld from opponents and projector", () => {
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const bob=enter(room,"Bob",1,2);room=bob.room;
+ room=act(room,host,"start");
+ assert.equal(viewFor(room,alice.actor).privateTeam.lastImpact,null);
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+ room=act(room,alice.actor,"lock_advisers");
+ const impact=viewFor(room,alice.actor).privateTeam.lastImpact;
+ const outcome=room.teams[0].economic.history[0];
+ assert.equal(impact.round,1);
+ assert.equal(impact.plan,"CONTAIN THE LEAK");
+ assert.equal(impact.fallout,outcome.fallout,"Story payoff must use committed scenario data");
+ assert.equal(impact.roundSpent,26000,"Cost includes compulsory operating expense");
+ assert.equal(impact.trustChange,10,"Trust delta is relative to the previous baseline");
+ assert.equal(impact.pendingLiability,0);
+ assert.deepEqual(impact.paidDeferred,[]);
+ assert.equal(viewFor(room,bob.actor).privateTeam.lastImpact,null);
+ const secret=outcome.fallout;
+ for(const other of [viewFor(room,host),viewFor(room,{role:"projector"}),viewFor(room,bob.actor)]){
+  assert.doesNotMatch(JSON.stringify(other),new RegExp(secret.slice(0,28)),
+   "Other roles must not receive this team's private narrative");
+ }
+ const at=Date.now()+ROUND_MS+GRACE_MS+10;
+ room=expireRoom(room,at);
+ assert.equal(viewFor(room,bob.actor).privateTeam.lastImpact.timedOut,true);
+ assert.equal(viewFor(room,bob.actor).privateTeam.lastImpact.plan,"NO RESPONSE");
+ assert.equal(viewFor(room,bob.actor).privateTeam.lastImpact.trustChange,-10);
+});
 test("captain selects advisers; every teammate must vote before team clock stops", () => {
   let {room,host}=fixture();
   const a=enter(room,"Alice",0,1);room=a.room;
