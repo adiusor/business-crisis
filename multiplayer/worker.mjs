@@ -201,6 +201,14 @@ export class CrisisRoom extends DurableObject {
           if(actor.role !== "host") fail(403, "Only the host can rotate projector access");
           return rotateProjector(room, projectorHash);
         });
+        // Reissuing a projector link revokes every existing projector session,
+        // not merely its ability to receive future snapshots. Close immediately
+        // after the new token is committed, independently of broadcast timing.
+        for(const ws of this.ctx.getWebSockets()){
+          if(ws.deserializeAttachment()?.role==="projector"){
+            try{ws.close(1008,"Projector access rotated");}catch(_){}
+          }
+        }
         return json({projectorToken});
       }
       if (path === "/actions" && request.method === "POST") {
