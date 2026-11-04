@@ -1,0 +1,118 @@
+# Opt-in only. The deployment job cannot run until the owner explicitly sets
+# Actions variable BC_STAGING_DEPLOY_ENABLED=YES and configures dedicated secrets.
+# This workflow has NO permission to route, merge or publish the production game.
+name: BUSINESS CRISIS isolated staging deployment
+
+on:
+  push:
+    branches: ["redesign/cinematic-crisis-v2"]
+    paths:
+      - ".github/workflows/business-crisis-staging.yml"
+      - "multiplayer/**"
+      - "src/content.js"
+      - "src/rules.js"
+      - "package.json"
+      - "scripts/check-staging.cjs"
+      - "scripts/smoke-staging.sh"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: business-crisis-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    if: ${{ github.repository == 'adiusor/business-crisis' && github.ref == 'refs/heads/redesign/cinematic-crisis-v2' && vars.BC_STAGING_DEPLOY_ENABLED == 'YES' }}
+    runs-on: ubuntu-latest
+    environment: business-crisis-staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify staging Worker isolation (no production routes)
+        run: node scripts/check-staging.cjs
+
+      - name: Install dependencies without Cloudflare credentials
+        run: npm install --no-audit --no-fund
+
+      - name: Check economic engine and multiplayer authorization
+        run: |
+          npm run test:rules
+          npm run test:multiplayer
+          npm run check:staging-bundle
+
+      - name: Validate browser, QR, WebSocket and six-episode gameplay before staging
+        run: |
+          npx playwright install --with-deps chromium
+          node tests/room-runtime.test.mjs
+          node tests/browser.mjs
+
+      - name: Require independent staging-only secrets
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          STAGING_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+          CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${CLOUDFLARE_ACCOUNT_ID:-}" =~ ^[0-9a-fA-F]{32}$ ]]; then
+            echo "::error::Cloudflare account ID missing or invalid."
+            exit 1
+          fi
+          if [[ -z "${STAGING_TOKEN:-}" ]]; then
+            echo "::error::BC_STAGING_DEPLOY_TOKEN missing. Read-only Cloudflare token is deliberately not reused."
+            exit 1
+          fi
+          if [[ ${#CREATION_KEY} -lt 32 ]]; then
+            echo "::error::BC_STAGING_ROOM_CREATION_KEY must be a new, unpredictable key of at least 32 characters."
+            exit 1
+          fi
+
+      - name: Publish named staging Worker only
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          # This configuration is validated to use ONLY business-crisis-rooms-staging.workers.dev,
+          # without any routes, domains or other Worker names.
+          node scripts/check-staging.cjs
+          npx wrangler deploy --config multiplayer/wrangler.staging.jsonc | tee "$RUNNER_TEMP/bc-staging-deploy.log"
+          STAGING_URL="$(grep -Eo 'https://business-crisis-rooms-staging\.[a-zA-Z0-9-]+\.workers\.dev' "$RUNNER_TEMP/bc-staging-deploy.log" | head -1 || true)"
+          if [[ -z "$STAGING_URL" ]]; then
+            echo "::error::Could not identify the isolated workers.dev URL. No production URL fallback is allowed."
+            exit 1
+          fi
+          echo "STAGING_URL=$STAGING_URL" >> "$GITHUB_ENV"
+
+      - name: Provision only the staging room-creation secret
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+          STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$STAGING_CREATION_KEY" | npx wrangler secret put ROOM_CREATION_KEY --config multiplayer/wrangler.staging.jsonc
+
+      - name: Live HTTPS smoke test (one empty staging room)
+        shell: bash
+        env:
+          STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: |
+          set -euo pipefail
+          bash scripts/smoke-staging.sh "$STAGING_URL"
+
+      - name: Record preview address without secrets
+        shell: bash
+        run: |
+          echo "## BUSINESS CRISIS — isolated staging" >> "$GITHUB_STEP_SUMMARY"
+          echo "Preview: $STAGING_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Verified health, unauthorized creation rejection, and authenticated room creation." >> "$GITHUB_STEP_SUMMARY"
+          echo "No main branch, custom domain, production Worker or production data was changed." >> "$GITHUB_STEP_SUMMARY"

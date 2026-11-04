@@ -40,6 +40,21 @@ The only Cloudflare credentials test in GitHub verifies read access, **not deplo
 
 **Local verification:** `npm install`, `node --test tests/multiplayer.test.mjs`, `npm run check:room-bundle`, `node tests/room-runtime.test.mjs` (Wrangler local Worker + Durable Object + multi-device Chromium integration), and `node tests/browser.mjs` for the existing standalone game. GitHub Actions runs these in a draft PR and archives actual browser screenshots. They now check projector access rotation, forbidden writes, snapshot privacy, the projector page and simulated network restoration. The draft Worker is named `business-crisis-rooms-preview`, not the production Worker, with `workers_dev: false` and no deploy job.
 
+## Cloudflare staging — opt-in, not yet deployed
+
+A **separate staging Worker** can now be provisioned without touching `main` or the production Worker. Its strictly validated config is `multiplayer/wrangler.staging.jsonc` (name `business-crisis-rooms-staging`, `workers_dev: true`, no custom domains/routes). The opt-in GitHub Actions workflow is `.github/workflows/business-crisis-staging.yml`; `scripts/check-staging.cjs` enforces isolation and `scripts/smoke-staging.sh` checks HTTPS, creation authorization, Durable Object persistence and the QR route after a deployment.
+
+**Staging is not launched by merely merging these files.** Until the repository variable `BC_STAGING_DEPLOY_ENABLED` is explicitly set to `YES` and dedicated secrets `BC_STAGING_DEPLOY_TOKEN` and `BC_STAGING_ROOM_CREATION_KEY` are set, the staging job is skipped. The existing Cloudflare read-only token is *not* used to deploy. Changing the variable alone does not start a workflow; the deployment requires a subsequent branch push. Real phone/device QA remains unverified.
+
+See **[STAGING_RUNBOOK.md](STAGING_RUNBOOK.md)** for the setup, access boundaries, one-time account permissions, costs and the physical-device test plan. For independent dry-run checks:
+
+```bash
+npm install --no-audit --no-fund
+npm run check:staging-isolation
+npm run check:staging-bundle
+bash -n scripts/smoke-staging.sh
+```
+
 ## Play and review
 
 The repository root `index.html` on **this branch** is a standalone, self-contained game. Download the file and open it in a modern browser. Do **not** merge into `main` or replace the Cloudflare production Worker until founder approval.

@@ -1,7 +1,7 @@
 name: Cinematic v2 quality gates
 on:
   pull_request:
-    paths: ["src/**", "multiplayer/**", "tests/**", "index.html", "scripts/**", "package.json", ".github/workflows/cinematic-v2.yml"]
+    paths: ["src/**", "multiplayer/**", "tests/**", "index.html", "scripts/**", "package.json", ".github/workflows/cinematic-v2.yml", ".github/workflows/business-crisis-staging.yml"]
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -43,6 +43,12 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Bundle isolated Cloudflare Worker (dry-run only, no deploy)
         run: npm run check:room-bundle
+      - name: Check staging shell syntax
+        run: bash -n scripts/smoke-staging.sh
+      - name: Verify staging isolation and no production domains
+        run: npm run check:staging-isolation
+      - name: Dry-run named staging Worker bundle (no deploy)
+        run: npm run check:staging-bundle
       - name: Exercise local Worker HTTP, QR and live WebSocket room sync (no deploy)
         run: node tests/room-runtime.test.mjs
       - name: Play 2-, 3- and 4-team games in Chromium
