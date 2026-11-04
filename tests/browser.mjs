@@ -85,6 +85,10 @@ if(round===2||round===4){await click("choose-amount",10000);await page.locator('
 await click("choose-signal",(team+round+1)%3);
 await click("commit");
 assert.match(await page.locator(".newspaper h2").innerText(),/.+/);assertions++;
+if(round===0&&team===0&&teams===2&&width===1440){
+ await page.reload();
+ assert.match(await page.locator(".newspaper h2").innerText(),/.+/,"partly completed round resumes");assertions++;
+}
 if(round===0&&team===0&&teams===2&&width===1440)await shot("04-fallout-desktop");
 await click("advance");
 }
@@ -109,7 +113,28 @@ assert.ok(overflow<=1,"Horizontal overflow at "+width+": "+overflow);assertions+
 assert.deepEqual(errors,[],"Browser errors");assertions++;
 await page.close();
 }
+
+async function verifySaveRecovery(){
+ const page=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
+ try{
+  await page.goto(url);
+  const key="business-crisis-cinematic-v2";
+  // A superficially plausible but incomplete session used to crash the view.
+  await page.evaluate(key=>localStorage.setItem(key,JSON.stringify({phase:"decision",round:0,teamCount:2,teams:[],names:["A","B"]})),key);
+  await page.reload();
+  assert.equal(await page.locator(".intro").count(),1,"incomplete session returns safely to intro");assertions++;
+  await page.locator('[data-action="lobby"]').click();
+  await page.locator('[data-action="begin"]').click();
+  await page.reload();
+  assert.equal(await page.locator(".brief-layout").count(),1,"valid live session resumes");assertions++;
+  await page.evaluate(key=>{const state=JSON.parse(localStorage.getItem(key));state.teams[0].cash+=1;localStorage.setItem(key,JSON.stringify(state));},key);
+  await page.reload();
+  assert.equal(await page.locator(".intro").count(),1,"unreconciled cash cannot be resumed");assertions++;
+ }finally{await page.close();}
+}
+
 try{
+await verifySaveRecovery();
 await play(2,1440);
 await play(3,390);
 await play(4,320);

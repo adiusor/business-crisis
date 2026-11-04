@@ -14,7 +14,7 @@ A competitive, shared-screen narrative strategy game. A confidential restructuri
 - Real cash ledger from an initial **£260,000 90-day response fund**. The **£240,000/year renewal** is tracked as contract value, never credited as cash.
 - Baseline operating response costs, plan spending, delayed liabilities and contingent future obligations.
 - Separate legal, operational, workforce, customer and liquidity exposures, client confidence and nonlinear outcome scoring.
-- Local save/resume on the same device, reduced-motion CSS, optional interface sound, 320px-responsive layouts.
+- Local save/resume on the same device, with invalid/corrupted saves safely rejected; reduced-motion CSS, optional interface sound, 320px-responsive layouts.
 - Final boardroom ranking, client renewal status and per-team causal case files.
 - Explicit championship gate: only a team with a renewed annual client contract, solvent response fund and viable operations can be Boardroom Champion. If none qualifies, there is **no champion**; the highest numeric score is identified separately.
 
@@ -38,7 +38,7 @@ npx playwright install chromium
 node tests/browser.mjs
 ```
 
-GitHub Actions runs 1,200 seeded engine simulations, deterministic ledger invariants and full Chromium playthroughs for 2, 3 and 4 teams, including 320px mobile. Actual browser screenshots are uploaded as a workflow artifact when the run succeeds. These automated tests do not substitute for Safari/iPhone device tests or independent group playtesting.
+GitHub Actions reports cash, score and risk percentiles from 1,200 seeded simulations, checks deterministic ledger invariants, rejects corrupt local saves and runs full Chromium playthroughs for 2, 3 and 4 teams, including 320px mobile. Actual browser screenshots are uploaded as a workflow artifact when the run succeeds. These automated tests do not substitute for Safari/iPhone device tests or independent group playtesting.
 
 ## Source structure
 

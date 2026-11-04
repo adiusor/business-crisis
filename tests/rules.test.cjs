@@ -64,6 +64,7 @@ check(R.championshipResult([qualified,twin]).joint.length===2,"tied qualifying c
 
 let scenarios=0,negative=0,renewed=0,conditional=0,lost=0,ties=0,determinism=0;
 let minCash=Infinity,maxCash=-Infinity,minScore=Infinity,maxScore=-Infinity;
+const cashSamples=[],scoreSamples=[],riskSamples=[];
 function rand(seed){let x=seed>>>0;return function(){x=(1664525*x+1013904223)>>>0;return x/4294967296;};}
 for(let seed=1;seed<=1200;seed++){
 const r=rand(seed),variant=R.seedVariant("TEST-"+seed),n=2+seed%3;
@@ -88,6 +89,7 @@ const o=R.evaluate(t);check(o.score>=0&&o.score<=100,"score bounds");
 check(o.unpaid===t.pending.reduce((sum,x)=>sum+x.cost,0),"unpaid liabilities exact");
 minCash=Math.min(minCash,t.cash);maxCash=Math.max(maxCash,t.cash);
 minScore=Math.min(minScore,o.score);maxScore=Math.max(maxScore,o.score);
+cashSamples.push(t.cash);scoreSamples.push(o.score);riskSamples.push(o.avgRisk);
 negative+=t.cash<0?1:0;
 renewed+=o.status==="RENEWED"?1:0;conditional+=o.status==="CONDITIONAL"?1:0;lost+=o.status==="LOST"?1:0;
 }
@@ -99,4 +101,5 @@ determinism++;
 }
 scenarios++;
 }
-console.log(JSON.stringify({passed:true,checks,seededSessions:scenarios,determinismChecks:determinism,insolvencies:negative,renewed,conditional,lost,topScoreTies:ties,cashRange:[minCash,maxCash],scoreRange:[minScore,maxScore]},null,2));
+function percentiles(samples){const sorted=samples.slice().sort((a,b)=>a-b);const at=p=>sorted[Math.floor((sorted.length-1)*p)];return {p5:at(.05),median:at(.5),p95:at(.95)};}
+console.log(JSON.stringify({cashPercentiles:percentiles(cashSamples),scorePercentiles:percentiles(scoreSamples),riskPercentiles:percentiles(riskSamples),passed:true,checks,seededSessions:scenarios,determinismChecks:determinism,insolvencies:negative,renewed,conditional,lost,topScoreTies:ties,cashRange:[minCash,maxCash],scoreRange:[minScore,maxScore]},null,2));

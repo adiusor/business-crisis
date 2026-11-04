@@ -492,7 +492,45 @@ const root=document.getElementById("app");
 function fresh(){return {phase:"intro",teamCount:2,names:["TEAM ALPHA","TEAM BRAVO","TEAM CHARLIE","TEAM DELTA"],teams:[],round:0,teamIndex:0,viewed:[],opened:null,selected:[],plan:null,signal:null,allocation:{amount:0,route:null},timeline:[],timelineSolved:false,variant:0,seed:"",sound:false};}
 let s=fresh();
 let lastRenderedPhase=null;
-try{const saved=JSON.parse(localStorage.getItem(KEY)||"null");if(saved&&Array.isArray(saved.teams)&&typeof saved.phase==="string"&&saved.round>=0&&saved.round<=6&&saved.teams.length<=4&&saved.teamCount>=2&&saved.teamCount<=4){s=Object.assign(fresh(),saved);s.opened=null;}}catch(e){}
+const SAVED_PHASES=["intro","lobby","brief","evidence","reconstruct","handoff","advisers","intel","decision","allocation","signal","fallout","roundup","verdict"];
+const SAVED_RISKS=["legal","ops","workforce","customer","liquidity"];
+function validSavedSession(v){
+ if(!v||typeof v!=="object"||!SAVED_PHASES.includes(v.phase))return false;
+ if(!Number.isInteger(v.teamCount)||v.teamCount<2||v.teamCount>4)return false;
+ if(!Number.isInteger(v.round)||v.round<0||v.round>=C.episodes.length)return false;
+ if(!Number.isInteger(v.teamIndex)||v.teamIndex<0||v.teamIndex>=v.teamCount)return false;
+ if(!Number.isInteger(v.variant)||v.variant<0||v.variant>=C.variants.length)return false;
+ if(!Array.isArray(v.names)||v.names.length<v.teamCount||v.names.some(n=>typeof n!=="string"||n.length>32))return false;
+ if(!Array.isArray(v.teams)||typeof v.seed!=="string"||typeof v.sound!=="boolean")return false;
+ if(typeof v.timelineSolved!=="boolean")return false;
+ const indices=(a,max,count)=>Array.isArray(a)&&a.length<=count&&new Set(a).size===a.length&&a.every(n=>Number.isInteger(n)&&n>=0&&n<max);
+ if(!indices(v.viewed,3,3)||!indices(v.selected,C.advisers.length,2)||!indices(v.timeline,3,3))return false;
+ if(![null,0,1,2].includes(v.plan)||![null,0,1,2].includes(v.signal))return false;
+ if(!v.allocation||![0,10000,20000].includes(v.allocation.amount)||!(v.allocation.route===null||R.allocations.some(a=>a.id===v.allocation.route)))return false;
+ const pregame=v.phase==="intro"||v.phase==="lobby";
+ if(pregame)return v.teams.length===0&&v.round===0&&v.teamIndex===0;
+ if(v.teams.length!==v.teamCount)return false;
+ const teamIndex=v.teamIndex,round=v.round;
+ const beforeCurrent=["handoff","advisers","intel","decision","allocation","signal"].includes(v.phase);
+ for(let i=0;i<v.teams.length;i++){
+  const t=v.teams[i];
+  if(!t||typeof t!=="object"||t.id!==i||typeof t.name!=="string"||!t.name.trim()||t.name.trim().length>32)return false;
+  if(!Number.isInteger(t.cash)||!Number.isInteger(t.trust)||t.trust<0||t.trust>100||!t.risks||typeof t.risks!=="object")return false;
+  if(SAVED_RISKS.some(k=>!Number.isInteger(t.risks[k])||t.risks[k]<0||t.risks[k]>100))return false;
+  if(!Array.isArray(t.history)||!Array.isArray(t.ledger)||!Array.isArray(t.pending))return false;
+  const completed=v.phase==="roundup"||v.phase==="verdict"||v.phase==="fallout"&&i<=teamIndex||beforeCurrent&&i<teamIndex;
+  const expected=round+(completed?1:0);
+  if(t.nextRound!==expected||t.history.length!==expected)return false;
+  if(t.history.some((h,j)=>!h||h.round!==j+1||typeof h.plan!=="string"||typeof h.signal!=="string"||!Number.isInteger(h.signalIndex)||h.signalIndex<0||h.signalIndex>=3||typeof h.fallout!=="string"||!Array.isArray(h.paidDeferred)||!Number.isInteger(h.roundSpent)))return false;
+  if(t.ledger.some(x=>!x||!Number.isInteger(x.round)||x.round<1||x.round>expected||!Number.isInteger(x.amount)||x.amount<0||typeof x.label!=="string"))return false;
+  if(t.pending.some(x=>!x||!Number.isInteger(x.due)||x.due<=expected||!Number.isInteger(x.cost)||x.cost<0||typeof x.label!=="string"))return false;
+  const spent=t.ledger.reduce((sum,x)=>sum+x.amount,0);
+  if(t.cash!==C.initialCash-spent||t.insolvent!==(t.cash<0))return false;
+ }
+ return true;
+}
+
+try{const saved=JSON.parse(localStorage.getItem(KEY)||"null");if(validSavedSession(saved)){s=Object.assign(fresh(),saved);s.opened=null;}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}}
 function esc(v){return String(v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function money(v){return (v<0?"−":"")+"£"+Math.abs(v).toLocaleString("en-GB");}
