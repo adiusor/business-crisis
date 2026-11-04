@@ -179,6 +179,7 @@ try {
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("Challenge 2"));
     const overflow = await phoneA.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
+    await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});
     await phoneA.screenshot({path: path.join(root, "screenshots", "06-room-mobile-320.png"), fullPage: true});
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
