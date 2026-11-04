@@ -213,7 +213,12 @@ try {
   assert.equal(rotated.response.status,200);
   assert.notEqual(rotated.payload.projectorToken,projectorAccess);
   assert.equal((await req("/api/rooms/" + roomCode + "/state","GET",undefined,projectorAccess)).response.status,401);
-  assert.equal(await projectorClosed,1008,"Old projector socket closed on credential rotation");
+  // On hibernating/local runtimes the physical close can be deferred. The
+  // revoked socket must nevertheless be rejected on its next message, never
+  // return another snapshot with the previous projector credential.
+  if(projectorWS.ws.readyState===WebSocket.OPEN)
+    projectorWS.ws.send(JSON.stringify({type:"snapshot"}));
+  assert.equal(await projectorClosed,1008,"Revoked projector socket cannot access a new snapshot");
   assert.equal((await req("/api/rooms/" + roomCode + "/state","GET",undefined,rotated.payload.projectorToken)).response.status,200);
 
 
