@@ -5,7 +5,7 @@ import CLIENT_HTML from "./client.html";
 import CLIENT_STYLE from "./client-style.txt";
 import CLIENT_SCRIPT from "./client-script.txt";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
-  clockFor, expireRoom} from "./room-core.mjs";
+  clockFor, expireRoom, rotateProjector} from "./room-core.mjs";
 
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
@@ -43,7 +43,7 @@ export default {
     try {
       const url = new URL(request.url);
       if (request.method === "GET") {
-        if (url.pathname === "/" || url.pathname === "/join")
+        if (url.pathname === "/" || url.pathname === "/join" || url.pathname === "/projector")
           return htmlResponse(CLIENT_HTML, "text/html; charset=utf-8");
         if (url.pathname === "/room-style.css")
           return htmlResponse(CLIENT_STYLE, "text/css; charset=utf-8");
@@ -80,7 +80,7 @@ export default {
         }
         fail(503, "Unable to allocate a new room");
       }
-      const route = /^\/api\/rooms\/([A-F0-9]{12})\/(join|lobby|state|actions|socket|qr)$/.exec(url.pathname);
+      const route = /^\/api\/rooms\/([A-F0-9]{12})\/(join|lobby|state|actions|socket|qr|projector-access)$/.exec(url.pathname);
       if (!route) fail(404, "Not found");
       const [, code, action] = route;
       if (action === "qr" && request.method === "GET") {
@@ -90,7 +90,7 @@ export default {
         return new Response(qr.svg(), {headers: {...HEADERS, "content-type": "image/svg+xml; charset=utf-8",
           "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox"}});
       }
-      const method = {join: "POST", lobby: "GET", state: "GET", actions: "POST", socket: "GET"}[action];
+      const method = {join: "POST", lobby: "GET", state: "GET", actions: "POST", socket: "GET", "projector-access": "POST"}[action];
       if (request.method !== method) fail(405, "Method not allowed");
       if (!env.CRISIS_ROOMS) fail(503, "Room storage is unavailable");
       const stub = env.CRISIS_ROOMS.get(env.CRISIS_ROOMS.idFromName(code));
@@ -144,6 +144,10 @@ export class CrisisRoom extends DurableObject {
     for (const ws of this.ctx.getWebSockets()) {
       const attachment = ws.deserializeAttachment();
       if (!attachment || attachment.role === "pending") continue;
+      if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){
+        try { ws.close(1008, "Projector access revoked"); } catch (_) {}
+        continue;
+      }
       try { ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, attachment)})); }
       catch (_) { /* Socket disappeared while broadcasting. */ }
     }
@@ -175,6 +179,16 @@ export class CrisisRoom extends DurableObject {
       if (path === "/state" && request.method === "GET") {
         const room = await this.readRoom();
         return json({state: viewFor(room, await this.actor(room, request))});
+      }
+      if (path === "/projector-access" && request.method === "POST") {
+        const projectorToken = token();
+        const projectorHash = await sha256(projectorToken);
+        await this.mutate(async room => {
+          const actor = await this.actor(room, request);
+          if(actor.role !== "host") fail(403, "Only the host can rotate projector access");
+          return rotateProjector(room, projectorHash);
+        });
+        return json({projectorToken});
       }
       if (path === "/actions" && request.method === "POST") {
         const command = await parse(request);
@@ -209,9 +223,13 @@ export class CrisisRoom extends DurableObject {
         if (input.type !== "authenticate" || typeof input.token !== "string" || !/^[0-9a-f]{64}$/.test(input.token))
           fail(401, "Unauthorized");
         const actor = authorize(room, await sha256(input.token));
-        ws.serializeAttachment(actor);
+        ws.serializeAttachment(actor.role === "projector" ?
+          {...actor, credentialHash: await sha256(input.token)} : actor);
         ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, actor)}));
         return;
+      }
+      if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){
+        ws.close(1008, "Projector access revoked"); return;
       }
       if (input.type === "snapshot") {
         ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, attachment)}));

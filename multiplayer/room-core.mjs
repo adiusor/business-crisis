@@ -39,7 +39,7 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  const names=teamNames.map(x=>typeof x==="string"?x.trim():"");
  requireState(names.every(x=>x.length>=1&&x.length<=32)&&new Set(names.map(fold)).size===names.length,400,"Teams require unique names (1–32 characters)");
  return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
-  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,
+  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
    roundPenalty:0,penaltyPoints:0,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
@@ -47,9 +47,17 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
 export function authorize(room,hash){
  requireState(room&&room.version===3&&typeof hash==="string"&&/^[a-f0-9]{64}$/.test(hash),401,"Unauthorized");
  if(hash===room.hostHash)return {role:"host"};
+ if(room.projectorHash&&hash===room.projectorHash)return {role:"projector"};
  const p=room.players.find(p=>p.credentialHash===hash);
  requireState(!!p,401,"Unauthorized");
  return {role:"player",playerId:p.id};
+}
+export function rotateProjector(room,newHash){
+ requireState(typeof newHash==="string"&&/^[a-f0-9]{64}$/.test(newHash)&&newHash!==room.hostHash&&
+  !room.players.some(p=>p.credentialHash===newHash),400,"Invalid projector credential");
+ const next=clone(room);
+ next.projectorHash=newHash;next.revision++;
+ return next;
 }
 export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId}){
  requireState(room.phase==="lobby",409,"Room already started; late joining is not enabled");
@@ -188,7 +196,18 @@ export function viewLobby(room){
   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length}))};
 }
 export function viewFor(room,actor,nowMs=Date.now()){
- requireState(actor&&(actor.role==="host"||actor.role==="player"),401,"Unauthorized");
+ requireState(actor&&["host","player","projector"].includes(actor.role),401,"Unauthorized");
+ if(actor.role==="projector"){
+  const episode=publicEpisode(room);
+  return {viewer:{role:"projector"},code:room.code,phase:room.phase,round:room.round,
+   revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
+   episode:episode?{number:episode.number,time:episode.time,title:episode.title,
+    kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
+   lastRecap:room.lastRecap,
+   teams:room.teams.map(t=>({name:t.name,ready:!!t.captainId,locked:t.locked,
+    timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty})),
+   verdict:room.phase==="complete"?finalVerdict(room):null};
+ }
  const player=actor.role==="player"?room.players.find(p=>p.id===actor.playerId):null;
  requireState(actor.role==="host"||!!player,401,"Unauthorized");
  const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,

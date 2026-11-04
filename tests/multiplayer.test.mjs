@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -372,4 +372,47 @@ test("cannot submit client-provided score, cash or adviser list after the clock"
  room=applyRoomAction(room,a.actor,{type:"submit_decision",planIndex:0,signalIndex:0,expectedRevision:room.revision,
     cash:999999,score:100},1002);
  assert.equal(room.teams[0].economic.cash,260000-8000-18000);
+});
+
+
+test("projector credential is independent from host and presents only public information", () => {
+  let {room,host}=fixture();
+  const a=enter(room,"SECRET_ALICE",0,1);room=a.room;
+  const b=enter(room,"SECRET_BOB",1,2);room=b.room;
+  const projectorHash=hash("projector-access-1");
+  room=rotateProjector(room,projectorHash);
+  assert.deepEqual(authorize(room,projectorHash),{role:"projector"});
+  const view=viewFor(room,{role:"projector"});
+  assert.equal(view.viewer.role,"projector");
+  assert.ok(!("players" in view));
+  assert.ok(!("privateTeam" in view));
+  assert.ok(!("teamNameOptions" in view));
+  assert.equal(JSON.stringify(view).includes("SECRET_ALICE"),false);
+  assert.equal(JSON.stringify(view).includes("credentialHash"),false);
+  assert.throws(()=>applyRoomAction(room,{role:"projector"},{type:"start",expectedRevision:room.revision}),/Only the host/);
+  room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},10000);
+  const live=viewFor(room,{role:"projector"},10001);
+  assert.equal(live.episode.evidence.length,3);
+  assert.equal(typeof live.episode.brief,"string");
+  assert.ok(!("plans" in live.episode));
+  assert.ok(!("signals" in live.episode));
+  assert.ok(!("advice" in live.episode));
+  assert.ok(!("players" in live));
+  assert.throws(()=>applyRoomAction(room,{role:"projector"},{type:"select_advisers",advisers:[1,2],expectedRevision:room.revision},10001),/participant/);
+  assert.throws(()=>applyRoomAction(room,{role:"projector"},{type:"advance",expectedRevision:room.revision},10001),/Only the host/);
+});
+
+test("rotating projector secret revokes old access and keeps player tokens valid", () => {
+  let {room}=fixture();
+  const a=enter(room,"Alice",0,1);room=a.room;
+  room=rotateProjector(room,hash("projector-one"));
+  const oldRevision=room.revision;
+  assert.equal(authorize(room,hash("projector-one")).role,"projector");
+  room=rotateProjector(room,hash("projector-two"));
+  assert.equal(room.revision,oldRevision+1);
+  assert.throws(()=>authorize(room,hash("projector-one")) ,/Unauthorized/);
+  assert.equal(authorize(room,hash("projector-two")).role,"projector");
+  assert.equal(authorize(room,hash("participant-1")).role,"player");
+  assert.throws(()=>rotateProjector(room,hash("host")),/Invalid projector credential/);
+  assert.throws(()=>rotateProjector(room,hash("participant-1")),/Invalid projector credential/);
 });

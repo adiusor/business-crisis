@@ -166,6 +166,33 @@ try {
   assert.equal(JSON.stringify(final).includes('"intelligence"'), false, "No private advice in host results");
   assert.equal(JSON.stringify(final).includes('"credentialHash"'), false, "No credentials in host results");
 
+  // Projector-only credentials: HTTP and WebSocket must expose no player identities or controls.
+  const grant=await req("/api/rooms/" + roomCode + "/projector-access","POST",{},hostToken);
+  assert.equal(grant.response.status,200);
+  assert.match(grant.payload.projectorToken,/^[a-f0-9]{64}$/);
+  const projectorAccess=grant.payload.projectorToken;
+  const projectorView=await req("/api/rooms/" + roomCode + "/state","GET",undefined,projectorAccess);
+  assert.equal(projectorView.response.status,200);
+  assert.equal(projectorView.payload.state.viewer.role,"projector");
+  assert.equal(JSON.stringify(projectorView.payload.state).includes('"players"'),false);
+  assert.equal(JSON.stringify(projectorView.payload.state).includes('"privateTeam"'),false);
+  assert.equal(JSON.stringify(projectorView.payload.state).includes("Alice"),false);
+  assert.equal((await req("/api/rooms/" + roomCode + "/actions","POST",
+    {type:"advance",expectedRevision:projectorView.payload.state.revision},projectorAccess)).response.status,403);
+  const projectorWS=await socketFor(projectorAccess,roomCode);
+  assert.equal(projectorWS.messages[0].state.viewer.role,"projector");
+  const projectorClosed=new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(Error("Rotated projector socket remained connected")),8000);
+    projectorWS.ws.addEventListener("close",e=>{clearTimeout(timeout);resolve(e.code);},{once:true});
+  });
+  const rotated=await req("/api/rooms/" + roomCode + "/projector-access","POST",{},hostToken);
+  assert.equal(rotated.response.status,200);
+  assert.notEqual(rotated.payload.projectorToken,projectorAccess);
+  assert.equal((await req("/api/rooms/" + roomCode + "/state","GET",undefined,projectorAccess)).response.status,401);
+  assert.equal(await projectorClosed,1008,"Old projector socket closed on credential rotation");
+  assert.equal((await req("/api/rooms/" + roomCode + "/state","GET",undefined,rotated.payload.projectorToken)).response.status,200);
+
+
   // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
   const {chromium} = await import("playwright");
   const browser = await chromium.launch({headless: true, args: ["--no-sandbox"]});
@@ -201,6 +228,23 @@ try {
     await phoneB.locator("#join-form button.primary").click();
     await phoneB.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
     await hostUI.waitForFunction(() => document.querySelector("#team-list")?.textContent?.includes("Mobile Bob"));
+    // Host can issue a projection link without revealing their own host bearer token.
+    await hostUI.locator("#rotate-projector").click();
+    await hostUI.locator("#projector-link").waitFor({state:"visible"});
+    const projectorHref=await hostUI.locator("#projector-link").getAttribute("href");
+    assert.match(projectorHref,/\/projector\?room=[A-F0-9]{12}#access=[a-f0-9]{64}$/);
+    const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
+    projected.on("pageerror",err=>browserErrors.push(err.message));
+    await projected.goto(projectorHref,{waitUntil:"load"});
+    await projected.locator("#room-screen").waitFor({state:"visible",timeout:12000});
+    assert.equal(await projected.locator("#viewer-mode").isVisible(),true);
+    assert.equal(await projected.locator("#host-actions").isVisible(),false);
+    assert.equal(await projected.locator("#player-actions").isVisible(),false);
+    assert.equal(await projected.locator("#captain-tools").isVisible(),false);
+    assert.equal(new URL(projected.url()).hash,"","Projector fragment credential cleared from browser URL");
+    assert.equal((await projected.locator("#team-list").innerText()).includes("Mobile Alice"),false,
+      "Player nicknames cannot reach projection display");
+
     const original = (await phoneA.locator(".team.mine strong").textContent()).trim();
     const options = await phoneA.locator("#team-name-choice option").evaluateAll(xs => xs.map(x => x.value));
     const newName = options.find(x => x !== original);
@@ -214,6 +258,9 @@ try {
     assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
+    assert.equal(await projected.locator(".evidence-item").count(),3);
+
     await phoneA.locator('[data-choice="0"]').click();
     await phoneA.locator('[data-choice="1"]').click();
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
@@ -226,13 +273,22 @@ try {
     await phoneB.locator('[data-plan="1"]').click();
     await phoneB.locator("#player-actions select").last().selectOption("1");
     await phoneB.getByRole("button", {name: "COMMIT STRATEGY & STATEMENT"}).click();
+    // Network loss while a team is waiting must not lose its saved session.
+    await phoneB.context().setOffline(true);
     await hostUI.getByRole("button", {name: "START NEXT EPISODE"}).click();
+    await phoneB.context().setOffline(false);
+    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      null,{timeout:15000});
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      null,{timeout:15000});
+
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     const overflow = await phoneA.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
     await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});
     await phoneA.screenshot({path: path.join(root, "screenshots", "06-room-mobile-320.png"), fullPage: true});
+    await projected.screenshot({path:path.join(root,"screenshots","07-projector-1280.png"),fullPage:true});
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",

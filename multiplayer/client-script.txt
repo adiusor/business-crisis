@@ -10,6 +10,7 @@
   ];
   const EPISODES = ["THE SEND", "THE FLOOR", "THE CLIENT", "THE BOARD",
     "THE OPERATION", "THE VERDICT"];
+  const isProjector = location.pathname === "/projector";
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
   let roomCode = /^[A-F0-9]{12}$/.test(codeFromUrl) ? codeFromUrl : "";
   let credential = null;
@@ -21,7 +22,7 @@
   let draftPicks = null;
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
-  const roleKey = code => "bc-preview-session-" + code;
+  const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
     if (text !== undefined && text !== null) el.textContent = String(text);
@@ -90,7 +91,7 @@
       const card = node("div", null, "team" + (state.viewer.role === "player" && state.viewer.teamIndex === i ? " mine" : ""));
       const lhs = node("div");
       lhs.append(node("strong", team.name));
-      const people = state.players.filter(p => p.teamIndex === i).map(p => p.nickname);
+      const people = (state.players || []).filter(p => p.teamIndex === i).map(p => p.nickname);
       lhs.append(node("small", people.length ? people.join(", ") : "No players yet"));
       const status = state.phase === "lobby" ? (team.ready ? "READY" : "WAITING") :
         (team.timedOut ? "TIMEOUT" : team.locked ? "LOCKED" : "CHOOSING");
@@ -312,6 +313,7 @@
       row.append(details);
       target.append(row);
     });
+    if (state.viewer.role !== "host") return;
     target.append(button("DOWNLOAD FINAL CASE FILE (JSON)",()=>{
       const exported={roomCode:state.code,generatedAt:new Date().toISOString(),
         note:"Illustrative game simulation; private advisers and participant information excluded.",
@@ -335,7 +337,11 @@
     if (draftPicks === null) draftPicks = state.privateTeam?.advisers?.slice() || [];
     show("room");
     $("room-code").textContent = state.code;
+    const projection = state.viewer.role === "projector";
+    document.body.classList.toggle("projector-mode", projection);
+    $("viewer-mode").hidden = !projection;
     $("host-share").hidden = state.viewer.role !== "host";
+    $("projector-share").hidden = state.viewer.role !== "host";
     if (state.viewer.role === "host") {
       const link = location.origin + "/join?room=" + state.code;
       $("join-link").textContent = link; $("join-link").href = link;
@@ -396,42 +402,80 @@
     $("connection").textContent = online ? "LIVE SYNC" : "RECONNECTING";
     $("connection").classList.toggle("live", online);
   }
+  function stopAccess(message) {
+    dropSession();
+    clearTimeout(retryHandle);
+    if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) socket.close();
+    setConnection(false);
+    if (isProjector) {
+      show("join"); $("join-form").hidden = true;
+      $("join-caption").textContent = "This projector link is invalid or has been rotated. Ask the host to generate a new one.";
+    } else if (location.pathname === "/join") {
+      lobby();
+    } else {
+      show("create");
+    }
+    error(message || "Room access is no longer valid.");
+  }
   function connect() {
-    if (!credential || !roomCode || socket?.readyState === WebSocket.OPEN) return;
+    if (!credential || !roomCode || !navigator.onLine) return;
+    if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) return;
     clearTimeout(retryHandle);
     try {
-      socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") +
+      const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") +
         location.host + "/api/rooms/" + roomCode + "/socket");
-      socket.addEventListener("open", () => {
-        retryDelay = 1000; setConnection(true);
-        socket.send(JSON.stringify({type: "authenticate", token: credential}));
+      socket = ws;
+      setConnection(false);
+      ws.addEventListener("open", () => {
+        if (socket !== ws || !credential) return;
+        ws.send(JSON.stringify({type: "authenticate", token: credential}));
       });
-      socket.addEventListener("message", event => {
+      ws.addEventListener("message", event => {
+        if (socket !== ws) return;
         let data;
         try { data = JSON.parse(event.data); } catch (_) { return; }
-        if (data.type === "snapshot") showRoom(data.state);
-        else if (data.type === "error") error(data.error);
+        if (data.type === "snapshot") {
+          retryDelay = 1000; setConnection(true);
+          showRoom(data.state);
+        } else if (data.type === "error") error(data.error);
       });
-      socket.addEventListener("close", () => {
+      ws.addEventListener("close", evt => {
+        if (socket !== ws) return;
+        socket = null;
         setConnection(false);
+        if (evt.code === 1008) {stopAccess("Access revoked or authentication failed.");return;}
         if (!credential) return;
         retryHandle = setTimeout(async () => {
-          try { showRoom((await getState()).state); } catch (_) {}
+          if (!credential || !navigator.onLine) return;
+          try {showRoom((await getState()).state);}
+          catch (e) {
+            if (e.httpStatus === 401 || e.httpStatus === 410) {stopAccess(e.message);return;}
+          }
           connect();
         }, retryDelay);
         retryDelay = Math.min(retryDelay * 2, 15000);
       });
-      socket.addEventListener("error", () => setConnection(false));
-    } catch (e) { setConnection(false); error("Live connection unavailable: " + e.message); }
+      ws.addEventListener("error", () => setConnection(false));
+    } catch (e) {setConnection(false);error("Live connection unavailable: " + e.message);}
+  }
+  async function refreshConnection() {
+    if (!credential || !roomCode || !navigator.onLine) return;
+    try {
+      showRoom((await getState()).state);
+      if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type: "snapshot"}));
+      else connect();
+    } catch (e) {
+      if (e.httpStatus === 401 || e.httpStatus === 410) stopAccess(e.message);
+      else setConnection(false);
+    }
   }
   async function authenticateSession() {
     try {
       showRoom((await getState()).state);
       connect();
     } catch (e) {
-      dropSession();
-      if (location.pathname === "/join") await lobby();
-      else { show("create"); error("Host session could not be restored. " + e.message); }
+      if (e.httpStatus === 401 || e.httpStatus === 410) { stopAccess(e.message); return; }
+      setConnection(false); error("Cannot restore room yet: " + e.message);
     }
   }
   $("create-form").addEventListener("submit", async e => {
@@ -464,12 +508,45 @@
     try { await navigator.clipboard.writeText($("join-link").href); notice("Join link copied."); }
     catch (_) { notice("Copy the link displayed above."); }
   });
+  $("rotate-projector").addEventListener("click", async () => {
+    try {
+      $("rotate-projector").disabled = true;
+      const response = await request("/api/rooms/" + roomCode + "/projector-access", {
+        method: "POST", headers: {authorization: "Bearer " + credential},
+        body: JSON.stringify({})
+      });
+      const href = location.origin + "/projector?room=" + roomCode + "#access=" + response.projectorToken;
+      $("projector-link").href = href;
+      $("projector-link").hidden = false;
+      notice("Projection link generated. The previous projection link, if any, has been revoked.");
+    } catch (e) {error(e.message);}
+    finally {$("rotate-projector").disabled = false;}
+  });
+  window.addEventListener("online", () => {setConnection(false);refreshConnection();});
+  window.addEventListener("offline", () => setConnection(false));
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshConnection();
+  });
   setInterval(tick, 250); // Only updates the local visual clock; deadlines are server-owned.
   if (roomCode) {
-    try { credential = sessionStorage.getItem(roleKey(roomCode)); } catch (_) {}
+    if (isProjector) {
+      const fragment = new URLSearchParams(location.hash.slice(1)).get("access") || "";
+      if (/^[0-9a-f]{64}$/.test(fragment)) {
+        try {sessionStorage.setItem(roleKey(roomCode), fragment);} catch (_) {}
+        credential = fragment;
+        history.replaceState(null, "", location.pathname + location.search); // Remove credential from address bar.
+      }
+    }
+    if (!credential) {
+      try {credential = sessionStorage.getItem(roleKey(roomCode));} catch (_) {}
+    }
     if (credential) authenticateSession();
-    else if (location.pathname === "/join") lobby();
-    else { show("create"); error("Host login is not available on this tab. Use the original host tab or create a new room."); }
-  } else if (location.pathname === "/join") { show("join"); error("The invitation link is missing its room code."); }
-  else show("create");
+    else if (isProjector) {
+      show("join");$("join-form").hidden = true;
+      $("join-caption").textContent = "Missing projector access. Ask the host for a new projection link.";
+    } else if (location.pathname === "/join") lobby();
+    else {show("create");error("Host login is not available on this tab. Use the original host tab or create a new room.");}
+  } else if (location.pathname === "/join" || isProjector) {
+    show("join"); $("join-form").hidden = true;error("The invitation is missing its room code.");
+  } else show("create");
 })();

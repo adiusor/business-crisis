@@ -104,3 +104,31 @@ footer{max-width:1500px;margin:auto;padding:22px 6vw 34px;display:flex;justify-c
 #player-actions .submit-game{width:100%;margin-top:12px}
 #player-actions .private-cash{font-weight:800;color:#f0ba88}
 @media(max-width:430px){.episode-panel{padding:14px}.episode-panel .episode-intro{font-size:18px}.strategy-choice button{width:100%}}
+
+/* Standalone public display. The projection URL never confers host or player controls. */
+.projector-access{border:1px solid #5d7d8c;background:#173040;margin:0 0 24px;padding:18px}
+.projector-access p{color:#bfd0dc;font-size:13px}
+.projector-access a{display:block;margin:12px 0 0;padding:12px 16px;color:#0c1a23;background:#eaa975;font-weight:800;text-align:center;overflow-wrap:anywhere}
+.projection-label{font-size:12px;color:#eaa975;font-weight:800;letter-spacing:.14em}
+.projector-mode .masthead{max-width:100%;padding:18px 3vw}
+.projector-mode .status-dot{display:none}
+.projector-mode .layout{max-width:1600px;display:block;padding:24px 3vw 45px}
+.projector-mode .lead-panel{display:none}
+.projector-mode .content-panel{max-width:none;background:#111f2c;border-color:#57768b;padding:clamp(22px,3vw,50px)}
+.projector-mode .room-bar h2{font-size:clamp(38px,4.5vw,68px)}
+.projector-mode .episode-panel{padding:clamp(20px,3vw,44px)}
+.projector-mode .episode-panel h3{font-size:clamp(48px,6vw,94px)}
+.projector-mode .episode-intro{max-width:1100px;font-size:clamp(21px,2.5vw,33px)}
+.projector-mode .evidence-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.projector-mode .evidence-item{padding:clamp(16px,2vw,27px)}
+.projector-mode .evidence-item strong{font-size:clamp(15px,1.5vw,20px)}
+.projector-mode .evidence-item p{font-size:clamp(13px,1.3vw,18px)}
+.projector-mode .team-list{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.projector-mode #timer-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px}
+.projector-mode #timer-wrap p{max-width:270px;text-align:left}
+.projector-mode footer{max-width:1600px}
+@media(max-width:950px){
+ .projector-mode .evidence-list{grid-template-columns:1fr}
+ .projector-mode #timer-wrap{display:block}
+ .projector-mode #timer-wrap p{text-align:center;max-width:none}
+}
