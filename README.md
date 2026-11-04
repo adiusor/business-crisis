@@ -57,6 +57,10 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Facilitator operating guide
+
+For your first real group playtest, use the one-page **[Facilitator Quick-Start](multiplayer/OPERATOR_GUIDE.md)**. It covers lobby setup, the read-only projector QR, six rules, private adviser picks, individual votes and tie-breaks, independent clock freezes, host rescue controls, the final printable case file and limitations. Keep this separate from the player screens so it does not add more in-game reading.
+
 ## Third-pass consistency and facilitation audit
 
 See **[THIRD_PASS_AUDIT.md](THIRD_PASS_AUDIT.md)** for repaired issues and remaining blockers. This pass aligns standalone and multiplayer championship tie-breaking on both score and remaining cash; bridges the client's **14:00 deadline** into episode five without assuming a shutdown or inventing a successful renewal; logs facilitator captain transfers and removals in a minimal, public intervention trail (never individual ballots or credentials); and adds a brief neutral epilogue explaining that the original email sender remains unconfirmed. Public projection shows recent host intervention events; the ordinary interface keeps its history collapsed to avoid adding more reading.
