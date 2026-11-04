@@ -151,6 +151,21 @@ const finalA=await state(code,ta);
 check(finalA.data.team.history.length===6,"all six team transitions persisted");
 check(finalA.data.team.cash===260000-finalA.data.team.history.reduce((s,h)=>s+h.roundSpent,0),"full-game ledger reconciles");
 check(!finalA.data.team.history.some(h=>h.cash===h.cash+240000),"annual renewal not treated as response cash");
+
+const limitedRequest=()=>new Request("https://preview.example/api/rooms",{method:"POST",headers:{"content-type":"application/json","CF-Connecting-IP":"198.51.100.42"},body:JSON.stringify({names:["RATE NORTH","RATE SOUTH"]})});
+const limitedResults=[];
+for(let i=0;i<7;i++) limitedResults.push(await worker.fetch(limitedRequest(),env));
+check(limitedResults.slice(0,6).every(r=>r.status===201),"six rooms allowed for one source IP per day");
+check(limitedResults[6].status===429,"seventh room rejected by persistent rate limiter");
+const temporary=await call("/api/rooms",{method:"POST",data:{names:["EXPIRING NORTH","EXPIRING SOUTH"]}});
+check(temporary.status===201,"independent preview room created for expiry test");
+const tempStorage=rooms.stores.get(temporary.data.code);
+const expired=await tempStorage.get("room");
+expired.expiresAt=Date.now()-1;
+await tempStorage.put("room",expired);
+const expiredView=await projector(temporary.data.code);
+check(expiredView.status===410,"expired preview rooms reject access");
+
 const noMore=await action(code,"advance",hostToken);
 check(noMore.status===409,"cannot advance beyond the finale");
 const noJoin=await join(0,"TOO LATE",inviteA);
