@@ -42,6 +42,12 @@ async function run(){
  const hostState=await fetch(base+"/api/rooms/"+code+"/state",{headers:{authorization:"Bearer "+hostToken}}).then(r=>r.json());
  const inviteA=hostState.teams[0].invite,inviteB=hostState.teams[1].invite;
  assert.ok(inviteA&&inviteB,"host sees team invitations");
+
+ await host.locator("details.dossier").first().evaluate(el=>{el.open=true;});
+ await host.waitForFunction(()=>{const img=document.querySelector("img.qr");return !!img&&img.complete&&img.naturalWidth>0;},{timeout:15000});
+ await mkdir("screenshots",{recursive:true});
+ await host.screenshot({path:"screenshots/multiplayer-host-private-qr-1440.png",fullPage:true});
+
  const playerContextA=await browser.newContext({viewport:{width:320,height:700}});
  const playerContextB=await browser.newContext({viewport:{width:390,height:844}});
  const a=await playerContextA.newPage(),b=await playerContextB.newPage();
