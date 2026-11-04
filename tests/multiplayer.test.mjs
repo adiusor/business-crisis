@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
+import {MAX_PLAYERS, ROUND_MS, GRACE_MS, GRACE_PENALTY, NO_ANSWER_PENALTY, ROOM_TTL_MS, TEAM_NAME_POOL, createRoom, authorize, joinRoom, balancedTeamIndex, rotateProjector, applyRoomAction, expireRoom, clockFor, viewLobby, viewFor} from "../multiplayer/room-core.mjs";
 
 const hash = s => createHash("sha256").update(s).digest("hex");
 function fixture(teamNames = ["ALPHA", "BRAVO"]) {
@@ -415,4 +415,60 @@ test("rotating projector secret revokes old access and keeps player tokens valid
   assert.equal(authorize(room,hash("participant-1")).role,"player");
   assert.throws(()=>rotateProjector(room,hash("host")),/Invalid projector credential/);
   assert.throws(()=>rotateProjector(room,hash("participant-1")),/Invalid projector credential/);
+});
+
+
+test("automatic assignment balances a two- or four-team lobby; explicit team preference remains possible", () => {
+  let {room}=fixture();
+  assert.equal(balancedTeamIndex(room),0);
+  room=enter(room,"A",undefined,1).room;
+  assert.equal(room.players[0].teamIndex,0);
+  room=enter(room,"B",undefined,2).room;
+  assert.equal(room.players[1].teamIndex,1);
+  room=enter(room,"C",undefined,3).room;
+  assert.equal(room.players[2].teamIndex,0);
+  room=enter(room,"D",1,4).room;
+  assert.equal(room.players[3].teamIndex,1);
+  assert.deepEqual(room.teams.map((t,i)=>room.players.filter(p=>p.teamIndex===i).length),[2,2]);
+  let four=fixture(["ALPHA","BRAVO","CHARLIE","DELTA"]).room;
+  for(let i=0;i<8;i++)four=enter(four,"P"+i,undefined,100+i).room;
+  assert.deepEqual(four.teams.map((t,i)=>four.players.filter(p=>p.teamIndex===i).length),[2,2,2,2]);
+});
+
+test("players can move teams in lobby, update both captains and unblock host start",()=>{
+  let {room,host}=fixture();
+  const alice=enter(room,"Alice",0,1);room=alice.room;
+  const bob=enter(room,"Bob",0,2);room=bob.room;
+  const eve=enter(room,"Eve",0,3);room=eve.room;
+  assert.throws(()=>act(room,host,"start"),/Each team needs a participant/);
+  assert.deepEqual(room.teams.map(t=>t.captainId),[alice.actor.playerId,null]);
+  room=act(room,bob.actor,"change_team",{teamIndex:1});
+  assert.deepEqual(room.teams.map(t=>t.captainId),[alice.actor.playerId,bob.actor.playerId]);
+  assert.equal(viewFor(room,bob.actor).viewer.captain,true);
+  assert.equal(viewFor(room,bob.actor).viewer.teamIndex,1);
+  assert.equal(viewFor(room,host).teams[1].joined,1);
+  const projector=viewFor(room,{role:"projector"});
+  assert.deepEqual(projector.teams.map(t=>t.joined),[2,1]);
+  assert.equal("players" in projector,false);
+  assert.equal(JSON.stringify(projector).includes("Alice"),false);
+  room=act(room,alice.actor,"change_team",{teamIndex:1});
+  assert.equal(room.teams[0].captainId,eve.actor.playerId,"remaining player inherits captain");
+  assert.equal(room.teams[1].captainId,bob.actor.playerId,"captain stays captain when joined by former captain");
+  room=act(room,alice.actor,"change_team",{teamIndex:0});
+  assert.equal(room.teams[0].captainId,eve.actor.playerId);
+  room=act(room,host,"start");
+  assert.equal(room.phase,"advisers");
+  assert.throws(()=>act(room,bob.actor,"change_team",{teamIndex:0}),/lobby participant/);
+  assert.throws(()=>act(room,host,"change_team",{teamIndex:0}),/lobby participant/);
+});
+
+test("team move refuses invalid destinations, spectators and same-team moves without mutating room",()=>{
+  let {room,host}=fixture();
+  const a=enter(room,"Alice",0,1);room=a.room;
+  const snap=structuredClone(room);
+  assert.throws(()=>act(room,a.actor,"change_team",{teamIndex:99}),/destination team/);
+  assert.throws(()=>act(room,a.actor,"change_team",{teamIndex:0}),/already in that team/);
+  assert.throws(()=>act(room,host,"change_team",{teamIndex:1}),/lobby participant/);
+  assert.throws(()=>act(room,{role:"player",playerId:"not-present"},"change_team",{teamIndex:1}),/lobby participant/);
+  assert.deepEqual(room,snap);
 });

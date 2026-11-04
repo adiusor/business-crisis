@@ -92,13 +92,25 @@ try {
   const alice = await req("/api/rooms/" + roomCode + "/join", "POST", {nickname: "Alice", teamIndex: 0});
   assert.equal(alice.response.status, 201);
   const aliceWS = await socketFor(alice.payload.playerToken, roomCode);
-  const bob = await req("/api/rooms/" + roomCode + "/join", "POST", {nickname: "Bob", teamIndex: 1});
+  const bob = await req("/api/rooms/" + roomCode + "/join", "POST", {nickname: "Bob", teamIndex: 0});
   assert.equal(bob.response.status, 201);
   const bobWS = await socketFor(bob.payload.playerToken, roomCode);
-  await snapshot(host, s => s.players.length === 2, "host sees two participants");
+  const bothInOne=await snapshot(host, s => s.players.length === 2, "host sees both participants");
+  assert.deepEqual(bothInOne.teams.map(t=>t.joined),[2,0],"reproduces same-team join issue");
+  const cannotStart=await req("/api/rooms/" + roomCode + "/actions","POST",
+    {type:"start",expectedRevision:bob.payload.state.revision},hostToken);
+  assert.equal(cannotStart.response.status,409,"Empty opponent team prevents start");
+  const moved=await req("/api/rooms/" + roomCode + "/actions","POST",
+    {type:"change_team",teamIndex:1,expectedRevision:bob.payload.state.revision},bob.payload.playerToken);
+  assert.equal(moved.response.status,200,"Bob can switch teams after joining");
+  assert.equal(moved.payload.state.viewer.captain,true);
+  assert.equal(moved.payload.state.viewer.teamIndex,1);
+  const balanced=await snapshot(host,s=>s.revision===moved.payload.state.revision,"host sees moved participant");
+  assert.deepEqual(balanced.teams.map(t=>t.joined),[1,1]);
+  await snapshot(bobWS,s=>s.revision===moved.payload.state.revision&&s.viewer.teamIndex===1,"Bob sees new team");
   const rename = await req("/api/rooms/" + roomCode + "/actions", "POST", {
     type: "rename_team", name: lobby.payload.teamNameOptions.find(n => !lobby.payload.teams.some(t => t.name === n)),
-    expectedRevision: bob.payload.state.revision
+    expectedRevision: moved.payload.state.revision
   }, alice.payload.playerToken);
   assert.equal(rename.response.status, 200, "Captain can rename room team: " + JSON.stringify(rename.payload));
   await snapshot(host, s => s.revision === rename.payload.state.revision, "host sees team rename");
@@ -176,6 +188,7 @@ try {
   assert.equal(projectorView.payload.state.viewer.role,"projector");
   assert.equal(JSON.stringify(projectorView.payload.state).includes('"players"'),false);
   assert.equal(JSON.stringify(projectorView.payload.state).includes('"privateTeam"'),false);
+  assert.deepEqual(projectorView.payload.state.teams.map(t=>t.joined),[1,1]);
   assert.equal(JSON.stringify(projectorView.payload.state).includes("Alice"),false);
   assert.equal((await req("/api/rooms/" + roomCode + "/actions","POST",
     {type:"advance",expectedRevision:projectorView.payload.state.revision},projectorAccess)).response.status,403);
@@ -219,15 +232,18 @@ try {
     });
     await phoneA.goto(base + "/join?room=" + uiCode);
     await phoneA.locator("#join-name").fill("Mobile Alice");
-    await phoneA.locator("#join-team").selectOption("0");
+    assert.equal(await phoneA.locator("#join-team").inputValue(),"auto");
+    await phoneA.locator("#join-team").selectOption("auto");
     await phoneA.locator("#join-form button.primary").click();
     await phoneA.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
     await phoneB.goto(base + "/join?room=" + uiCode);
     await phoneB.locator("#join-name").fill("Mobile Bob");
-    await phoneB.locator("#join-team").selectOption("1");
+    await phoneB.locator("#join-team").selectOption("0");
     await phoneB.locator("#join-form button.primary").click();
     await phoneB.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
     await hostUI.waitForFunction(() => document.querySelector("#team-list")?.textContent?.includes("Mobile Bob"));
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "No start when all players join the same team");
     // Host can issue a projection link without revealing their own host bearer token.
     await hostUI.locator("#rotate-projector").click();
     await hostUI.locator("#projector-link").waitFor({state:"visible"});
@@ -244,6 +260,29 @@ try {
     assert.equal(new URL(projected.url()).hash,"","Projector fragment credential cleared from browser URL");
     assert.equal((await projected.locator("#team-list").innerText()).includes("Mobile Alice"),false,
       "Player nicknames cannot reach projection display");
+    assert.deepEqual(await projected.locator(".team small").allTextContents(),
+      ["2 PLAYERS JOINED","0 PLAYERS JOINED"],"Projector displays public counts from server, not hidden nicknames");
+    assert.equal(await projected.locator("#projector-invite").isVisible(),true);
+    assert.match(await projected.locator("#projector-join-link").getAttribute("href"),
+      new RegExp("/join\\?room="+uiCode+"$"));
+    const projectionQR=await projected.locator("#projector-qr").evaluate(async img=>{
+      if(!img.complete)await new Promise((resolve,reject)=>{
+        img.addEventListener("load",resolve,{once:true});img.addEventListener("error",reject,{once:true});
+      });
+      return {ok:img.naturalWidth>0,src:img.getAttribute("src")};
+    });
+    assert.equal(projectionQR.ok,true);
+    assert.equal(projectionQR.src,"/api/rooms/"+uiCode+"/qr");
+    await phoneB.locator("#change-team-select").selectOption("1");
+    await phoneB.locator("#change-team-button").click();
+    await phoneB.waitForFunction(()=>document.querySelector("#change-team-select")?.value==="1");
+    await projected.waitForFunction(()=>
+      [...document.querySelectorAll(".team small")].map(n=>n.textContent).join("|")==="1 PLAYER JOINED|1 PLAYER JOINED",
+      null,{timeout:12000});
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),false,
+      "Rebalancing 2 devices enables game start");
+    assert.equal(await phoneB.locator("#captain-tools").isVisible(),true,
+      "First participant on destination team becomes captain");
 
     const original = (await phoneA.locator(".team.mine strong").textContent()).trim();
     const options = await phoneA.locator("#team-name-choice option").evaluateAll(xs => xs.map(x => x.value));

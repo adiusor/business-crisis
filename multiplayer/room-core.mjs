@@ -59,9 +59,17 @@ export function rotateProjector(room,newHash){
  next.projectorHash=newHash;next.revision++;
  return next;
 }
+// Default to the least populated team. Explicit player selection remains authoritative.
+export function balancedTeamIndex(room){
+ requireState(room&&Array.isArray(room.teams)&&room.teams.length>=2,400,"Invalid room");
+ const counts=room.teams.map((t,i)=>room.players.filter(p=>p.teamIndex===i).length);
+ const smallest=Math.min(...counts);
+ return counts.indexOf(smallest);
+}
 export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId}){
  requireState(room.phase==="lobby",409,"Room already started; late joining is not enabled");
  requireState(room.players.length<MAX_PLAYERS,409,"Room join limit reached");
+ if(teamIndex===undefined||teamIndex===null)teamIndex=balancedTeamIndex(room);
  requireState(Number.isInteger(teamIndex)&&teamIndex>=0&&teamIndex<room.teams.length,400,"Invalid team");
  const nick=typeof nickname==="string"?nickname.trim():"";
  requireState(nick.length>=1&&nick.length<=24,400,"Nickname must contain 1–24 characters");
@@ -130,7 +138,19 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  const next=clone(room),isHost=actor&&actor.role==="host";
  const player=!isHost&&actor&&actor.role==="player"&&next.players.find(p=>p.id===actor.playerId);
  const type=command.type;
- if(type==="rename_team"){
+ if(type==="change_team"){
+  requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can change teams");
+  const destination=command.teamIndex;
+  requireState(Number.isInteger(destination)&&destination>=0&&destination<next.teams.length,400,"Invalid destination team");
+  requireState(destination!==player.teamIndex,409,"You are already in that team");
+  const previous=player.teamIndex;
+  player.teamIndex=destination;
+  // Captain handover follows stable join order to avoid orphaned leadership.
+  if(next.teams[previous].captainId===player.id)
+   next.teams[previous].captainId=next.players.find(p=>p.teamIndex===previous)?.id||null;
+  if(!next.teams[destination].captainId)
+   next.teams[destination].captainId=player.id;
+ }else if(type==="rename_team"){
   requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can rename their team");
   const t=next.teams[player.teamIndex];
   requireState(t.captainId===player.id,403,"Only the team captain can rename");
@@ -204,7 +224,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
    lastRecap:room.lastRecap,
-   teams:room.teams.map(t=>({name:t.name,ready:!!t.captainId,locked:t.locked,
+   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty})),
    verdict:room.phase==="complete"?finalVerdict(room):null};
  }

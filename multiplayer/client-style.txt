@@ -132,3 +132,14 @@ footer{max-width:1500px;margin:auto;padding:22px 6vw 34px;display:flex;justify-c
  .projector-mode #timer-wrap{display:block}
  .projector-mode #timer-wrap p{text-align:center;max-width:none}
 }
+
+/* Clearly visible room-specific QR on the read-only projected display. */
+.projector-invite{margin:12px 0 25px;padding:22px 26px;border:2px solid #eaa975;background:#162f3e;display:grid;grid-template-columns:minmax(0,1fr) 240px;align-items:center;gap:26px}
+.projector-invite-copy strong{display:block;font-size:clamp(19px,2.4vw,32px);font-weight:900;letter-spacing:.04em;color:#f4c295;margin:10px 0}
+.projector-invite-copy p{font-size:clamp(15px,1.4vw,21px)}
+.projector-invite-copy a{overflow-wrap:anywhere;color:#f0b586;font-size:clamp(12px,1.2vw,17px)}
+.projector-invite img{width:240px;height:240px;background:#fff;border:10px solid #fff;border-radius:3px}
+.lobby-transfer{display:flex;align-items:center;gap:10px;margin:14px 0}
+.lobby-transfer select{min-width:0;flex:1}
+.lobby-transfer button{flex:none}
+@media(max-width:750px){.projector-invite{grid-template-columns:1fr}.projector-invite img{width:240px;height:240px;max-width:100%}.lobby-transfer{flex-direction:column;align-items:stretch}}

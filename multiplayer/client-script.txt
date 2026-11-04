@@ -76,12 +76,14 @@
       $("join-caption").textContent = "Choose a nickname and the group you want to join. You can join without an account.";
       const target = $("join-team"), old = target.value;
       target.replaceChildren();
+      const automatic = node("option", "AUTO — assign to the smallest team");
+      automatic.value = "auto"; target.append(automatic);
       data.teams.forEach((team, index) => {
         const opt = node("option", team.name + " · " + team.joined + " joined");
         opt.value = String(index);
         target.append(opt);
       });
-      if ([...target.options].some(o => o.value === old)) target.value = old;
+      target.value = [...target.options].some(o => o.value === old) ? old : "auto";
       show("join");
     } catch (e) { show("join"); error(e.message); }
   }
@@ -92,7 +94,10 @@
       const lhs = node("div");
       lhs.append(node("strong", team.name));
       const people = (state.players || []).filter(p => p.teamIndex === i).map(p => p.nickname);
-      lhs.append(node("small", people.length ? people.join(", ") : "No players yet"));
+      const count = Number.isInteger(team.joined) ? team.joined : people.length;
+      lhs.append(node("small", state.viewer.role === "projector" ?
+        count + " PLAYER" + (count === 1 ? "" : "S") + " JOINED" :
+        (people.length ? people.join(", ") : "No players yet")));
       const status = state.phase === "lobby" ? (team.ready ? "READY" : "WAITING") :
         (team.timedOut ? "TIMEOUT" : team.locked ? "LOCKED" : "CHOOSING");
       const rhs = node("span", status, "meta");
@@ -171,9 +176,24 @@
     if (target.hidden) return;
     const mine = state.teams[state.viewer.teamIndex],privateData=state.privateTeam;
     if (state.phase === "lobby") {
-      target.append(node("p", state.viewer.captain ?
-        "You are your team's captain. You may rename it and submit its decisions." :
-        "You joined successfully. Your captain will confirm the team's decisions."));
+      target.append(node("h3","YOUR TEAM / CHANGE BEFORE START","section-label"));
+      target.append(node("p", "You're currently on " + mine.name + ". You can switch freely until the host starts. The first member of a team becomes its captain."));
+      const form = node("div",null,"lobby-transfer");
+      const select = node("select"); select.id="change-team-select";
+      state.teams.forEach((team,index)=>{
+        const option=node("option",team.name+" · "+team.joined+" player"+(team.joined===1?"":"s"));
+        option.value=String(index);select.append(option);
+      });
+      select.value=String(state.viewer.teamIndex);
+      const move=button("SWITCH TEAM",()=>action({
+        type:"change_team",teamIndex:Number(select.value)
+      }).catch(e=>error(e.message)),"secondary",true);
+      move.id="change-team-button";
+      select.addEventListener("change",()=>{move.disabled=Number(select.value)===state.viewer.teamIndex;});
+      form.append(select,move);target.append(form);
+      target.append(node("p",state.viewer.captain?
+        "You are captain of this team and can rename it before the start.":
+        "You are a member of this team. Its captain will submit decisions."));
       return;
     }
     if (state.phase === "complete") {
@@ -340,6 +360,17 @@
     const projection = state.viewer.role === "projector";
     document.body.classList.toggle("projector-mode", projection);
     $("viewer-mode").hidden = !projection;
+    $("projector-invite").hidden = !projection;
+    if (projection) {
+      const link = location.origin + "/join?room=" + state.code;
+      $("projector-invite-room").textContent = state.code;
+      $("projector-join-link").href = link;
+      $("projector-join-link").textContent = link;
+      $("projector-qr").src = "/api/rooms/" + state.code + "/qr";
+      $("projector-invite-status").textContent = state.phase === "lobby" ?
+        "SCAN TO JOIN · ENTER YOUR NAME & CHOOSE A TEAM" :
+        "ROOM IN PROGRESS · JOINING CLOSED";
+    }
     $("host-share").hidden = state.viewer.role !== "host";
     $("projector-share").hidden = state.viewer.role !== "host";
     if (state.viewer.role === "host") {
@@ -383,7 +414,7 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "lock_advisers", "submit_decision"].includes(command.type);
+          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
           if (command.type === "lock_advisers" || command.type === "submit_decision") {
@@ -494,8 +525,11 @@
   $("join-form").addEventListener("submit", async e => {
     e.preventDefault(); error("");
     try {
+      const selectedTeam = $("join-team").value;
+      const payload = {nickname: $("join-name").value};
+      if (selectedTeam !== "auto") payload.teamIndex = Number(selectedTeam);
       const data = await request("/api/rooms/" + roomCode + "/join", {method: "POST",
-        body: JSON.stringify({nickname: $("join-name").value, teamIndex: Number($("join-team").value)})});
+        body: JSON.stringify(payload)});
       saveSession(data.playerToken); showRoom(data.state); connect();
     } catch (e) { error(e.message); }
   });
