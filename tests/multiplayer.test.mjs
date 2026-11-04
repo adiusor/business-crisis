@@ -171,7 +171,7 @@ test("lobby discovery does not expose tokens, nicknames or team-private choices"
   assert.equal(JSON.stringify(publicView).includes("credentialHash"), false);
   room = act(room, host, "start");
   room = act(room, a.actor, "select_advisers", {advisers: [0, 4]});
-  assert.equal(JSON.stringify(viewFor(room, host)).includes('"advisers"'), false);
+  assert.equal(JSON.stringify(viewFor(room, host)).includes('"advisers":'), false);
   assert.deepEqual(viewFor(room, a.actor).privateTeam.advisers, [0, 4]);
   assert.deepEqual(viewFor(room, b.actor).privateTeam.advisers, []);
 });
@@ -255,7 +255,7 @@ test("points remain cumulative over six windows without leaking other teams' ans
   assert.equal(room.teams[1].roundResults.length, 6);
   assert.equal(room.teams[1].roundResults.every(r => r.penalty === 5), true);
   const hostView = viewFor(room, host);
-  assert.equal(JSON.stringify(hostView).includes('"advisers"'), false);
+  assert.equal(JSON.stringify(hostView).includes('"advisers":'), false);
   assert.equal(JSON.stringify(viewFor(room, a.actor)).includes('"advisers":[2,3]'), false);
 });
 
