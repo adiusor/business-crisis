@@ -738,3 +738,58 @@ h1,h2,h3{font-family:var(--bc-editorial)}
 .report-sheet{font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:15px}
 .report-head h2,.report-section-title,.report-team-timeline h4{font-family:var(--bc-editorial)}
 .report-explain,.report-reasons p{font-size:.88rem;line-height:1.56}
+
+
+/* A 720p projector is a single cinematic stage, not an endlessly scrolling
+   webpage. Keep the incident, collective clocks and three source exhibits
+   within a standard 1280×720 room display without removing information. */
+@media(min-width:1000px) and (max-height:800px){
+ .projector-mode.in-game .masthead{padding:7px 2.5vw;min-height:55px}
+ .projector-mode.in-game .brand-mark{padding:7px 9px;font-size:17px}
+ .projector-mode.in-game .brand{font-size:14px;gap:10px}
+ .projector-mode.in-game .brand small{font-size:9px;margin-top:2px}
+ .projector-mode.in-game .layout{padding:3px 2.4vw 9px}
+ .projector-mode.in-game .content-panel{padding:7px 14px 12px}
+ .projector-mode.in-game .room-bar{position:absolute;top:10px;right:2.5vw;z-index:4;display:block}
+ .projector-mode.in-game .room-bar>div{display:none}
+ .projector-mode.in-game .connection{padding:5px 10px;font-size:10px}
+ .projector-mode.in-game #timer-wrap{margin:0 0 5px;padding:2px 10px;min-height:41px}
+ .projector-mode.in-game #timer-wrap strong{font-size:36px}
+ .projector-mode.in-game #timer-wrap span{font-size:10px;letter-spacing:.08em}
+ .projector-mode.in-game #timer-wrap p{font-size:11px;max-width:355px}
+ .projector-mode.in-game #projector-intervention{
+  margin:2px 0 4px;padding:4px 10px;font-size:10px;letter-spacing:.035em}
+ .projector-mode.in-game .projector-ticker{margin:2px 0 5px;gap:6px}
+ .projector-mode.in-game .ticker-team{padding:5px 10px;min-height:46px;grid-template-columns:1fr auto}
+ .projector-mode.in-game .ticker-team strong{font-size:14px;margin-bottom:1px}
+ .projector-mode.in-game .ticker-status,.projector-mode.in-game .ticker-clock{font-size:11px}
+ .projector-mode.in-game .episode-panel{margin:5px 0;padding:9px 12px}
+ .projector-mode.in-game .scene-topline{margin-bottom:2px;padding-bottom:3px}
+ .projector-mode.in-game .scene-hero{min-height:149px;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:9px}
+ .projector-mode.in-game .scene-copy h3{font-size:clamp(44px,4.35vw,61px)!important;
+  margin:3px 0 6px;line-height:.97}
+ .projector-mode.in-game .scene-kicker{font-size:10px!important;margin:0}
+ .projector-mode.in-game .scene-headline{font-size:clamp(16px,1.6vw,21px)}
+ .projector-mode.in-game .scene-facts{margin:6px 0 0;gap:5px}
+ .projector-mode.in-game .scene-fact{padding:3px 7px;min-height:42px}
+ .projector-mode.in-game .scene-fact dt{font-size:9px;letter-spacing:.02em}
+ .projector-mode.in-game .scene-fact dd{font-size:17px;line-height:1.05}
+ .projector-mode.in-game .scene-art{min-height:150px;max-height:158px}
+ .projector-mode.in-game .scene-art svg{max-height:160px}
+ .projector-mode.in-game .episode-progress{margin:4px 0 6px;min-height:24px}
+ .projector-mode.in-game .episode-progress li{padding:4px 5px}
+ .projector-mode.in-game .episode-progress-name{font-size:9px}
+ .projector-mode.in-game .episode-index{font-size:9px}
+ .projector-mode.in-game .briefing-details{margin:4px 0}
+ .projector-mode.in-game .briefing-details summary{padding:6px 10px;font-size:11px;min-height:29px}
+ .projector-mode.in-game .evidence-heading{margin:5px 0 6px}
+ .projector-mode.in-game .evidence-heading strong{font-size:12px}
+ .projector-mode.in-game .evidence-heading small{font-size:10px}
+ .projector-mode.in-game .evidence-list{gap:10px}
+ .projector-mode.in-game .evidence-item summary{min-height:114px;padding:8px 10px}
+ .projector-mode.in-game .evidence-summary small{font-size:9px}
+ .projector-mode.in-game .evidence-summary strong{font-size:17px;line-height:1.16}
+ .projector-mode.in-game .evidence-finding{font-size:16px;line-height:1.32}
+ .projector-mode.in-game .evidence-item summary:after{margin-top:4px;font-size:9px}
+ .projector-mode.in-game footer{display:none}
+}

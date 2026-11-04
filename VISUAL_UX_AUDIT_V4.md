@@ -40,3 +40,11 @@ The pre-existing room protocol rejected an individual vote whenever **any other 
 The server now accepts a modern independent `lock_vote` whose `expectedRound` and `expectedRunoffOrdinal` exactly match the authoritative episode and private runoff stage, even if unrelated votes have increased the global room revision. It still rejects future revisions, duplicate votes, already completed teams, invalid selections, votes after the 4-minute deadline, and ballots from an earlier episode or earlier runoff. Non-vote changes, including host roster administration and stage advancement, retain strict revision guards. Existing legacy clients still use the original strict revision protocol.
 
 **Regression checks:** 30 simulated participants distributed across four teams all lock ballots from the same outdated revision; each team incurs its winning economic package **once**, not once per vote. A separate real local Cloudflare Durable Object test dispatches six HTTP ballots concurrently and verifies success, exactly-once team cost and rejection of an old-episode ballot after advance. These tests are meaningful contention checks, **not** evidence that 30–80 physical phones or unstable venue networks have been validated.
+
+## Evidence from inspecting real Chromium screenshots — 720p projection fix
+
+Actual full-page Chromium screenshots for the first v4 pass showed a material blind spot: at a **1280×720** viewport, the story art looked good, but the three public evidence cards started **below the physical viewport**. A complete screenshot was therefore misleading; viewers in the room would need the host to scroll just to see the exhibits.
+
+A 720p-specific density layout moves the nonessential live-connection badge into the header, reduces duplicate vertical chrome, tightens the ticker and hero without removing facts, and keeps all three evidence-card summaries on the same visible slide. Text on the evidence cards remains readable, and a new browser assertion checks the **actual evidence-list bottom edge** against the viewport height. A non-full-page `12-projection-actual-720p.png` screenshot is now included alongside the full-page captures.
+
+This is an intentional trade-off between 720p information density and distance-legibility. The test validates fit, not visibility from the back row of a large physical venue.

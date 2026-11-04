@@ -522,6 +522,16 @@ try {
     const projectedOverflow=await projected.evaluate(()=>
       document.documentElement.scrollWidth-innerWidth);
     assert.ok(projectedOverflow<=1,"1280px projector must avoid sideways scrolling");
+    const stage=await projected.evaluate(()=>{
+      const proof=document.querySelector(".evidence-list").getBoundingClientRect();
+      const hero=document.querySelector(".scene-hero").getBoundingClientRect();
+      return {proofBottom:proof.bottom,heroBottom:hero.bottom,viewport:innerHeight};
+    });
+    assert.ok(stage.proofBottom<=stage.viewport-8,
+      "All three evidence summaries must fit inside a real 720p projector viewport: "+
+      JSON.stringify(stage));
+    await projected.screenshot({path:path.join(root,"screenshots","12-projection-actual-720p.png"),
+      fullPage:false});
     await phoneA.screenshot({path:path.join(root,"screenshots","10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,"screenshots","11-design-v4-projection-1280.png"),fullPage:true});
 
