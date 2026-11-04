@@ -44,6 +44,7 @@ jobs:
       - name: Check economic engine and multiplayer authorization
         run: |
           npm run test:rules
+          npm run test:storyline
           npm run test:multiplayer
           npm run check:staging-bundle
 

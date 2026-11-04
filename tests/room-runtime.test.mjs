@@ -310,12 +310,36 @@ try {
     assert.match(await phoneA.locator("#timer-phase").textContent(), /STANDARD TIME/);
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
+    // Cinematic scene remains scannable: one hero, six chapter markers, and
+    // evidence whose full source paragraphs are progressively disclosed.
+    assert.equal(await phoneA.locator(".scene-art svg").count(),1);
+    assert.equal(await phoneA.locator(".episode-progress li").count(),6);
+    assert.equal(await phoneA.locator(".evidence-item[open]").count(),0);
+    assert.equal(await phoneA.locator(".briefing-details[open]").count(),0);
+    assert.equal(await phoneA.locator("body.in-game").count(),1);
+    await phoneA.locator(".evidence-item summary").first().click();
+    assert.equal(await phoneA.locator(".evidence-item[open]").count(),1);
+    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Subject: RESTRUCTURING/);
+    await phoneA.locator(".briefing-details summary").click();
+    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/600 employees/);
+    assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
+
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
     assert.equal(await projected.locator(".evidence-item").count(),3);
 
     await phoneA.locator('[data-choice="0"]').click();
     await phoneA.locator('[data-choice="1"]').click();
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
+    assert.equal(await phoneA.locator(".strategy-grid .strategy-choice").count(),3);
+    assert.equal(await phoneA.locator(".strategy-tradeoffs[open]").count(),0);
+    await phoneA.locator(".strategy-tradeoffs summary").first().click();
+    assert.match(await phoneA.locator(".strategy-tradeoffs[open]").innerText(),/UPSIDE/);
+    assert.equal(await phoneA.locator(".evidence-item[open]").count(),1,
+      "Expanded evidence stays open on subsequent live snapshots");
+    assert.equal(await phoneA.locator(".briefing-details[open]").count(),1,
+      "Briefing disclosure stays open as teammates vote");
+
     await phoneA.locator('[data-plan="0"]').click();
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
@@ -341,6 +365,8 @@ try {
     await phoneB.context().setOffline(false);
     await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
+    assert.equal(await phoneB.locator(".scene-art[data-scene='2'] svg").count(),1,
+      "Each episode uses the matching cinematic illustration");
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
 
@@ -361,6 +387,10 @@ try {
     await reportHost.locator("#boardroom-report").waitFor({state:"visible",timeout:12000});
     assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
     assert.equal(await reportHost.locator(".report-team").count(),2);
+    assert.equal(await reportHost.locator(".cash-trajectory svg").count(),2,
+      "Final report shows actual response fund trajectory for each team");
+    assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
+      "Host gets optional facilitator questions without adding default reading");
     assert.equal(await reportHost.locator(".report-episode").count(),12);
     assert.equal(await reportHost.getByRole("button",{name:"PRINT / SAVE AS PDF"}).count(),1);
     assert.equal((await reportHost.locator("#results").innerText()).includes("JSON"),false);
@@ -372,6 +402,9 @@ try {
     assert.match(html,/THE BOARDROOM VERDICT/);
     assert.match(html,/FINAL TEAM RANKINGS/);
     assert.match(html,/THE DECISION TRAIL/);
+    assert.match(html,/CASH TRAJECTORY/);
+    assert.match(html,/role="img"/);
+    assert.doesNotMatch(html,/FACILITATOR DEBRIEF/,"Debrief not exported into private team reports");
     assert.doesNotMatch(html,new RegExp(hostToken));
     assert.doesNotMatch(html,new RegExp(roomCode));
     assert.doesNotMatch(html,/<script/i);

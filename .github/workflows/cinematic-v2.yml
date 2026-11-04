@@ -33,6 +33,8 @@ jobs:
           node --check tests/multiplayer.test.mjs
       - name: Test economic engine and 1200 seeded sessions
         run: node tests/rules.test.cjs
+      - name: Audit six episodes and consequence coherence
+        run: node --test tests/storyline.test.cjs
       - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
         run: |
           node --test tests/multiplayer.test.mjs

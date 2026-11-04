@@ -11,7 +11,8 @@
     "test:multiplayer": "node --test tests/multiplayer.test.mjs",
     "check:room-bundle": "wrangler deploy --dry-run --config multiplayer/wrangler.jsonc --outdir /tmp/business-crisis-rooms-build",
     "check:staging-isolation": "node scripts/check-staging.cjs",
-    "check:staging-bundle": "wrangler deploy --dry-run --config multiplayer/wrangler.staging.jsonc --outdir /tmp/business-crisis-staging-build"
+    "check:staging-bundle": "wrangler deploy --dry-run --config multiplayer/wrangler.staging.jsonc --outdir /tmp/business-crisis-staging-build",
+    "test:storyline": "node --test tests/storyline.test.cjs"
   },
   "devDependencies": {
     "playwright": "^1.52.0",

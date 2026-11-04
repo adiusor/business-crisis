@@ -581,3 +581,31 @@ test("three player majority applies a complete proposal once, without disclosing
  assert.equal(viewFor(room,b.actor).privateTeam.voting.runoff,null);
  assert.equal(viewFor(room,host).teams[0].votesSubmitted,3);
 });
+
+
+test("second tied vote ends the debate with a known captain casting vote instead of an endless loop",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const mate=enter(room,"Eve",0,3);room=mate.room;
+ const b=enter(room,"Bob",1,2);room=b.room;
+ const now=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},now);
+ room=applyRoomAction(room,a.actor,{type:"select_advisers",advisers:[0,1],expectedRevision:room.revision},now+1);
+ const proposalA={planIndex:0,signalIndex:0};
+ const proposalB={planIndex:1,signalIndex:1};
+ for(const [actor,vote,at] of [[a.actor,proposalA,1000],[mate.actor,proposalB,2000]]){
+   room=applyRoomAction(room,actor,{type:"lock_vote",...vote,expectedRevision:room.revision},now+at);
+ }
+ assert.equal(room.teams[0].locked,false);
+ assert.equal(room.teams[0].runoff.ordinal,1);
+ for(const [actor,vote,at] of [[a.actor,proposalB,3000],[mate.actor,proposalA,4000]]){
+   room=applyRoomAction(room,actor,{type:"lock_vote",...vote,expectedRevision:room.revision},now+at);
+ }
+ assert.equal(room.teams[0].locked,true,"second tied runoff must finish");
+ assert.equal(room.teams[0].economic.history.length,1,"business rule applied exactly once");
+ assert.equal(room.teams[0].economic.history[0].planIndex,proposalB.planIndex,"captain's runoff vote is casting vote");
+ assert.equal(room.teams[0].economic.history[0].signalIndex,proposalB.signalIndex);
+ assert.equal(room.teams[0].runoff,null);
+ assert.equal(room.teams[0].lockedAtMs,now+4000);
+ assert.equal(viewFor(room,a.actor,now+20000).privateTeam.teamClock.stage,"locked");
+});

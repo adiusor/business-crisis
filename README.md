@@ -56,6 +56,16 @@ npm run check:staging-bundle
 bash -n scripts/smoke-staging.sh
 ```
 
+## Cinematic information design and storyline audit
+
+**The game keeps its economic and narrative depth while reducing simultaneous reading.** The six episodes now use custom, lightweight vector scene illustrations; a six-step visual progress strip; a one-line evidence finding on each of three exhibits (full source revealed on click); and a collapsed full briefing for players who want more context. Strategy choices show their core action and description first, with benefits, cost and trade-offs available behind **Reveal trade-offs**. Confidential adviser briefs are retained and grouped as a private expandable dossier.
+
+The active player screen now shows a **team-private live exposure strip**: response cash, client trust, commitments and four named risk-index bars (lower is better). The projector never receives that sensitive team data. Actual playtime remains governed by the server, with individual-team clock freezes after the winning full ballot is resolved. When an in-team revote ties again, the captain's revote ballot is the casting vote, preventing an endless loop; this is announced before the runoff.
+
+The stage uses restrained navy/petrol tones with meaningful amber/teal/coral accents, illustrated incident scenes, high visibility labels and nonessential animation disabled by `prefers-reduced-motion`. Design is informed by progressive disclosure and accessibility guidance, not unverified claims that one colour will make players behave a certain way.
+
+See **[EXPERIENCE_RESEARCH_STORY_AUDIT.md](EXPERIENCE_RESEARCH_STORY_AUDIT.md)** for public UX research sources, six-episode causal and timeline review, scoring logic, deferred obligations, recommended facilitator prompts, unanswered questions and testing limitations. `tests/storyline.test.cjs` guards structural and economic consistency; these checks do **not** substitute for a real facilitated group playtest.
+
 ## Play and review
 
 The repository root `index.html` on **this branch** is a standalone, self-contained game. Download the file and open it in a modern browser. Do **not** merge into `main` or replace the Cloudflare production Worker until founder approval.

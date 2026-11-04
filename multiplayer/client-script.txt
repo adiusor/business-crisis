@@ -3,7 +3,7 @@
 // Never stores or transmits an email address. Room bearer tokens remain in sessionStorage.
 (() => {
   const $ = id => document.getElementById(id);
-  const REPORT_EXPORT_CSS = "*{box-sizing:border-box}body{margin:0;padding:32px;background:#e8ecef;color:#152330;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.55}\n.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}\n.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}\n.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}\n.report-eyebrow,.report-kicker{color:#efb17c}\n.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}\n.report-subhead{color:#bbcbd4;font-size:18px}\n.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}\n.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}\n.report-winner p{color:#c3d2dc}\n.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}\n.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}\n.report-rankings{display:grid;gap:16px}\n.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}\n.report-team.winner{border:2px solid #bb7e49}\n.report-rank-row{display:flex;justify-content:space-between;gap:20px}\n.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}\n.report-rank-number,.report-status,.report-episode-number{color:#b87842}\n.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}\n.report-final-score strong{font-size:49px;line-height:1}\n.report-final-score span{font-size:14px;color:#5b6975}\n.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}\n.report-score-fill{height:100%;background:#bf844f}\n.report-formula{font-size:12px;color:#566677}\n.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}\n.report-metric{background:#edf2f4;padding:12px}\n.report-metric small{display:block;color:#6a7d8b;font-size:9px}\n.report-metric strong{display:block;font-size:17px;margin-top:5px}\n.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}\n.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}\n.report-reasons p{margin:6px 0;font-size:12px}\n.report-team-timeline{break-before:auto;page-break-inside:auto}\n.report-team-timeline h4{font-size:20px;margin:24px 0 12px}\n.report-episodes{display:grid;gap:9px}\n.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}\n.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}\n.report-episode-top strong{font-size:17px}\n.report-missed{color:#a43d31;font-size:11px;font-weight:900}\n.report-choice-line{font-size:14px;margin:8px 0}\n.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}\n.report-fallout{font-size:12px;color:#435360}\n.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}\n.report-foot strong{color:#263a47}\n@media(max-width:650px){body{padding:0}.report-sheet{padding:15px;box-shadow:none}.report-head{padding:22px}.report-head h2{font-size:33px}.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-rank-row h4{font-size:20px}}\n@media print{@page{size:A4;margin:13mm}body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report-sheet{max-width:none;box-shadow:none;padding:0}.report-team{break-inside:avoid}.report-head{break-inside:avoid}}";
+  const REPORT_EXPORT_CSS = "*{box-sizing:border-box}body{margin:0;padding:32px;background:#e8ecef;color:#152330;font-family:Inter,Arial,sans-serif;font-size:14px;line-height:1.55}\n.report-sheet{max-width:940px;margin:auto;background:#fff;padding:40px;box-shadow:0 10px 30px #23384725}\n.report-head{padding:30px 30px 22px;background:#101e2b;color:#fff}\n.report-eyebrow,.report-kicker,.report-rank-number,.report-status,.report-metric small,.report-episode-number{font-size:11px;letter-spacing:.15em;font-weight:800}\n.report-eyebrow,.report-kicker{color:#efb17c}\n.report-head h2{font-size:46px;letter-spacing:-.05em;line-height:1;margin:13px 0}\n.report-subhead{color:#bbcbd4;font-size:18px}\n.report-winner{padding:20px 0 5px;border-top:1px solid #67798666}\n.report-winner strong{display:block;font-size:28px;line-height:1.2;margin:7px 0}\n.report-winner p{color:#c3d2dc}\n.report-section-title{margin:33px 0 4px;font-size:18px;letter-spacing:.11em;border-bottom:2px solid #e7aa75;padding-bottom:10px}\n.report-explain{font-size:13px;color:#536575;margin:12px 0 20px}\n.report-rankings{display:grid;gap:16px}\n.report-team{border:1px solid #ccdae1;padding:22px;break-inside:avoid}\n.report-team.winner{border:2px solid #bb7e49}\n.report-rank-row{display:flex;justify-content:space-between;gap:20px}\n.report-rank-row h4{font-size:25px;margin:5px 0;letter-spacing:-.04em}\n.report-rank-number,.report-status,.report-episode-number{color:#b87842}\n.report-final-score{display:flex;align-items:baseline;gap:5px;white-space:nowrap}\n.report-final-score strong{font-size:49px;line-height:1}\n.report-final-score span{font-size:14px;color:#5b6975}\n.report-score-track{height:9px;background:#e6ecef;margin:18px 0 10px}\n.report-score-fill{height:100%;background:#bf844f}\n.report-formula{font-size:12px;color:#566677}\n.report-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}\n.report-metric{background:#edf2f4;padding:12px}\n.report-metric small{display:block;color:#6a7d8b;font-size:9px}\n.report-metric strong{display:block;font-size:17px;margin-top:5px}\n.report-reasons{border-top:1px solid #d9e2e8;margin-top:16px;padding-top:12px}\n.report-reasons h5{font-size:11px;color:#7e5c46;letter-spacing:.15em;margin:0}\n.report-reasons p{margin:6px 0;font-size:12px}\n.report-team-timeline{break-before:auto;page-break-inside:auto}\n.report-team-timeline h4{font-size:20px;margin:24px 0 12px}\n.report-episodes{display:grid;gap:9px}\n.report-episode{border-left:3px solid #b57f52;background:#f1f5f6;padding:15px 18px;break-inside:avoid}\n.report-episode-top{display:flex;align-items:baseline;flex-wrap:wrap;gap:12px}\n.report-episode-top strong{font-size:17px}\n.report-missed{color:#a43d31;font-size:11px;font-weight:900}\n.report-choice-line{font-size:14px;margin:8px 0}\n.report-episode-metrics{display:flex;flex-wrap:wrap;gap:15px;color:#586875;font-size:11px;font-weight:800}\n.report-fallout{font-size:12px;color:#435360}\n.report-foot{border-top:2px solid #202e39;margin-top:32px;padding-top:14px;font-size:11px;color:#556573}\n.report-foot strong{color:#263a47}\n@media(max-width:650px){body{padding:0}.report-sheet{padding:15px;box-shadow:none}.report-head{padding:22px}.report-head h2{font-size:33px}.report-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-rank-row h4{font-size:20px}}\n@media print{@page{size:A4;margin:13mm}body{padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report-sheet{max-width:none;box-shadow:none;padding:0}.report-team{break-inside:avoid}.report-head{break-inside:avoid}}.cash-trajectory{border-top:1px solid #d9e2e8;margin:18px 0 8px;padding:14px 0 0}\n.cash-heading{font-size:11px;letter-spacing:.13em;color:#7e5c46}\n.cash-trajectory-labels{display:flex;justify-content:space-between;gap:10px;font-size:10px;font-weight:800;color:#687681}\n.cash-trajectory svg{display:block;overflow:visible}\n";
   const ADV = [
     ["MARA VALE", "GENERAL COUNSEL"], ["DANIEL ROOK", "OPERATIONS DIRECTOR"],
     ["INES PARK", "CLIENT PARTNER"], ["ELI MERCER", "FINANCE CONTROLLER"],
@@ -22,6 +22,11 @@
   let retryDelay = 1000;
   let clockOffset = 0;
   let draftPicks = null;
+  let briefingOpen = false;
+  const expandedEvidence = new Set();
+  const expandedStrategies = new Set();
+  let expandedIntel = false;
+  let expandedRecap = false;
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   let draftRunoffOrdinal = 0;
@@ -189,25 +194,124 @@
     select.value = [...select.options].some(x => x.value === previous) ? previous : own.name;
     $("rename-team").disabled = !select.value || select.value === own.name;
   }
+  function sceneArtwork(number) {
+    const wrap = node("div", null, "scene-art");
+    wrap.dataset.scene = String(number);
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 340 200");
+    svg.setAttribute("role", "presentation");
+    svg.setAttribute("aria-hidden", "true");
+    const add = (tag, attrs) => {
+      const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [name,value] of Object.entries(attrs)) el.setAttribute(name, String(value));
+      svg.append(el);
+    };
+    const p = (d,cls) => add("path",{d,class:cls||"scene-ink"});
+    for(let i=0;i<7;i++){
+      add("line",{x1:30+i*47,y1:18,x2:30+i*47,y2:186,class:"scene-grid"});
+    }
+    for(let j=0;j<4;j++){
+      add("line",{x1:16,y1:35+j*44,x2:324,y2:35+j*44,class:"scene-grid"});
+    }
+    add("circle",{cx:170,cy:100,r:78,class:"scene-halo"});
+    const n=Number(number);
+    if(n===1){
+      add("rect",{x:97,y:68,width:146,height:90,rx:3,class:"scene-frame"});
+      p("M97 69 L170 119 L243 69 M97 157 L147 116 M243 157 L194 116");
+      add("circle",{cx:250,cy:59,r:18,class:"scene-alert"});
+      p("M250 49 L250 64 M250 70 L250 72","scene-ink scene-alert-ink");
+    }else if(n===2){
+      [122,170,218].forEach((cx,i)=>{
+        add("circle",{cx,cy:77+(i%2)*8,r:15,class:"scene-frame"});
+        p("M"+(cx-30)+" "+(137+i%2*7)+" Q"+cx+" "+(96+i%2*7)+" "+(cx+30)+" "+(137+i%2*7));
+      });
+      p("M103 158 L237 158");
+    }else if(n===3){
+      add("rect",{x:122,y:40,width:99,height:124,rx:3,class:"scene-frame"});
+      p("M141 77 L199 77 M141 92 L199 92 M141 108 L185 108 M142 142 L166 142 L194 123");
+      p("M212 135 Q259 110 272 138","scene-accent");
+    }else if(n===4){
+      [99,121,143,165,187,209,231].forEach((x,i)=>add("rect",
+        {x,y:95-[18,43,58,27,67,49,30][i]/2,width:11,height:[18,43,58,27,67,49,30][i],rx:2,class:"scene-column"}));
+      p("M80 143 L259 143 M80 56 L259 56");
+      add("circle",{cx:275,cy:62,r:11,class:"scene-alert"});
+    }else if(n===5){
+      p("M62 144 L111 144 L129 118 L201 118 L224 144 L279 144");
+      p("M110 144 L110 93 L166 93 L166 117 M167 117 L215 117 L215 101 L238 101 L262 133");
+      [118,251].forEach(cx=>add("circle",{cx,cy:149,r:18,class:"scene-frame"}));
+      p("M62 74 L280 74 M240 66 L280 74 L240 82");
+    }else{
+      add("circle",{cx:171,cy:103,r:63,class:"scene-frame"});
+      p("M140 103 L162 124 L207 82","scene-accent");
+      p("M97 171 L244 171 M126 38 L217 38");
+      add("circle",{cx:171,cy:103,r:83,class:"scene-ring"});
+    }
+    wrap.append(svg);
+    const num = node("span",String(number).padStart(2,"0"),"scene-watermark");
+    num.setAttribute("aria-hidden","true");wrap.append(num);
+    return wrap;
+  }
   function renderEpisode() {
     const box = $("episode-panel");
-    box.replaceChildren();
     const e = state.episode;
     box.hidden = !e;
-    if (!e) return;
-    box.append(node("div", "EPISODE " + e.number + " / " + e.time + " / " + e.kicker, "eyebrow"));
-    box.append(node("h3", e.title));
-    box.append(node("p", e.brief, "episode-intro"));
-    box.append(node("div", "THE EVIDENCE / THREE EXHIBITS", "section-label"));
-    const list = node("div", null, "evidence-list");
-    for (const d of e.evidence) {
-      const card = node("article", null, "evidence-item");
-      card.append(node("small", d.type + " / " + d.time));
-      card.append(node("strong", d.title));
-      card.append(node("p", d.body));
-      card.append(node("p", "KEY FINDING: " + d.clue));
-      list.append(card);
+    if (!e) {
+      box.replaceChildren(); box.dataset.episodeKey = "";return;
     }
+    const key = state.round + "-" + e.number;
+    // Don't replace the dossier while teammates vote: keep scroll/focus and open
+    // evidence stable across server-pushed WebSocket snapshots.
+    if (box.dataset.episodeKey === key) return;
+    box.dataset.episodeKey = key;
+    box.replaceChildren();
+    const number = Number(e.number), top = node("div",null,"scene-topline");
+    top.append(node("span","EPISODE "+e.number+" / 06","eyebrow"));
+    top.append(node("span",e.time+" / LIVE INCIDENT","scene-timestamp"));
+    box.append(top);
+    const hero=node("div",null,"scene-hero"),copy=node("div",null,"scene-copy");
+    copy.append(node("p",e.kicker,"scene-kicker"));
+    copy.append(node("h3",e.title));
+    copy.append(node("strong",e.headline||e.kicker,"scene-headline"));
+    hero.append(copy,sceneArtwork(number));box.append(hero);
+    const progress=node("ol",null,"episode-progress");
+    ["THE SEND","THE FLOOR","THE ULTIMATUM","THE HEADLINE","THE BOTTLENECK","THE BOARD VOTE"].forEach((name,i)=>{
+      const item=node("li",null,i+1===number?"is-current":i+1<number?"is-past":"");
+      const marker=node("span",String(i+1).padStart(2,"0"),"episode-index");
+      marker.setAttribute("aria-hidden","true");
+      item.append(marker,node("span",name,"episode-progress-name"));
+      if(i+1===number)item.setAttribute("aria-current","step");
+      progress.append(item);
+    });
+    progress.setAttribute("aria-label","Six episode storyline");
+    box.append(progress);
+    const brief=node("details",null,"briefing-details");
+    brief.open=briefingOpen;
+    brief.addEventListener("toggle",()=>{briefingOpen=brief.open;});
+    brief.append(node("summary","READ THE INCIDENT BRIEF · FULL CONTEXT"));
+    brief.append(node("p",e.brief,"episode-intro"));
+    box.append(brief);
+    const heading=node("div",null,"evidence-heading");
+    heading.append(node("strong","THE EVIDENCE"));
+    heading.append(node("small","THREE EXHIBITS · TAP FOR SOURCE DETAILS"));
+    box.append(heading);
+    const list=node("div",null,"evidence-list");
+    e.evidence.forEach((d,i)=>{
+      const key=e.number+"-"+i;
+      const card=node("details",null,"evidence-item");
+      card.open=expandedEvidence.has(key);
+      card.addEventListener("toggle",()=>{
+        if(card.open)expandedEvidence.add(key);else expandedEvidence.delete(key);
+      });
+      const summary=node("summary",null,"evidence-summary");
+      summary.append(node("small",d.type+" / "+d.time));
+      summary.append(node("strong",d.title));
+      summary.append(node("span",d.clue,"evidence-finding"));
+      card.append(summary);
+      const source=node("div",null,"evidence-source");
+      source.append(node("small","SOURCE DOCUMENT / EXPAND TO READ"));
+      source.append(node("p",d.body));
+      card.append(source);list.append(card);
+    });
     box.append(list);
   }
   function renderRecap() {
@@ -215,12 +319,55 @@
     box.replaceChildren();
     box.hidden = !state.lastRecap;
     if (!state.lastRecap) return;
-    box.append(node("h3", "PREVIOUS EPISODE / DECISIONS & CONSEQUENCES"));
-    for (const team of state.lastRecap.teams) {
-      box.append(node("p", team.name + ": " + team.plan + " / " + team.signal +
-        ". Cash remaining: £" + team.cash.toLocaleString("en-GB") +
-        ". Trust: " + team.trust + ". Time penalty: −" + team.timingPenalty + "."));
+    const details=node("details",null,"recap-details");
+    details.open=expandedRecap;
+    details.addEventListener("toggle",()=>{expandedRecap=details.open;});
+    const summary=node("summary");
+    summary.append(node("span","AFTERSHOCK / PREVIOUS EPISODE"));
+    summary.append(node("small","REVEAL THE PUBLIC DECISION LOG"));
+    details.append(summary);
+    for(const team of state.lastRecap.teams) {
+      const line=node("div",null,"recap-team");
+      line.append(node("strong",team.name));
+      line.append(node("span",team.plan+" / "+team.signal));
+      line.append(node("small","CASH £"+team.cash.toLocaleString("en-GB")+
+        " · TRUST "+team.trust+" · TIME PENALTY −"+team.timingPenalty));
+      details.append(line);
     }
+    box.append(details);
+  }
+
+  function renderPrivateExposure(economic) {
+    const panel=node("section",null,"exposure-panel");
+    panel.setAttribute("aria-label","Private team financial and risk picture");
+    const head=node("div",null,"exposure-heading");
+    head.append(node("span","YOUR TEAM / LIVE EXPOSURE"));
+    head.append(node("small","RISK INDEX · LOWER IS BETTER"));
+    panel.append(head);
+    const metrics=node("div",null,"exposure-metrics");
+    for(const [label,value,kind] of [
+      ["RESPONSE CASH","£"+economic.cash.toLocaleString("en-GB"),"cash"],
+      ["CLIENT TRUST",economic.trust+"/100","trust"],
+      ["FUTURE COMMITMENTS","£"+economic.pendingLiability.toLocaleString("en-GB"),"liability"]
+    ]) {
+      const item=node("div",null,"exposure-metric "+kind);
+      item.append(node("small",label),node("strong",value));metrics.append(item);
+    }
+    panel.append(metrics);
+    const list=node("div",null,"exposure-risk-list");
+    for(const [key,label] of [
+      ["legal","LEGAL"],["ops","OPERATIONS"],["workforce","PEOPLE"],["customer","CLIENT"]
+    ]) {
+      const value=economic.risks[key];
+      const entry=node("div",null,"risk-entry");
+      const caption=node("div",null,"risk-caption");
+      caption.append(node("span",label),node("strong",String(value)));
+      const track=node("div",null,"risk-track");
+      const fill=node("span",null,"risk-fill "+(value>=68?"is-high":value>=42?"is-mid":"is-low"));
+      fill.style.width=Math.max(0,Math.min(100,value))+"%";
+      track.append(fill);entry.append(caption,track);list.append(entry);
+    }
+    panel.append(list);return panel;
   }
   function labelledSelect(labelText, options, value, onChange, className = "decision-select") {
     const wrap = node("div");
@@ -270,8 +417,7 @@
       return;
     }
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
-    target.append(node("p", "Response fund: £" + privateData.economic.cash.toLocaleString("en-GB") +
-      " · Client confidence: " + privateData.economic.trust + "/100", "private-cash"));
+    target.append(renderPrivateExposure(privateData.economic));
     const progress = node("div", null, "ballot-progress");
     progress.append(node("strong", mine.locked ?
       (mine.timedOut ? "DEADLINE MISSED" : "TEAM DECISION LOCKED · CLOCK STOPPED") :
@@ -279,17 +425,20 @@
     progress.append(node("p", mine.locked ?
       (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
-      "Every team member locks one complete proposal. The most popular wins when all have voted; a tie triggers a private debate and revote."));
+      "Every player locks a complete proposal. Most votes wins; a tie sends your team into a private revote."));
     target.append(progress);
     if (privateData.intelligence.length) {
-      target.append(node("h3", "CLASSIFIED / YOUR TEAM ONLY", "section-label"));
-      const intel = node("div", null, "intel-list");
-      for (const entry of privateData.intelligence) {
-        const card = node("article", null, "intel-card");
-        card.append(node("strong", entry.name), node("small", entry.role), node("p", entry.brief));
+      const dossier=node("details",null,"intel-dossier");
+      dossier.open=expandedIntel;
+      dossier.addEventListener("toggle",()=>{expandedIntel=dossier.open;});
+      dossier.append(node("summary","CLASSIFIED ADVICE · 2 PRIVATE BRIEFINGS"));
+      const intel=node("div",null,"intel-list");
+      for(const entry of privateData.intelligence){
+        const card=node("article",null,"intel-card");
+        card.append(node("strong",entry.name),node("small",entry.role),node("p",entry.brief));
         intel.append(card);
       }
-      target.append(intel);
+      dossier.append(intel);target.append(dossier);
     }
     if (mine.locked) return;
     if (voting.myVote) {
@@ -324,7 +473,7 @@
     const ep = state.episode;
     if (voting.runoff) {
       target.append(node("h3", "PRIVATE TEAM DEBATE / TIE BREAK", "section-label"));
-      target.append(node("p", "Your votes were tied. Discuss the trade-offs, then choose between the two closest leading proposals. Everyone must vote again; your timer is still running."));
+      target.append(node("p", "Tie. Debate the two closest proposals, then everyone votes again while the clock runs. If the revote is also tied, the captain's ballot decides."));
       voting.runoff.choices.forEach((proposal, i) => {
         const plan = ep.plans[proposal.planIndex], statement = ep.signals[proposal.signalIndex];
         const selected = draftPlan === proposal.planIndex && draftSignal === proposal.signalIndex &&
@@ -344,22 +493,38 @@
         choose.dataset.runoff = String(i); card.append(choose); target.append(card);
       });
     } else {
-      target.append(node("h3", "02 / CHOOSE YOUR STRATEGY", "section-label"));
-      for (let i = 0; i < ep.plans.length; i++) {
-        const p = ep.plans[i], card = node("article", null,
-          "strategy-choice" + (draftPlan === i ? " chosen" : ""));
-        card.append(node("strong", String.fromCharCode(65 + i) + " / " + p.name));
-        card.append(node("small", p.desc));
-        card.append(node("small", "BENEFITS: " + p.benefits.join("; ")));
-        card.append(node("small", "TRADE-OFF: " + p.cost +
-          " · SPEND £" + p.spend.toLocaleString("en-GB")));
-        const choose = button(draftPlan === i ? "SELECTED" : "SELECT STRATEGY", () => {
-          draftPlan = i; renderPlayerActions();
-          target.querySelector('[data-plan="' + i + '"]')?.focus({preventScroll:true});
-        }, "secondary");
-        choose.dataset.plan = i; choose.setAttribute("aria-pressed", String(draftPlan === i));
-        card.append(choose); target.append(card);
+      target.append(node("h3", "02 / YOUR STRATEGY", "section-label"));
+      target.append(node("p","Three routes. No perfect choice. Talk to your team.","decision-microcopy"));
+      const cards=node("div",null,"strategy-grid");
+      for(let i=0;i<ep.plans.length;i++){
+        const p=ep.plans[i],card=node("article",null,
+          "strategy-choice"+(draftPlan===i?" chosen":""));
+        const hdr=node("div",null,"strategy-head");
+        hdr.append(node("span",String.fromCharCode(65+i),"strategy-letter"));
+        const name=node("div");
+        name.append(node("strong",p.name),node("small",p.verb));
+        hdr.append(name);card.append(hdr);
+        card.append(node("p",p.desc,"strategy-description"));
+        const detail=node("details",null,"strategy-tradeoffs");
+        detail.open=expandedStrategies.has(state.round+"-"+i);
+        detail.addEventListener("toggle",()=>{
+          const key=state.round+"-"+i;
+          if(detail.open)expandedStrategies.add(key);
+          else expandedStrategies.delete(key);
+        });
+        detail.append(node("summary","REVEAL TRADE-OFFS · £"+p.spend.toLocaleString("en-GB")));
+        const facts=node("div",null,"strategy-facts");
+        facts.append(node("strong","UPSIDE"),node("p",p.benefits.join(" · ")));
+        facts.append(node("strong","COST"),node("p",p.cost));
+        detail.append(facts);card.append(detail);
+        const choose=button(draftPlan===i?"✓ SELECTED":"CHOOSE "+String.fromCharCode(65+i),()=>{
+          draftPlan=i;renderPlayerActions();
+          target.querySelector('[data-plan="'+i+'"]')?.focus({preventScroll:true});
+        },"secondary");
+        choose.dataset.plan=i;choose.setAttribute("aria-pressed",String(draftPlan===i));
+        card.append(choose);cards.append(card);
       }
+      target.append(cards);
       if (ep.allocations.length) {
         target.append(node("h3", "03 / OPTIONAL INVESTMENT", "section-label"));
         target.append(labelledSelect("Discretionary budget", [
@@ -409,6 +574,39 @@
       if (!ready) target.append(node("p", "Teams still deciding or debating. Each team freezes its own clock after everyone votes and a winning proposal is confirmed."));
       else target.append(node("p", "ALL TEAMS FINISHED. You can start the next episode now."));
     } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
+  }
+  function renderCashTrajectory(team) {
+    const wrap=node("section",null,"cash-trajectory");
+    wrap.append(node("strong","RESPONSE FUND / CASH TRAJECTORY","cash-heading"));
+    const cashValues=[260000,...team.decisions.map(x=>x.cash)];
+    const formatCash=n=>"£"+n.toLocaleString("en-GB");
+    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox","0 0 600 112");
+    svg.setAttribute("role","img");
+    svg.setAttribute("aria-label","Cash by episode, starting with "+formatCash(cashValues[0])+
+      ": "+cashValues.slice(1).map((x,i)=>"Episode "+(i+1)+" "+formatCash(x)).join("; "));
+    svg.setAttribute("style","display:block;width:100%;height:auto;max-height:120px");
+    const draw=(tag,attrs)=>{
+      const item=document.createElementNS("http://www.w3.org/2000/svg",tag);
+      for(const [k,v]of Object.entries(attrs))item.setAttribute(k,String(v));
+      svg.append(item);
+    };
+    const min=Math.min(0,...cashValues),max=Math.max(260000,...cashValues);
+    const range=Math.max(1,max-min);
+    const points=cashValues.map((value,i)=>({x:18+i*(564/(cashValues.length-1)),
+      y:14+(max-value)/range*82,value}));
+    for(let i=0;i<4;i++)draw("line",{x1:12,y1:14+i*27,x2:588,y2:14+i*27,
+      stroke:"#b1c6ca",opacity:.28,"stroke-width":1});
+    const pointsStr=points.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+    draw("polyline",{points:pointsStr,fill:"none",stroke:"#b77b48",
+      "stroke-width":3.8,"stroke-linecap":"round","stroke-linejoin":"round"});
+    for(const p of points)draw("circle",{cx:p.x,cy:p.y,r:4,fill:"#b77b48",stroke:"#fff","stroke-width":1.5});
+    wrap.append(svg);
+    const legend=node("div",null,"cash-trajectory-labels");
+    legend.append(node("span","OPENING "+formatCash(cashValues[0])));
+    legend.append(node("span","CLOSING "+formatCash(cashValues[cashValues.length-1])));
+    wrap.append(legend);
+    return wrap;
   }
   function renderResults() {
     const target = $("results");
@@ -465,6 +663,7 @@
         metric.append(node("small",label),node("strong",value));metrics.append(metric);
       }
       card.append(metrics);
+      card.append(renderCashTrajectory(team));
       if (team.reasons.length) {
         const reasons=node("div",null,"report-reasons");
         reasons.append(node("h5","WHY THIS OUTCOME"));
@@ -506,6 +705,18 @@
     sheet.append(footer);
     target.append(sheet);
 
+    if (state.viewer.role === "host") {
+      const debrief=node("details",null,"facilitator-debrief");
+      debrief.append(node("summary","FACILITATOR DEBRIEF · 3 QUESTIONS"));
+      const prompts=node("ol");
+      for(const prompt of [
+        "Which piece of evidence changed your team's mind?",
+        "Which public promise cost the business most — and was it worth it?",
+        "When did team disagreement improve your decision, and when did time pressure hurt it?"
+      ])prompts.append(node("li",prompt));
+      debrief.append(prompts);
+      target.append(debrief);
+    }
     if (state.viewer.role === "projector") return;
     const actions=node("div",null,"report-actions");
     actions.append(button("PRINT / SAVE AS PDF",()=>window.print(),"primary"));
@@ -534,6 +745,7 @@
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
       draftRunoffOrdinal = 0;
+      briefingOpen=false; expandedIntel=false; expandedRecap=false;
     }
     const runoffOrdinal = state.privateTeam?.voting?.runoff?.ordinal || 0;
     if (runoffOrdinal !== draftRunoffOrdinal) {
@@ -546,6 +758,8 @@
     $("room-code").parentElement.hidden = state.phase !== "lobby";
     const projection = state.viewer.role === "projector";
     document.body.classList.toggle("projector-mode", projection);
+    document.body.classList.toggle("in-game", state.phase === "advisers");
+    document.body.classList.toggle("game-complete", state.phase === "complete");
     $("viewer-mode").hidden = !projection;
     $("projector-invite").hidden = !projection || state.phase !== "lobby";
     if (projection) {

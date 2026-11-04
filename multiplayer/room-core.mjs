@@ -152,6 +152,15 @@ function resolveVotes(room,teamIndex,nowMs){
  const ordered=[...tally.values()].sort((a,b)=>b.count-a.count||a.first-b.first);
  const leaders=ordered.filter(x=>x.count===ordered[0].count);
  if(leaders.length===1){decideTeam(room,teamIndex,leaders[0].ballot,nowMs);return;}
+ // A second tie cannot loop forever. Once everybody has had a focused private
+ // debate and revoted, the captain's ballot is the agreed casting-vote rule.
+ if(t.runoff){
+  const casting=t.votes[t.captainId]?.ballot;
+  requireState(!!casting,409,"Captain must participate in the final runoff");
+  decideTeam(room,teamIndex,casting,nowMs);
+  t.runoff=null;
+  return;
+ }
  // If 3+ proposals tie for first, select the two most similar packages
  // (strategy > public statement > investment), with stable proposer-order tie breaking.
  // This provides a focused, meaningful debate instead of arbitrary two nominees.
