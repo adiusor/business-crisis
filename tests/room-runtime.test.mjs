@@ -448,35 +448,6 @@ try {
     assert.doesNotMatch(html,/credentialHash/);
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
-  // A few unauthenticated handshakes are tolerated briefly, but cannot
-  // occupy all 64 room connection slots and deny service to actual players.
-  const anonymous=[];
-  for(let i=0;i<8;i++){
-    const pending=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
-    sockets.push(pending);anonymous.push(pending);
-    await new Promise((resolve,reject)=>{
-      const timeout=setTimeout(()=>reject(Error("Pending socket failed to open")),6000);
-      pending.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
-      pending.addEventListener("error",()=>{clearTimeout(timeout);reject(Error("Pending socket unexpectedly rejected"));},{once:true});
-    });
-  }
-  const oldestWasDisplaced=new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>reject(Error("Old anonymous socket was not evicted")),7000);
-    anonymous[0].addEventListener("close",evt=>{clearTimeout(timeout);resolve(evt.code);},{once:true});
-  });
-  const ninth=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
-  sockets.push(ninth);
-  await new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>reject(Error("A replacement socket could not connect")),6000);
-    ninth.addEventListener("open",()=>{clearTimeout(timeout);resolve();},{once:true});
-    ninth.addEventListener("error",()=>{clearTimeout(timeout);reject(Error("Replacement socket rejected"));},{once:true});
-  });
-  assert.equal(await oldestWasDisplaced,1008,
-    "The oldest unverified connection is evicted to protect authenticated capacity");
-  const afterAttack=await socketFor(hostToken,roomCode);
-  assert.equal(afterAttack.messages[0].state.viewer.role,"host",
-    "Authenticated host can still enter while anonymous sockets occupy their small quota");
-  for(const ws of anonymous)ws.close();
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
     qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
     privacy: "role-filtered snapshots", serverClock: "3m + 1m", deployments: 0}, null, 2));

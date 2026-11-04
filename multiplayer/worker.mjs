@@ -214,25 +214,11 @@ export class CrisisRoom extends DurableObject {
       }
       if (path === "/socket" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
         await this.readRoom();
-        const sockets=this.ctx.getWebSockets();
-        if(sockets.length>=64)fail(429,"Too many connections");
-        // Only a small fraction of connection slots may be unauthenticated.
-        // Credentials are still validated by the first WebSocket message.
-        const unauthenticated=sockets.filter(ws=>
-          ws.deserializeAttachment()?.role==="pending");
-        if(unauthenticated.length>=8){
-          // A hard reject would also lock out a legitimate host, since the
-          // first-message credential is not known at upgrade time. Displace
-          // the oldest pending socket instead; validated sessions are untouched.
-          const oldest=unauthenticated.reduce((a,b)=>
-            (a.deserializeAttachment()?.connectedAtMs??0)<=
-            (b.deserializeAttachment()?.connectedAtMs??0)?a:b);
-          try{oldest.close(1008,"Unverified connection displaced");}catch(_){}
-        }
+        if (this.ctx.getWebSockets().length >= 64) fail(429, "Too many connections");
         const pair = new WebSocketPair();
         const [client, server] = Object.values(pair);
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({role:"pending",connectedAtMs:Date.now()});
+        server.serializeAttachment({role: "pending"});
         return new Response(null, {status: 101, webSocket: client});
       }
       fail(404, "Not found");
