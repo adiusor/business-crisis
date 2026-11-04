@@ -468,3 +468,9 @@ body{background:radial-gradient(ellipse at 15% -15%,#183a4b 0%,transparent 52%),
 .facilitator-debrief summary{padding:17px 22px;color:#f6c494;font-weight:900;letter-spacing:.1em;font-size:13px;cursor:pointer}
 .facilitator-debrief ol{margin:0;padding:6px 28px 20px 43px;color:#dbe5e9;font-size:14px;line-height:1.6}
 .facilitator-debrief li{padding:3px 0}
+
+/* Quiet feedback: hover highlights actionable evidence, never reveals a hidden answer. */
+@media(hover:hover){
+ .evidence-item:hover,.strategy-choice:not(.chosen):hover{border-color:#83a8b4}
+ .strategy-tradeoffs summary:hover,.briefing-details summary:hover{color:#ffe2bb}
+}
