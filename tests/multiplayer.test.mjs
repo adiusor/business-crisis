@@ -837,3 +837,79 @@ test("host interventions are public, bounded and never reveal participant IDs or
  }
  assert.ok(room.interventions.length<=12,"Only the last twelve changes are retained");
 });
+
+
+test("thirty simulated participants can lock concurrent-style same-revision ballots exactly once",()=>{
+ let {room,host}=fixture(["ALPHA","BRAVO","CHARLIE","DELTA"]);
+ const actors=[];
+ for(let i=0;i<30;i++){
+  const joined=enter(room,"P"+i,i%4,i+100);
+  room=joined.room;actors.push(joined.actor);
+ }
+ room=act(room,host,"start");
+ for(let team=0;team<4;team++){
+  room=act(room,actors[team],"select_advisers",{advisers:[0,1]});
+ }
+ const oldRevision=room.revision,at=Date.now()+1000;
+ for(let i=0;i<actors.length;i++){
+  room=applyRoomAction(room,actors[i],{
+   type:"lock_vote",planIndex:0,signalIndex:0,
+   expectedRound:0,expectedRunoffOrdinal:0,expectedRevision:oldRevision
+  },at+i);
+ }
+ assert.equal(room.revision,oldRevision+30);
+ assert.deepEqual(room.teams.map(t=>t.locked),[true,true,true,true]);
+ for(const team of room.teams){
+  assert.equal(team.economic.history.length,1,"One economic decision per team, not per voter");
+  assert.equal(team.economic.history[0].roundSpent,26000,
+    "Thirty votes never multiply the cost of a winning team package");
+  assert.equal(team.economic.cash,234000);
+  assert.equal(team.roundPenalty,0);
+ }
+ const prior=structuredClone(room);
+ assert.throws(()=>applyRoomAction(room,actors[0],{
+   type:"lock_vote",planIndex:0,signalIndex:0,
+   expectedRound:0,expectedRunoffOrdinal:0,expectedRevision:oldRevision
+ },at+31),/decision is locked/);
+ assert.deepEqual(room,prior);
+ room=act(room,host,"advance");
+ assert.equal(room.round,1);
+ assert.throws(()=>applyRoomAction(room,actors[0],{
+   type:"lock_vote",planIndex:0,signalIndex:0,
+   expectedRound:0,expectedRunoffOrdinal:0,expectedRevision:oldRevision
+ },at+32),/Voting round changed/,
+ "A delayed vote can never be applied to the next episode");
+});
+
+test("runoff-stage guard rejects delayed original ballots despite unchanged episode",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1);room=a.room;
+ const e=enter(room,"Eve",0,2);room=e.room;
+ const b=enter(room,"Bob",1,3);room=b.room;
+ room=act(room,host,"start");
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ const oldRevision=room.revision,at=Date.now()+1000;
+ const scoped=(actor,planIndex,signalIndex,ordinal,time)=>applyRoomAction(room,actor,{
+  type:"lock_vote",planIndex,signalIndex,
+  expectedRound:0,expectedRunoffOrdinal:ordinal,expectedRevision:oldRevision
+ },at+time);
+ room=scoped(a.actor,0,0,0,1);
+ room=scoped(e.actor,1,1,0,2);
+ assert.equal(room.teams[0].runoff?.ordinal,1);
+ assert.equal(Object.keys(room.teams[0].votes).length,0,
+  "Active ballot resets for a private runoff");
+ const before=structuredClone(room);
+ assert.throws(()=>scoped(a.actor,0,0,0,3),/Voting stage changed/,
+  "A duplicate or delayed first-round vote cannot silently become a runoff ballot");
+ assert.throws(()=>scoped(a.actor,0,0,undefined,4),/Voting stage changed/);
+ assert.deepEqual(room,before,"Rejected stale votes never mutate the ledger");
+ room=scoped(a.actor,0,0,1,5);
+ room=scoped(e.actor,0,0,1,6);
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].economic.history.length,1);
+ assert.equal(room.teams[0].economic.history[0].planIndex,0);
+ assert.equal(room.teams[0].roundPenalty,0);
+ assert.throws(()=>applyRoomAction(room,host,{
+   type:"set_captain",playerId:a.actor.playerId,expectedRevision:oldRevision
+ },at+7),/Room changed/,"Host administration retains strict revision checking");
+});

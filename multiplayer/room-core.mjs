@@ -257,7 +257,19 @@ function logIntervention(room,kind,teamName,nowMs){
 export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  requireState(validNow(nowMs),400,"Invalid server clock");
  requireState(command&&typeof command==="object"&&!Array.isArray(command),400,"Invalid command");
- requireState(Number.isInteger(command.expectedRevision)&&command.expectedRevision===room.revision,409,"Room changed; refresh state and retry");
+ // Other participants may lock valid ballots simultaneously. A modern vote
+ // is scoped to an episode AND a runoff ordinal, not an unrelated global
+ // revision. All legacy and non-vote commands keep strict revision matching.
+ const scopedVote=command.type==="lock_vote"&&Object.prototype.hasOwnProperty.call(command,"expectedRound");
+ if(scopedVote){
+  requireState(Number.isSafeInteger(command.expectedRound)&&command.expectedRound===room.round,
+   409,"Voting round changed; refresh the episode");
+  requireState(Number.isSafeInteger(command.expectedRevision)&&command.expectedRevision>=0&&
+   command.expectedRevision<=room.revision,409,"Room changed; refresh state and retry");
+ }else{
+  requireState(Number.isInteger(command.expectedRevision)&&command.expectedRevision===room.revision,
+   409,"Room changed; refresh state and retry");
+ }
  const next=clone(room),isHost=actor&&actor.role==="host";
  const player=!isHost&&actor&&actor.role==="player"&&next.players.find(p=>p.id===actor.playerId);
  const type=command.type;
@@ -337,6 +349,9 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   }else{
    requireState(t.advisers.length===2,409,"Choose two advisers first");
    if(type==="lock_vote"){
+    if(scopedVote)requireState(Number.isSafeInteger(command.expectedRunoffOrdinal)&&
+     command.expectedRunoffOrdinal===(t.runoff?.ordinal||0),
+     409,"Voting stage changed; refresh your team ballot");
     const vote=ballotFor(next,command);
     t.votes=t.votes||{};
     requireState(!t.votes[player.id]?.locked,409,"Your vote is already locked");

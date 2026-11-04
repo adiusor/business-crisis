@@ -1030,13 +1030,20 @@
   }
   async function action(command) {
     error("");
-    // Other teams may act while this phone is selecting. A stale global revision is
-    // normal, not a failed player choice. Retry only these safe, single-team commands.
+    // A complete individual vote belongs to a single episode and either the
+    // original ballot or a particular private runoff. Never silently migrate
+    // a delayed vote to a later stage while other players act concurrently.
+    const voteScope=command.type==="lock_vote"?{
+      expectedRound:state.round,
+      expectedRunoffOrdinal:state.privateTeam?.voting?.runoff?.ordinal||0
+    }:{};
+    // Host/roster changes remain strictly revision-guarded. An independent
+    // correctly-scoped vote can bypass unrelated global revision changes.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const response = await request("/api/rooms/" + roomCode + "/actions", {
           method: "POST", headers: {authorization: "Bearer " + credential},
-          body: JSON.stringify({...command, expectedRevision: state.revision})
+          body: JSON.stringify({...command,...voteScope, expectedRevision: state.revision})
         });
         if (command.type === "select_advisers") draftPicks = null;
         showRoom(response.state);

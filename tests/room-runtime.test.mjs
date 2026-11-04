@@ -225,6 +225,52 @@ try {
   assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,anna.payload.playerToken)).response.status,200);
   assert.equal((await req("/api/rooms/"+adminCode+"/state","GET",undefined,cleo.payload.playerToken)).response.status,200);
 
+  // Real Cloudflare Durable Object burst: several phones vote from the same
+  // initial room revision, so unrelated teammate votes must not cause 409s.
+  const burst=await req("/api/rooms","POST",{teamCount:2},creationKey);
+  assert.equal(burst.response.status,201);
+  const burstCode=burst.payload.roomCode,burstHost=burst.payload.hostToken;
+  const burstPeople=[];
+  for(let i=0;i<6;i++){
+    const joined=await req("/api/rooms/"+burstCode+"/join","POST",
+      {nickname:"Parallel "+i,teamIndex:i%2});
+    assert.equal(joined.response.status,201);
+    burstPeople.push({token:joined.payload.playerToken,teamIndex:i%2});
+  }
+  let burstState=(await req("/api/rooms/"+burstCode+"/state","GET",undefined,burstHost)).payload.state;
+  let transition=await req("/api/rooms/"+burstCode+"/actions","POST",
+    {type:"start",expectedRevision:burstState.revision},burstHost);
+  assert.equal(transition.response.status,200);
+  burstState=transition.payload.state;
+  for(let team=0;team<2;team++){
+    const captain=burstPeople.find(p=>p.teamIndex===team);
+    const pick=await req("/api/rooms/"+burstCode+"/actions","POST",
+      {type:"select_advisers",advisers:[0,1],expectedRevision:burstState.revision},captain.token);
+    assert.equal(pick.response.status,200);burstState=pick.payload.state;
+  }
+  const commonRevision=burstState.revision;
+  const burstVotes=await Promise.all(burstPeople.map(p=>
+    req("/api/rooms/"+burstCode+"/actions","POST",
+      {type:"lock_vote",planIndex:0,signalIndex:0,
+        expectedRound:0,expectedRunoffOrdinal:0,expectedRevision:commonRevision},p.token)));
+  assert.deepEqual(burstVotes.map(x=>x.response.status),[200,200,200,200,200,200],
+    "Concurrent team votes sharing one old global revision must all commit");
+  const burstAfter=(await req("/api/rooms/"+burstCode+"/state","GET",undefined,burstHost)).payload.state;
+  assert.equal(burstAfter.revision,commonRevision+6,
+    "Each successful vote increments the revision without duplicate decisions");
+  assert.deepEqual(burstAfter.teams.map(t=>t.locked),[true,true]);
+  const burstPlayerView=await req("/api/rooms/"+burstCode+"/state","GET",undefined,burstPeople[0].token);
+  assert.equal(burstPlayerView.payload.state.privateTeam.economic.cash,234000,
+    "Three ballots per team must only pay for one £26k response");
+  const burstAdvanced=await req("/api/rooms/"+burstCode+"/actions","POST",
+    {type:"advance",expectedRevision:burstAfter.revision},burstHost);
+  assert.equal(burstAdvanced.response.status,200);
+  const delayed=await req("/api/rooms/"+burstCode+"/actions","POST",
+    {type:"lock_vote",planIndex:0,signalIndex:0,
+      expectedRound:0,expectedRunoffOrdinal:0,expectedRevision:commonRevision},burstPeople[0].token);
+  assert.equal(delayed.response.status,409,"Old-episode ballot rejected after advance");
+  assert.match(delayed.payload.error,/Voting round changed/);
+
   // Projector-only credentials: HTTP and WebSocket must expose no player identities or controls.
   const grant=await req("/api/rooms/" + roomCode + "/projector-access","POST",{},hostToken);
   assert.equal(grant.response.status,200);
