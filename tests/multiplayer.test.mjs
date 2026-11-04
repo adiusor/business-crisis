@@ -272,6 +272,8 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.match(html, /\/room-script\.js/);
   assert.match(html, /\/room-art\.js/);
   assert.match(script, /BCPreviewArt\.portrait/, "Adviser portraits use isolated graphic assets");
+  assert.match(script, /bc-auth-/, "Room client requests authenticated WebSocket upgrades");
+  assert.doesNotMatch(script, /socket\?token=/, "WebSocket tokens are not placed into URLs");
   const art = await fs.readFile(new URL("../multiplayer/client-art.txt", import.meta.url), "utf8");
   assert.match(art, /BCPreviewArt/);
   assert.doesNotMatch(art, /g\.BCContent|privateTeam|roomToken|credentialHash/,

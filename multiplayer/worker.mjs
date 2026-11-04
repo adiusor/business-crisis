@@ -8,7 +8,6 @@ import CLIENT_ART from "./client-art.txt";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
   clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
 
-const PENDING_SOCKET_TTL_MS=15000;
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' ws: wss:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
@@ -114,14 +113,6 @@ export class CrisisRoom extends DurableObject {
       if (now < clock.normalEndsAt) times.push(clock.normalEndsAt);
       else if (now < clock.closesAt) times.push(clock.closesAt);
     }
-    // Idle, unauthenticated WebSockets must not exhaust all room slots.
-    const pending=this.ctx.getWebSockets().map(ws=>ws.deserializeAttachment())
-      .filter(x=>x?.role==="pending");
-    if(pending.length){
-      const earliest=Math.min(...pending.map(x=>Number.isSafeInteger(x.createdAtMs)?
-        x.createdAtMs+PENDING_SOCKET_TTL_MS:now));
-      times.push(Math.max(now+1000,earliest));
-    }
     await this.ctx.storage.setAlarm(Math.min(...times));
   }
   async readRoom() {
@@ -223,80 +214,65 @@ export class CrisisRoom extends DurableObject {
       }
       if (path === "/socket" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
         const room=await this.readRoom();
-        if (this.ctx.getWebSockets().length >= 64) fail(429, "Too many connections");
-        const pair = new WebSocketPair();
-        const [client, server] = Object.values(pair);
+        // Browser WebSockets cannot send an Authorization header. Authenticate
+        // their same-origin subprotocol offer *before* allocating a socket slot.
+        // Only bc-room is echoed; never echo the credential-bearing offer.
+        const protocols=(request.headers.get("sec-websocket-protocol")||"")
+          .split(",").map(x=>x.trim());
+        if(protocols.length!==2||protocols[0]!=="bc-room"||
+           !/^bc-auth-[a-f0-9]{64}$/.test(protocols[1]))fail(401,"Unauthorized socket");
+        const credentialHash=await sha256(protocols[1].slice("bc-auth-".length));
+        const actor=authorize(room,credentialHash);
+        if(this.ctx.getWebSockets().length>=64)fail(429,"Too many connections");
+        const pair=new WebSocketPair(),[client,server]=Object.values(pair);
         this.ctx.acceptWebSocket(server);
-        const connectedAtMs=Date.now();
-        server.serializeAttachment({role:"pending",createdAtMs:connectedAtMs});
-        // A newly accepted socket might not appear in getWebSockets() before
-        // the upgrade response is returned. Schedule its initial expiry now.
-        const scheduled=await this.ctx.storage.getAlarm();
-        await this.ctx.storage.setAlarm(Math.min(
-          Number.isSafeInteger(scheduled)?scheduled:Infinity,
-          connectedAtMs+PENDING_SOCKET_TTL_MS));
-        return new Response(null, {status: 101, webSocket: client});
+        server.serializeAttachment(actor.role==="projector"?
+          {...actor,credentialHash}:actor);
+        server.send(JSON.stringify({type:"snapshot",state:viewFor(room,actor)}));
+        return new Response(null,{status:101,webSocket:client,
+          headers:{"sec-websocket-protocol":"bc-room"}});
       }
       fail(404, "Not found");
     } catch (e) { return problem(e); }
   }
   async webSocketMessage(ws, message) {
-    const attachment = ws.deserializeAttachment() || {role: "pending"};
+    const attachment=ws.deserializeAttachment();
     try {
-      if (attachment.role==="expired"){ws.close(1008,"Authentication deadline");return;}
-      if (typeof message !== "string" || message.length > 4096) fail(400, "Invalid message");
+      if(!attachment||!["host","player","projector"].includes(attachment.role)){
+        ws.close(1008,"Unauthorized");return;
+      }
+      if(typeof message!=="string"||message.length>4096)fail(400,"Invalid message");
       let input;
-      try { input = JSON.parse(message); } catch (_) { fail(400, "Invalid JSON"); }
-      if (!input || typeof input !== "object" || Array.isArray(input)) fail(400, "Invalid message");
-      const room = await this.readRoom();
-      if (attachment.role === "pending") {
-        if (input.type !== "authenticate" || typeof input.token !== "string" || !/^[0-9a-f]{64}$/.test(input.token))
-          fail(401, "Unauthorized");
-        const actor = authorize(room, await sha256(input.token));
-        ws.serializeAttachment(actor.role === "projector" ?
-          {...actor, credentialHash: await sha256(input.token)} : actor);
-        ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, actor)}));
-        return;
+      try{input=JSON.parse(message);}catch(_){fail(400,"Invalid JSON");}
+      if(!input||typeof input!=="object"||Array.isArray(input))fail(400,"Invalid message");
+      const room=await this.readRoom();
+      if(attachment.role==="projector"&&attachment.credentialHash!==room.projectorHash){
+        ws.close(1008,"Projector access revoked");return;
       }
-      if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){
-        ws.close(1008, "Projector access revoked"); return;
-      }
-      if (input.type === "snapshot") {
-        ws.send(JSON.stringify({type: "snapshot", state: viewFor(room, attachment)}));
-      } else if (input.type === "action") {
-        await this.mutate(room => applyRoomAction(room, attachment, input.command, Date.now()));
-      } else fail(400, "Unknown message");
-    } catch (e) {
-      if (attachment.role === "pending") ws.close(1008, "Unauthorized");
-      else {
-        try { ws.send(JSON.stringify({type: "error",
-          error: e && Number.isInteger(e.status) ? e.message : "Room error"})); }
-        catch (_) { /* Client disconnected. */ }
-      }
+      if(input.type==="snapshot"){
+        ws.send(JSON.stringify({type:"snapshot",state:viewFor(room,attachment)}));
+      }else if(input.type==="action"){
+        await this.mutate(room=>applyRoomAction(room,attachment,input.command,Date.now()));
+      }else fail(400,"Unknown message");
+    }catch(e){
+      try{ws.send(JSON.stringify({type:"error",
+        error:e&&Number.isInteger(e.status)?e.message:"Room error"}));}
+      catch(_){/* Client disconnected. */}
     }
   }
   async alarm() {
     try {
-      const now=Date.now();
-      for(const ws of this.ctx.getWebSockets()){
-        const a=ws.deserializeAttachment();
-        if(a?.role==="pending" &&
-          (!Number.isSafeInteger(a.createdAtMs)||now-a.createdAtMs>=PENDING_SOCKET_TTL_MS)){
-          try {ws.serializeAttachment({role:"expired"});ws.close(1008,"Authentication deadline");}
-          catch (_) {}
-        }
-      }
-      const room = await this.readRoom();
+      const room=await this.readRoom();
       await this.schedule(room);
-      await this.notify(room); // Timers enter the grace window without continuous polling.
-    } catch (e) {
-      if (e.status === 404 || e.status === 410) {
-        for (const ws of this.ctx.getWebSockets()) {
-          try { ws.close(1001, "Room expired"); } catch (_) {}
+      await this.notify(room);
+    }catch(e){
+      if(e.status===404||e.status===410){
+        for(const ws of this.ctx.getWebSockets()){
+          try{ws.close(1001,"Room expired");}catch(_){}
         }
         return;
       }
-      throw e; // Retry transient storage failures via Durable Object alarm semantics.
+      throw e;
     }
   }
   webSocketClose(ws, code, reason) { try { ws.close(code, reason); } catch (_) {} }
