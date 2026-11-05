@@ -33,6 +33,10 @@
   let exposureOpen = null;
   let decisionNear = false;
   let voteSending = false;
+  let lastRosterSeq = null;
+  let presenceDismiss = null;
+  let hostReadySeen = null;
+  let hostReadyDismissed = null;
   let evidenceFolderOpen = null;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
@@ -79,14 +83,16 @@
     if (!roomCode) { show("create"); return; }
     try {
       const data = await request("/api/rooms/" + roomCode + "/lobby");
-      if (data.phase !== "lobby") {
-        show("join"); $("join-form").hidden = true; $("join-code-form").hidden = true;
-        $("join-caption").textContent = "This room already started. Late joining is not available in the prototype.";
+      if (data.phase === "complete") {
+        show("join"); $("join-form").hidden = true; $("join-code-form").hidden = false;
+        $("join-caption").textContent = "This game has finished. Ask the host to create a new room.";
         return;
       }
       $("join-form").hidden = false;
       $("join-code-form").hidden = true;
-      $("join-caption").textContent = "Choose a nickname and the group you want to join. You can join without an account.";
+      $("join-caption").textContent = data.phase==="advisers" ?
+        "GAME IN PROGRESS · Choose your name and team. You may watch this episode and vote from the next one." :
+        "Choose your nickname and team. No account needed. Everyone votes each episode.";
       const target = $("join-team"), old = target.value;
       target.replaceChildren();
       const automatic = node("option", "AUTO — assign to the smallest team");
@@ -126,6 +132,47 @@
       card.append(lhs, rhs);
       $("team-list").append(card);
     });
+  }
+  function renderRosterNotifications(){
+    const events=state?.rosterEvents||[];
+    const latest=events.length?events[events.length-1].seq:0;
+    if(lastRosterSeq===null){lastRosterSeq=latest;return;}
+    const updates=events.filter(x=>x.seq>lastRosterSeq);
+    lastRosterSeq=Math.max(lastRosterSeq,latest);
+    if(!updates.length)return;
+    const newest=updates[updates.length-1];
+    if(newest.kind==="joined"&&state.viewer.role==="player"&&newest.nickname===state.viewer.nickname)
+      return;
+    const label=newest.kind==="joined"?"JOINED":newest.kind==="left"?"LEFT":
+      newest.kind==="moved"?"SWITCHED TO":"REMOVED FROM";
+    const toast=$("presence-toast");
+    toast.replaceChildren();
+    toast.append(node("strong","PLAYER UPDATE"),node("span",
+      newest.nickname+" "+label+" "+newest.team+
+      (updates.length>1?" · "+updates.length+" recent changes":"")));
+    toast.hidden=false;
+    clearTimeout(presenceDismiss);
+    presenceDismiss=setTimeout(()=>{toast.hidden=true;},6500);
+  }
+  function renderHostReadyDialog(){
+    const box=$("host-ready-dialog");
+    const ready=state?.viewer.role==="host"&&state.phase==="advisers"&&
+      state.teams.every(t=>t.locked);
+    const key=ready?state.code+":"+state.round:null;
+    if(!ready){box.hidden=true;return;}
+    if(hostReadySeen!==key){
+      hostReadySeen=key;hostReadyDismissed=null;
+    }
+    box.hidden=hostReadyDismissed===key;
+    if(box.hidden)return;
+    $("host-ready-title").textContent=state.round===5 ?
+      "All teams finished. Reveal the verdict." :
+      "Every team is ready.";
+    $("host-ready-description").textContent=state.teams.some(t=>t.timedOut)?
+      "Every team's window has ended. At least one team missed the deadline." :
+      state.teams.length+" teams have confirmed their answers. Advance when you're ready.";
+    $("ready-next").textContent=state.round===5?"REVEAL BOARDROOM VERDICT":"START NEXT EPISODE";
+    if(document.activeElement===document.body) $("ready-next").focus({preventScroll:true});
   }
   function renderReadyNotice() {
     const banner = $("ready-notice");
@@ -522,6 +569,24 @@
     }
     return report;
   }
+  function renderChosenAdvisers(privateData){
+    const box=node("section",null,"chosen-advisers");
+    box.append(node("h3","YOUR TWO SELECTED ADVISERS","section-label"));
+    const grid=node("div",null,"chosen-advisers-grid");
+    for(const intel of privateData.intelligence||[]){
+      const idx=ADV.findIndex(x=>x[0]===intel.name);
+      const card=node("article",null,"chosen-adviser");
+      if(idx>=0&&window.BCPreviewArt?.portrait){
+        const portrait=node("span",null,"chosen-adviser-portrait");
+        portrait.innerHTML=window.BCPreviewArt.portrait(idx);
+        portrait.setAttribute("aria-hidden","true");card.append(portrait);
+      }
+      const note=node("div",null,"chosen-adviser-copy");
+      note.append(node("strong",intel.name),node("small",intel.role),node("p",intel.brief));
+      card.append(note);grid.append(card);
+    }
+    box.append(grid);return box;
+  }
   function renderPlayerActions(force = false) {
     const target = $("player-actions");
     target.hidden = state.viewer.role !== "player";
@@ -534,6 +599,7 @@
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
       privateData.economic,privateData.lastImpact,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.voting?.canVote,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
     if(!force && playerRenderKey===snapshotKey){
@@ -574,7 +640,20 @@
       target.append(node("p", "The boardroom verdict and your team's decision history appear below."));
       return;
     }
-    const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
+    const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null,canVote:true};
+    // After locking a ballot, remove ALL voting controls. Only the two chosen
+    // advisers and a concise status remain on this screen.
+    if(mine.locked||voting.myVote||!voting.canVote){
+      target.append(node("div",mine.locked?"TEAM RESPONSE CONFIRMED":voting.myVote?
+        "YOUR VOTE IS SAVED":"JOINED MID-EPISODE · FIRST VOTE NEXT ROUND","vote-finished"));
+      if(privateData.intelligence.length)target.append(renderChosenAdvisers(privateData));
+      if(!voting.canVote)target.append(node("p",
+        "You are with "+mine.name+". Follow this scene with your team; you can vote as soon as the host starts the next episode."));
+      else if(voting.myVote&&!mine.locked)target.append(node("p",
+        "Your answer is locked. Other teammates are still deciding; you do not need to do anything else."));
+      if(mine.locked&&privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
+      return;
+    }
     if (privateData.lastImpact) target.append(renderTeamAftershock(privateData.lastImpact));
     target.append(renderPrivateExposure(privateData.economic));
     const progress = node("div", null, "ballot-progress");
@@ -588,24 +667,7 @@
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
       "Only vote progress is shown before the team decides. The most popular complete proposal wins; a tie triggers a private revote."));
     target.append(progress);
-    if (privateData.intelligence.length) {
-      const dossier=node("details",null,"intel-dossier");
-      dossier.open=expandedIntel;
-      dossier.addEventListener("toggle",()=>{expandedIntel=dossier.open;});
-      dossier.append(node("summary","CLASSIFIED ADVICE · 2 PRIVATE BRIEFINGS"));
-      const intel=node("div",null,"intel-list");
-      for(const entry of privateData.intelligence){
-        const card=node("article",null,"intel-card");
-        card.append(node("strong",entry.name),node("small",entry.role),node("p",entry.brief));
-        intel.append(card);
-      }
-      dossier.append(intel);target.append(dossier);
-    }
-    if (mine.locked) return;
-    if (voting.myVote) {
-      target.append(node("p", "YOUR VOTE IS LOCKED. Individual choices stay private while teammates finish. Your clock stops when the team result is settled."));
-      return;
-    }
+
     if (state.viewer.captain && !voting.runoff) {
       target.append(node("h3", "01 / CAPTAIN — SELECT TWO ADVISERS", "section-label"));
       target.append(node("p", "Once saved, the briefings are available privately to all your teammates."));
@@ -634,6 +696,9 @@
         catch (e) {error(e.message);}
       }, "secondary", draftPicks.length !== 2 || voting.lockedVotes > 0));
     }
+    // Their advice belongs directly below the six adviser portraits, never
+    // several screens above the strategy and statement choices.
+    if(privateData.intelligence.length)target.append(renderChosenAdvisers(privateData));
     if (privateData.advisers.length !== 2) {
       target.append(node("p", "Waiting for the captain to choose two advisers. The team clock is running."));
       return;
@@ -722,7 +787,10 @@
       if(voteSending)return;
       voteSending=true;submit.disabled=true;submit.textContent="SENDING YOUR VOTE…";
       submit.setAttribute("aria-busy","true");
-      try{await action({type:"lock_vote",planIndex:draftPlan,signalIndex:draftSignal,allocation});}
+      try{
+        await action({type:"lock_vote",planIndex:draftPlan,signalIndex:draftSignal,allocation});
+        requestAnimationFrame(()=>target.scrollIntoView({block:"start",behavior:"instant"}));
+      }
       catch(e){error(e.message);}
       finally{
         voteSending=false;
@@ -1000,7 +1068,7 @@
       dock.hidden=true;return;
     }
     const team=state.teams[state.viewer.teamIndex],personal=state.privateTeam;
-    const waiting=!!personal?.voting?.myVote;
+    const waiting=!!personal?.voting?.myVote||personal?.voting?.canVote===false;
     dock.hidden=!!team?.locked||waiting||decisionNear;
     if(dock.hidden)return;
     const label=personal?.voting?.runoff?"CAST YOUR RUNOFF VOTE":
@@ -1060,17 +1128,26 @@
       $("projector-qr").src = "/api/rooms/" + state.code + "/qr";
       $("projector-invite-status").textContent = state.phase === "lobby" ?
         "SCAN TO JOIN · ENTER YOUR NAME & CHOOSE A TEAM" :
-        "ROOM IN PROGRESS · JOINING CLOSED";
+        "GAME LIVE · NEW PLAYERS JOIN NEXT EPISODE";
     }
-    $("host-share").hidden = state.viewer.role !== "host" || state.phase !== "lobby";
+    $("host-share").hidden = state.viewer.role !== "host";
     $("projector-share").hidden = state.viewer.role !== "host";
     if (state.viewer.role === "host") {
       const link = location.origin + "/join?room=" + state.code;
       $("join-link").textContent = link; $("join-link").href = link;
+      $("host-play-link").href=link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
     renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderFacilitatorLog(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
-    renderDecisionDock();tick();
+    renderDecisionDock();renderRosterNotifications();renderHostReadyDialog();tick();
+    $("leave-room").hidden=state.viewer.role!=="player"||state.phase==="complete";
+    if(prevCode===state.code &&
+      ((prevRound!==state.round&&state.phase==="advisers")||
+       (prevPhase==="lobby"&&state.phase==="advisers"))){
+      requestAnimationFrame(()=>window.scrollTo(0,0));
+    }
+    if(prevPhase==="advisers"&&state.phase==="complete"&&state.viewer.role!=="projector")
+      requestAnimationFrame(()=>$("results").scrollIntoView({block:"start"}));
   }
   function tick() {
     if (!state || state.phase !== "advisers" || !state.clock) {
@@ -1245,6 +1322,12 @@
       setConnection(false); error("Cannot restore room yet: " + e.message);
     }
   }
+  $("quick-join-form").addEventListener("submit",e=>{
+    e.preventDefault();
+    const code=$("quick-room-code").value.trim().toUpperCase();
+    if(!validRoomCode(code)){error("Enter a valid four-character room code.");return;}
+    location.assign("/join?room="+encodeURIComponent(code));
+  });
   $("create-form").addEventListener("submit", async e => {
     e.preventDefault(); error("");
     const key = $("create-key").value;
@@ -1328,6 +1411,32 @@
       evt.preventDefault();
     }
   });
+  $("ready-next").addEventListener("click",async()=>{
+    if(!state||state.viewer.role!=="host")return;
+    $("ready-next").disabled=true;
+    try{await action({type:"advance"});}
+    catch(e){error(e.message);}
+    finally{$("ready-next").disabled=false;}
+  });
+  $("ready-later").addEventListener("click",()=>{
+    hostReadyDismissed=state?.code+":"+state?.round;
+    $("host-ready-dialog").hidden=true;
+    $("host-actions").scrollIntoView({block:"center"});
+  });
+  $("leave-room").addEventListener("click",async()=>{
+    if(!state||state.viewer.role!=="player")return;
+    if(!window.confirm("Leave "+state.teams[state.viewer.teamIndex].name+
+       "? Your saved vote will remain committed for this round."))return;
+    try{
+      await request("/api/rooms/"+roomCode+"/actions",{
+        method:"POST",headers:{authorization:"Bearer "+credential},
+        body:JSON.stringify({type:"leave_room",expectedRevision:state.revision})
+      });
+      dropSession();
+      if(socket)socket.close();
+      location.assign("/join");
+    }catch(e){error(e.message);}
+  });
   window.addEventListener("online", () => {setConnection(false);refreshConnection();});
   window.addEventListener("offline", () => setConnection(false));
   document.addEventListener("visibilitychange", () => {
@@ -1364,7 +1473,7 @@
       show("join");$("join-form").hidden = true;
       $("join-caption").textContent = "A room address alone cannot open a projector. On the host page choose GENERATE / ROTATE PROJECTOR LINK, then COPY PROJECTOR LINK.";
     } else if (location.pathname === "/join") lobby();
-    else {show("create");error("Host login is not available on this tab. Use the original host tab or create a new room.");}
+    else location.replace("/join?room="+encodeURIComponent(roomCode));
   } else if (location.pathname === "/join") {
     show("join"); $("join-form").hidden = true; $("join-code-form").hidden = false;
     $("join-caption").textContent = "Enter the short code shown on the projector, or scan the QR to join directly.";
