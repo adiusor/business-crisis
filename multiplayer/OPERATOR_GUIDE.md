@@ -1,5 +1,5 @@
 # BUSINESS CRISIS — Facilitator quick-start
-**The 09:17 Incident · Isolated staging playtest · Host copy only**
+**The 09:17 Challenge · Project Spark · Isolated staging playtest · Host copy only**
 
 ## Before players arrive
 - Open the staging **/play** page (the root / is now the commercial homepage) and select **2–4 teams**. The founder-managed room creation key is private; never project it, email it to participants or paste it into a team chat.
@@ -25,10 +25,10 @@
 
 ## Closing the session
 - The **Boardroom Verdict** ranks teams by economic score less time penalties (floored at zero). Equal final scores break on remaining cash; only exact score-and-cash ties share the title.
-- Winning the **championship** also requires renewed client-contract status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best crisis response without falsely saying every contract was lost.
+- Winning the **championship** also requires board-ready fictional pilot status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best documented project plan without falsely saying every contract was lost.
 - The report shows cash, risk, trust and all six decisions. Use **DOWNLOAD RESULTS · PDF** to save the complete vector PDF immediately. Neither requires contact details.
 - Suggested debrief: Which evidence changed your mind? Which public promise was most expensive? When did disagreement improve the team decision?
-- The sender's identity is intentionally **unconfirmed**. Contractor access evidence is not proof of who leaked the memo.
+- The Project Spark pilot is **not awarded or contracted** by the story. Board-readiness in the game is an internal simulated threshold, not a signed agreement.
 
 ## Boundaries of this playtest
 Room data expires after 24 hours. This staging prototype is **not commercially ready**: real 30-device load, 40–80 participant support, robust entry rate limits, host account recovery, privacy processes, payments, accessibility and physical projector/mobile testing remain outstanding. Never put real customer, staff or commercially sensitive information into test nicknames or notes.
