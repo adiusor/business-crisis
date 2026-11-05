@@ -58,6 +58,8 @@ const data={
       "brief": "At 09:17, a national partner invites your company to pitch Project Spark: a 90-day pilot turning under-used spaces into welcoming, interactive experiences for businesses, schools and communities. The board proposal is due at 17:30. Up to three locations are possible, but nothing has been awarded. Your company has a separate £260,000 ninety-day improvement reserve and an existing £240,000-per-year service contract. Neither guarantees revenue from Project Spark.",
       "headline": "A BIG IDEA. SIX DECISIONS. YOUR TEAM'S CALL.",
       "question": "What will you promise before the details have been tested?",
+      "teamPrompt": "Hear two different voices: how would each option protect the people already delivering other work?",
+      "teamPrompt": "Which detail in the invitation is a fact, and which is still only an assumption? Agree on one thing you would verify first.",
       "pressure": "Excitement is real. So are the limits on money, staff time and proof.",
       "evidence": [
         {
@@ -362,6 +364,7 @@ const data={
       "brief": "Three supplier options could power Project Spark. One is proven but expensive, one promises faster delivery with conditions, and an in-house team can build a simpler demonstration. The partner wants a defensible recommendation by 14:00, including accessibility evidence, clear owners and a credible delivery schedule.",
       "headline": "THE BEST OFFER IS THE ONE YOU CAN DELIVER.",
       "question": "Which partnership can you defend after the launch?",
+      "teamPrompt": "Have someone defend the fastest supplier and someone defend the safest. What evidence would change either mind?",
       "pressure": "Speed, independent proof and in-house control cannot all be maximised at once.",
       "evidence": [
         {
@@ -515,6 +518,7 @@ const data={
       "brief": "At 13:12, the partner's marketing team shares a scheduled teaser of Project Spark. People immediately ask where they can visit, whether all three locations will open and if the experience will be accessible to everyone. The teaser depicts an unapproved concept, not a confirmed launch.",
       "headline": "THE IDEA HAS ATTENTION. NOW EARN THE TRUST.",
       "question": "How will you protect the excitement without promising a fantasy?",
+      "teamPrompt": "Look back at your team's earlier promise. Does the public teaser make that promise harder to keep?",
       "pressure": "The public is interested, but the site list and access checks are still conditional.",
       "evidence": [
         {
@@ -653,6 +657,7 @@ const data={
       "brief": "At 15:40, the venue dry run exposes an intermittent connection problem. The demonstration is not a public launch. A qualified backup supplier is available, while the internal team has a robust offline alternative. The client needs a credible plan for the evening board decision.",
       "headline": "A GREAT PLAN SHOULD ALSO SURVIVE REALITY.",
       "question": "What will you protect when the demo meets a practical limit?",
+      "teamPrompt": "Choose one feature you would protect at all costs — and one you would willingly delay. Can everyone agree?",
       "pressure": "The connectivity fault is repeatable. There is no time to pretend it has vanished.",
       "evidence": [
         {
@@ -812,6 +817,7 @@ const data={
       "brief": "At 17:30, the partner and company board review your Project Spark proposal. They have the prototype evidence, team-capacity plan, public communications, £260,000 reserve ledger and every remaining commitment. No pilot has been awarded yet. The board is deciding whether your plan is credible enough to pursue, not magically signing a contract.",
       "headline": "ONE LAST DECISION. WHAT WILL YOU MAKE REAL?",
       "question": "Which next step could your team defend six weeks from now?",
+      "teamPrompt": "Before the final vote, name one promise you can definitely deliver and one assumption the board must still challenge.",
       "pressure": "The strongest ending must match the resources, people and promises you actually have.",
       "evidence": [
         {
