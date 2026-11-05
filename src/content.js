@@ -1,174 +1,993 @@
 (function(g){
 "use strict";
-const advisers=[
-{id:"legal",name:"MARA VALE",role:"GENERAL COUNSEL",color:"#b9a6a0",line:"Clear facts make confident decisions possible."},
-{id:"ops",name:"DANIEL ROOK",role:"OPERATIONS DIRECTOR",color:"#a9bbc4",line:"A strong plan must also work on the floor."},
-{id:"client",name:"INES PARK",role:"CLIENT PARTNER",color:"#b4a6b5",line:"Trust grows when we show our work."},
-{id:"finance",name:"ELI MERCER",role:"FINANCE CONTROLLER",color:"#9fbaa9",line:"Every pound should support a real outcome."},
-{id:"security",name:"NOOR SHAH",role:"SECURITY LEAD",color:"#a9b3c6",line:"Follow the evidence, not the first theory."},
-{id:"people",name:"RUTH BELL",role:"PEOPLE DIRECTOR",color:"#c4ae94",line:"A good leader gives people a real voice."}
-];
-const episodes=[
-{id:"send",number:"01",time:"09:17",title:"THE SEND",kicker:"One unexpected message. One leadership opportunity.",scene:"mail",base:8000,
-brief:"At 09:17 an internal transformation proposal reaches 600 employees and three major clients. No restructuring decision has been approved. A £240,000-a-year client renewal is approaching, and the board needs a credible plan before lunch.",
-headline:"ONE EMAIL. SIX DECISIONS. YOUR TEAM'S CALL.",question:"How will you protect trust and keep the business moving?",pressure:"The cause is unverified. Balance openness, security and continuity.",
-evidence:[
-{type:"LEAKED EMAIL",time:"09:17",title:"THE FORWARDED MEMO",body:"Subject: RESTRUCTURING — STRICTLY CONFIDENTIAL. The email distribution list includes all staff and three external client contacts. The attachment contains internal cost reductions and a proposed change to service coverage.",clue:"The message was sent, not merely drafted. Deleting it cannot recall copies."},
-{type:"ACCESS LOG",time:"09:12",title:"THE OPEN SESSION",body:"A temporary contractor account accessed the shared documents folder five minutes before the send. The session was due to expire the previous evening.",clue:"An active session is evidence of access, not proof of who sent the email."},
-{type:"CLIENT MESSAGE",time:"09:26",title:"THE FIRST CALL",body:"Your largest client asks whether the restructuring plan will affect the service they pay for. Procurement is copied into the message.",clue:"They are asking about delivery confidence, not just confidentiality."}
-],
-advice:[
-"Preserve the original message and access logs. Do not name a culprit or assert containment until you can prove it.",
-"Any blanket shutdown may stop the overnight delivery handover. Plan a continuity route before revoking access.",
-"Call the renewal client with confirmed facts. Silence will be interpreted as avoidance.",
-"£260k is your 90-day response fund. The £240k renewal is annual contract value, not spendable cash.",
-"An open contractor session is a lead, not an attribution. Separate access evidence from transmission evidence.",
-"Staff will see the restructuring language as a threat. Acknowledgement must precede reassurance."
-],
-plans:[
-{name:"VERIFY & SECURE",verb:"Protect the facts",desc:"Restrict risky external sharing, preserve evidence and assign clear investigation owners.",benefits:["Protects verified evidence","Supports credible client updates"],cost:"Targeted controls take resources and slow some handovers.",spend:18000,delta:{legal:-11,ops:6,workforce:2,customer:-8},trust:8,fallout:"The client receives a verified update and an owner for next steps. Services continue with a slower, supervised handover.",tag:"CONTROL"},
-{name:"PROTECT THE SYSTEMS",verb:"Prioritise secure access",desc:"Temporarily suspend contractor access and external sharing while operations agree a safe workaround.",benefits:["Closes the known access route","Creates a visible control"],cost:"Extra restoration work and slower operations remain likely.",spend:32000,delta:{legal:-14,ops:16,workforce:7,customer:-4},trust:3,delay:{due:2,cost:9000,label:"Controlled access restoration and delivery handover",delta:{ops:5}},fallout:"The sensitive access route is closed. Your team now needs a funded recovery route for the delayed delivery handover.",tag:"SHUTDOWN"},
-{name:"PUT CLIENTS FIRST",verb:"Lead with communication",desc:"Keep essential services running and brief the client promptly while technical verification begins.",benefits:["Preserves client confidence","Keeps critical work moving"],cost:"Unverified exposure persists until the evidence review catches up.",spend:9000,delta:{legal:12,ops:-3,workforce:-2,customer:-14},trust:12,delay:{due:2,cost:13000,label:"Late forensic remediation",delta:{legal:5}},fallout:"The client values the direct call and a named contact. Security asks for extra remediation because the source is still unresolved.",tag:"RELATIONSHIP"}
-],
-signals:[
-{name:"VERIFIED FACTS",line:"We have identified an unexpected distribution and are verifying the facts.",delta:{legal:-3,customer:-2},trust:2},
-{name:"OPEN UPDATE",line:"We will share a verified timeline, accountable owners and corrective steps.",delta:{legal:4,workforce:-5,customer:-4},trust:5},
-{name:"SERVICE ASSURANCE",line:"Our plan is to maintain essential services while we verify the controls.",delta:{legal:6,ops:3,customer:-5},trust:6,delay:{due:3,cost:8000,label:"Service assurance contingency",delta:{customer:7}}}
-]},
-{id:"floor",number:"02",time:"10:06",title:"THE FLOOR",kicker:"Clarity and motivation can change the outcome.",scene:"floor",base:11000,
-brief:"The draft references 40 roles, two depots and a hiring freeze. Colleagues are sharing screenshots and asking questions. A team leader says the afternoon shift may decline extra hours until management explains the proposal.",
-headline:"PEOPLE NEED ANSWERS. THE BUSINESS NEEDS THEM.",question:"How will you engage the team and protect today's service?",pressure:"Proposed role changes are unsigned. An immediate staffing gap still needs a solution.",
-evidence:[
-{type:"STAFF CHAT",time:"09:44",title:"THE SCREENSHOT",body:"A message with the heading 'THEY ALREADY DECIDED' has been reposted hundreds of times. It quotes a preliminary cost model as a final decision.",clue:"The document is real. The interpretation is not yet verified."},
-{type:"SHIFT ROSTER",time:"10:01",title:"THE COVERAGE GAP",body:"Two supervisors have requested leave and four experienced team members are refusing additional hours pending an explanation.",clue:"The next 24 hours are more fragile than the monthly staffing forecast."},
-{type:"DRAFT MEMO",time:"08:30",title:"THE UNSIGNED PLAN",body:"The restructuring proposal carries no board approval. A margin note says 'subject to consultation and client commitments'.",clue:"Management can truthfully say no final decision has been taken."}
-],
-advice:[
-"Consultation language matters. Do not treat a draft as an approved redundancy decision.",
-"Your immediate constraint is shift coverage. The company cannot communicate its way around an empty depot.",
-"A visible staff dispute will be noticed by clients faster than any official update.",
-"An open-ended overtime guarantee is a liability. Put a cap on it.",
-"Lock down copies of the memo without deleting the audit trail or silencing legitimate staff discussion.",
-"Speak directly to employees. Managers-only messages will be read as concealment."
-],
-plans:[
-{name:"OPEN THE CONVERSATION",verb:"Listen and clarify",desc:"Bring colleagues together, explain what remains a draft and open a structured consultation channel.",benefits:["Creates employee voice","Reduces speculation"],cost:"Management time is redirected from daily operations.",spend:16000,delta:{workforce:-17,legal:-5,ops:5,customer:-2},trust:4,fallout:"Colleagues ask difficult questions, but the live discussion replaces some rumours with verifiable next steps.",tag:"DIALOGUE"},
-{name:"STABILISE THE SHIFT",verb:"Protect continuity",desc:"Equip team leaders with verified talking points, an escalation channel and a practical coverage plan.",benefits:["Maintains today's service","Gives supervisors a clear plan"],cost:"A manager-led approach may still feel distant to the workforce.",spend:8000,delta:{ops:-9,workforce:14,legal:3,customer:3},trust:-2,fallout:"The shift starts on time. Colleagues want a direct forum, not just a message through supervisors.",tag:"CONTINUITY"},
-{name:"BACK THE TEAM",verb:"Provide tangible support",desc:"Offer capped retention incentives and a time-limited overtime arrangement alongside staff consultation.",benefits:["Supports staff coverage","Acknowledges extra effort"],cost:"Extra financial commitments reduce future flexibility.",spend:29000,delta:{workforce:-21,ops:-6,legal:4,customer:-3},trust:3,delay:{due:4,cost:10000,label:"Temporary overtime guarantee",delta:{}},fallout:"The rota fills, and employees see practical support. Finance now tracks the time-limited payroll commitment.",tag:"CASH"}
-],
-signals:[
-{name:"INVITE QUESTIONS",line:"No final changes are approved; here is how to ask questions and contribute.",delta:{workforce:-6,legal:-2},trust:2},
-{name:"EXPLAIN THE PLAN",line:"We will protect service today while creating time for an open conversation.",delta:{ops:-4,workforce:5},trust:0},
-{name:"PAUSE ROLE CHANGES",line:"We will pause proposed role changes while formal consultation is organised.",delta:{workforce:-7,legal:5},trust:4,delay:{due:4,cost:12000,label:"Temporary consultation and staffing protection",delta:{legal:6}}}
-]},
-{id:"client",number:"03",time:"11:24",title:"THE CLIENT MEETING",kicker:"Trust is an opportunity you can earn.",scene:"client",base:14000,
-brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00, an accountable owner and service milestones the board can genuinely deliver.",
-headline:"A RENEWAL IS WON WITH EVIDENCE.",question:"What can you show the client by 14:00 to earn confidence?",pressure:"The £240k annual renewal is at stake, but future contract revenue is not today's cash.",
-evidence:[
-{type:"PROCUREMENT NOTE",time:"11:03",title:"THE CONDITIONS",body:"The client requires an incident owner, an audit trail and a credible plan for uninterrupted service. A full unconditional guarantee is not required.",clue:"A bounded commitment may be more credible than an absolute promise."},
-{type:"FINANCE SHEET",time:"11:12",title:"THE EXPOSURE",body:"The renewal is worth £240,000 per year in revenue, not immediate cash. Emergency response spending draws on the separate £260,000 fund.",clue:"Do not treat future contract value as money available today."},
-{type:"OPERATIONS NOTE",time:"11:18",title:"THE BOTTLENECK",body:"The client delivery team can meet the current deadline only if at least two specialist staff remain on the account.",clue:"A recovery plan that removes the delivery team is not operationally credible."}
-],
-advice:[
-"Make any guarantee bounded and evidence-backed. Avoid signing an impossible absolute warranty.",
-"Two specialists are the critical path. A recovery plan must fund their time.",
-"The client is asking for accountability. A named incident owner may matter more than polished slides.",
-"An independent review is affordable only if you preserve enough liquidity for operations.",
-"An audit must validate controls, not just produce a glossy certificate.",
-"Overloading the same two specialists creates a retention and burnout problem."
-],
-plans:[
-{name:"INDEPENDENT REVIEW",verb:"Invite independent scrutiny",desc:"Commission an external review with owners, clear milestones and a verified remediation schedule.",benefits:["Credible evidence","Reduces legal ambiguity"],cost:"Audit expense and specialist time pressure.",spend:26000,delta:{legal:-10,customer:-17,ops:5,workforce:3},trust:15,fallout:"Procurement welcomes independently reviewed milestones. Specialists must balance the audit with delivery.",tag:"ASSURANCE"},
-{name:"COMMIT TO RECOVERY",verb:"Offer accountable milestones",desc:"Agree a bounded service-recovery commitment before every technical dependency is verified.",benefits:["Shows accountable ownership","Keeps renewal talks constructive"],cost:"Future cost rises if agreed milestones are missed.",spend:12000,delta:{customer:-16,legal:10,ops:9,workforce:4},trust:13,delay:{due:5,cost:22000,label:"Contractual service guarantee exposure",delta:{customer:10,legal:6}},fallout:"The client appreciates a concrete plan. Legal records the uncertainty as a funded contractual obligation.",tag:"PROMISE"},
-{name:"PROVE SERVICE VALUE",verb:"Show operational evidence",desc:"Focus specialists on measurable delivery improvements and demonstrate progress before wider assurances.",benefits:["Shows operational progress","Builds practical confidence"],cost:"Concentrating delivery work on a few specialists risks fatigue.",spend:18000,delta:{ops:-16,customer:-7,workforce:12,legal:4},trust:7,fallout:"The delivery dashboard improves. The team needs a sustainable rota to maintain those results.",tag:"EXECUTION"}
-],
-signals:[
-{name:"VERIFIED MILESTONES",line:"Here are the controls, owners and dates we can substantiate.",delta:{customer:-5,legal:-3},trust:4},
-{name:"RECOVERY TARGET",line:"Our target is full recovery within 48 hours, with verification at each stage.",delta:{customer:-6,legal:5,ops:4},trust:7,delay:{due:5,cost:14000,label:"Board guarantee remediation",delta:{legal:4}}},
-{name:"EVIDENCE FIRST",line:"We will give you a verified progress update before extending our commitments.",delta:{legal:-5,customer:7},trust:-3}
-]},
-{id:"press",number:"04",time:"13:12",title:"THE PUBLIC CONVERSATION",kicker:"Your response can set a constructive example.",scene:"press",base:12000,
-brief:"A business reporter has obtained the memo and asks for comment within 30 minutes. An employee has posted a contradictory account online. The story is moving beyond the company.",
-headline:"YOUR RESPONSE CAN SHAPE THE STORY.",question:"How will you offer clarity without creating new risks?",pressure:"The journalist has the draft, but the facts are narrower than the rumour.",
-evidence:[
-{type:"PRESS ENQUIRY",time:"12:58",title:"THE JOURNALIST",body:"The reporter asks whether the company plans redundancies and whether client service will be cut. They have the first page of the draft but not its approval status.",clue:"There is a narrow opportunity to correct a material factual error."},
-{type:"SOCIAL POST",time:"13:05",title:"THE ANONYMOUS THREAD",body:"An employee account claims the restructuring was approved last week. The attached screenshot shows an unsigned version.",clue:"The approval claim is unsubstantiated; the underlying document is genuine."},
-{type:"BOARD MESSAGE",time:"13:09",title:"THE DIRECTIVE",body:"The chair wants the company to avoid speculation and protect the renewal. Legal warns against issuing a misleading blanket denial.",clue:"The board is divided between silence and controlled disclosure."}
-],
-advice:[
-"Correct false factual claims, but do not deny the existence of the genuine draft.",
-"Make sure public statements do not contradict what shift managers are telling staff.",
-"Clients will read the press statement. Coordinate it with the account update.",
-"A targeted request to protect personal data may help; suppressing all coverage would damage credibility.",
-"Publish only facts verified by the investigation. Preserve screenshots and timestamps.",
-"An anonymous employee is not an enemy to be publicly identified."
-],
-plans:[
-{name:"SHARE THE VERIFIED STORY",verb:"Communicate transparently",desc:"Release confirmed facts, correct the approval rumour and name a response lead.",benefits:["Provides constructive context","Aligns public and staff messages"],cost:"Openness creates scrutiny and legal review work.",spend:15000,delta:{legal:2,customer:-12,workforce:-9,ops:2},trust:10,fallout:"The article still appears, but includes verified facts, a named owner and a timeline for follow-through.",tag:"TRANSPARENCY"},
-{name:"VERIFY BEFORE SPEAKING",verb:"Protect accuracy",desc:"Acknowledge the enquiry and commit to a short verification window before a wider update.",benefits:["Avoids unsupported claims","Protects investigation quality"],cost:"An information gap allows others to fill in the story.",spend:9000,delta:{legal:-5,customer:8,workforce:6,ops:0},trust:-3,fallout:"The company avoids guessing, but the press needs an explicit time for the next useful update.",tag:"RESTRAINT"},
-{name:"PROTECT CONFIDENTIALITY",verb:"Set responsible boundaries",desc:"Ask the journalist to protect personal details while providing an authorised factual clarification.",benefits:["Protects sensitive information","Maintains a constructive channel"],cost:"Legal review and careful wording can delay clarity.",spend:19000,delta:{legal:-7,customer:5,workforce:3,ops:2},trust:1,fallout:"Sensitive personal information is withheld. The broader concerns remain, and colleagues still need a clear explanation.",tag:"CONFRONTATION"}
-],
-signals:[
-{name:"CORRECT THE RECORD",line:"This is a draft; no final restructuring decision has been approved.",delta:{legal:-4,workforce:-5,customer:-3},trust:4},
-{name:"ACKNOWLEDGE CONCERNS",line:"We understand the concerns and will answer with verified information.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
-{name:"STAFF FIRST",line:"We will answer colleagues directly before sharing our verified client update.",delta:{legal:-2,workforce:-11,customer:7},trust:1}
-]},
-{id:"warehouse",number:"05",time:"15:40",title:"THE DELIVERY TEST",kicker:"Plans count only when the team can deliver.",scene:"warehouse",base:17000,
-brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
-headline:"THE NEXT SHIFT IS OUR REAL TEST.",question:"How will you deliver while supporting the people doing the work?",pressure:"Two key specialists are fatigued and the backup route still needs validation.",
-evidence:[
-{type:"DELIVERY BOARD",time:"15:16",title:"THE MISSED HANDOVER",body:"One specialist team is short of capacity. The backup route has not been fully tested. There is still a narrow window to protect the critical shipment.",clue:"More money can buy capacity, but not instant experience."},
-{type:"VENDOR LETTER",time:"15:27",title:"THE CONTRACTOR",body:"The contractor requests continued supervised access or a paid transition. Its agreement permits a short emergency extension under supervision.",clue:"An agreed, supervised transition is available, but it requires security controls and money."},
-{type:"PEOPLE UPDATE",time:"15:34",title:"THE EXHAUSTION WARNING",body:"Two key staff have worked through their breaks. Both say another emergency shift would be unsafe.",clue:"A heroic overtime plan has a real operational and human limit."}
-],
-advice:[
-"Document any vendor transition and ensure temporary access is restricted and auditable.",
-"Protect the critical delivery path. The backup route is not yet proven.",
-"Tell the client which milestone is genuinely at risk rather than hiding a miss.",
-"Overtime is a deferred cost as well as a cash cost. Budget for recovery time.",
-"Supervised vendor access can be safer than informal workarounds.",
-"Exhausted staff are not a renewable resource. Repeated overtime raises future failure risk."
-],
-plans:[
-{name:"ACTIVATE THE BACKUP",verb:"Share delivery load",desc:"Fund a vetted specialist partner and a controlled handover to restore capacity.",benefits:["Diversifies delivery resources","Creates breathing room for staff"],cost:"A significant cash and transition commitment remains.",spend:38000,delta:{ops:-15,workforce:-5,customer:-5,legal:2},trust:5,delay:{due:7,cost:9000,label:"Vendor transition close-out",delta:{}},fallout:"The specialist partner takes part of the load. The company funds a handover and future vendor close-out.",tag:"RESILIENCE"},
-{name:"REDEPLOY THE CREW",verb:"Bring in rested specialists",desc:"Transfer qualified, rested colleagues from lower-priority work, fund cover for their previous assignments and protect exhausted staff.",benefits:["Uses experienced staff without unsafe overtime","Restores critical delivery quickly"],cost:"Reassignment costs money and can delay lower-priority clients.",spend:24000,delta:{ops:-14,workforce:-4,legal:2,customer:6},trust:3,delay:{due:6,cost:12000,label:"Temporary specialist cover and handover",delta:{ops:6,customer:4}},fallout:"Rested specialists secure the urgent delivery. Other clients need a clear transition plan while their normal team is temporarily reassigned.",tag:"PEOPLE"},
-{name:"RENEGOTIATE PRIORITIES",verb:"Focus on what matters",desc:"Agree a short-term priority order with the client, protecting critical work and employee capacity.",benefits:["Protects frontline capacity","Uses cash responsibly"],cost:"A change of scope needs an agreed concession.",spend:11000,delta:{ops:5,workforce:-11,customer:12,legal:-3},trust:-6,fallout:"The most important delivery remains viable. The client requests a fair adjustment for rescheduled work.",tag:"TRADE-OFF"}
-],
-signals:[
-{name:"MILESTONE ALERT",line:"Here are the priority milestones and a realistic recovery path.",delta:{customer:-5,legal:-2},trust:5},
-{name:"CONFIDENT UPDATE",line:"We are protecting priority service with named contingencies, and will report any milestone change.",delta:{customer:-8,legal:5,ops:3},trust:5,delay:{due:6,cost:10000,label:"Customer assurance contingency",delta:{customer:9}}},
-{name:"VERIFY BEFORE UPDATING",line:"We will confirm the next milestone after operational checks are complete.",delta:{ops:-2,customer:9},trust:-4}
-]},
-{id:"board",number:"06",time:"17:30",title:"THE NEXT MOVE",kicker:"Choose the company you want to build.",scene:"board",base:9000,
-brief:"The board has your incident log, the cash ledger and the client's final questions. You cannot undo the morning. You can choose what kind of recovery the company will fund.",
-headline:"SIX DECISIONS LATER, WHAT COMES NEXT?",question:"What will your leadership team invest in next?",pressure:"Your choices have created cash costs, staff responsibilities and opportunities to rebuild trust.",
-evidence:[
-{type:"BOARD PACK",time:"17:02",title:"THE COST OF THE DAY",body:"Every response commitment is now on the ledger. Unresolved contingent liabilities may become payable after this session.",clue:"Remaining cash and pending liabilities are separate. Neither is the client contract value."},
-{type:"CLIENT POSITION",time:"17:18",title:"THE RENEWAL NOTE",body:"The client will judge evidence, continuity and the credibility of future commitments. It will not accept a cosmetic statement as remediation.",clue:"A contract can be conditionally retained even when trust is damaged."},
-{type:"CHAIR'S QUESTION",time:"17:29",title:"THE LAST PAGE",body:"The chair asks: what are we prepared to stop doing to make this plan real? Every answer has a cost.",clue:"A smaller funded plan may be better than an impossible promise."}
-],
-advice:[
-"Fund independent oversight and clear owners. Avoid signing unbounded warranties.",
-"Make sure the recovery programme leaves sufficient operating capacity.",
-"Clients reward evidence-backed follow-through, not theatrical certainty.",
-"Protect liquidity. Pending commitments are not free because they fall after today.",
-"Security controls require ongoing ownership after the immediate incident closes.",
-"Staff need a recovery plan that does not depend on permanent emergency overtime."
-],
-plans:[
-{name:"FUND THE NEXT STEPS",verb:"Turn learning into action",desc:"Fund independent monitoring, accountable owners and a sustainable improvement schedule.",benefits:["Protects future partnerships","Creates lasting governance"],cost:"The investment reduces remaining response cash.",spend:28000,delta:{legal:-13,customer:-10,workforce:-6,ops:3},trust:13,fallout:"The team secures funding for improvements. The client receives milestones that can be checked.",tag:"GOVERNANCE"},
-{name:"INVEST IN MOMENTUM",verb:"Build on confidence",desc:"Back a faster recovery timetable with measurable milestones and explicit resource commitments.",benefits:["Signals positive direction","May strengthen renewal talks"],cost:"Accelerated delivery consumes cash and adds staff pressure.",spend:18000,delta:{customer:-21,ops:-9,workforce:10,legal:5},trust:12,delay:{due:7,cost:18000,label:"Accelerated recovery commitment",delta:{}},fallout:"The board backs a more ambitious plan. The opportunity is real, and so are next month's commitments.",tag:"AMBITION"},
-{name:"FOCUS & DELIVER",verb:"Choose sustainable scope",desc:"Prioritise services you can reliably deliver and offer the client an honest scope review.",benefits:["Preserves future capacity","Makes commitments manageable"],cost:"A narrower offer may reduce near-term revenue.",spend:7000,delta:{ops:-11,workforce:-7,customer:10,legal:-3},trust:4,fallout:"The company protects the reserve and clarifies its offer. The client asks for a case for revised scope.",tag:"DISCIPLINE"}
-],
-signals:[
-{name:"OWN THE TRADE-OFFS",line:"Here is what we will fund, what we will stop and how we will report progress.",delta:{legal:-5,customer:-6,workforce:-3},trust:6},
-{name:"BUILD MOMENTUM",line:"We will accelerate the most important commitments with published milestones.",delta:{customer:-7,legal:7,workforce:8},trust:8,delay:{due:7,cost:16000,label:"Accelerated milestone investment",delta:{}}},
-{name:"SHARE THE NEXT STEPS",line:"We will publish owners and a verified handover timetable for the next shift.",delta:{legal:-2,customer:3,workforce:2,ops:-8},trust:2}
-]}
-];
-g.BCContent={advisers:advisers,episodes:episodes,initialCash:260000,annualContractValue:240000,baseline:{legal:47,ops:38,workforce:44,customer:51,liquidity:25},variants:[
-{title:"Temporary access remained active",effect:{legal:4,ops:2},note:"The contractor session was still live after its scheduled expiry."},
-{title:"A forwarding rule widened exposure",effect:{legal:6,customer:3},note:"An internal forwarding rule amplified the distribution beyond the original list."},
-{title:"The address book included old contacts",effect:{customer:5,workforce:2},note:"An outdated contact group added recipients who should not have been included."}
-]};
+// Project Spark: the opportunity-led 09:17 Challenge. Fictional model, not a financial forecast.
+const data={
+  "advisers": [
+    {
+      "id": "legal",
+      "name": "MARA VALE",
+      "role": "LEGAL & ACCESSIBILITY",
+      "color": "#b9a6a0",
+      "line": "An exciting promise must work for everyone."
+    },
+    {
+      "id": "ops",
+      "name": "DANIEL ROOK",
+      "role": "OPERATIONS DIRECTOR",
+      "color": "#a9bbc4",
+      "line": "A beautiful plan deserves a practical delivery route."
+    },
+    {
+      "id": "client",
+      "name": "INES PARK",
+      "role": "PARTNERSHIPS LEAD",
+      "color": "#b4a6b5",
+      "line": "Make it ambitious, but make it believable."
+    },
+    {
+      "id": "finance",
+      "name": "ELI MERCER",
+      "role": "FINANCE CONTROLLER",
+      "color": "#9fbaa9",
+      "line": "An idea succeeds only if we can fund the reality."
+    },
+    {
+      "id": "security",
+      "name": "NOOR SHAH",
+      "role": "TECH & DATA LEAD",
+      "color": "#a9b3c6",
+      "line": "Test the experience before promising the technology."
+    },
+    {
+      "id": "people",
+      "name": "RUTH BELL",
+      "role": "PEOPLE & CULTURE",
+      "color": "#c4ae94",
+      "line": "The strongest design includes the people who deliver it."
+    }
+  ],
+  "episodes": [
+    {
+      "id": "invitation",
+      "number": "01",
+      "time": "09:17",
+      "title": "THE INVITATION",
+      "kicker": "One unexpected opportunity. A day to make it real.",
+      "scene": "mail",
+      "base": 8000,
+      "brief": "At 09:17, a national partner invites your company to pitch Project Spark: a 90-day pilot turning under-used spaces into welcoming, interactive experiences for businesses, schools and communities. The board proposal is due at 17:30. Up to three locations are possible, but nothing has been awarded. Your company has a separate £260,000 ninety-day improvement reserve and an existing £240,000-per-year service contract. Neither guarantees revenue from Project Spark.",
+      "headline": "A BIG IDEA. SIX DECISIONS. YOUR TEAM'S CALL.",
+      "question": "What will you promise before the details have been tested?",
+      "pressure": "Excitement is real. So are the limits on money, staff time and proof.",
+      "evidence": [
+        {
+          "type": "PARTNER INVITATION",
+          "time": "09:17",
+          "title": "THE SHORTLIST",
+          "body": "Project Spark seeks a credible 90-day pilot with options for one, two or three locations. The funding committee will review proposals at 17:30. A place on the shortlist is not a signed contract.",
+          "clue": "A clear plan wins attention; a contract is not yet guaranteed."
+        },
+        {
+          "type": "CONCEPT SKETCH",
+          "time": "09:10",
+          "title": "THE THREE SPACES",
+          "body": "The concept team proposes interactive learning zones, a creative workshop and a community experience. Sketches show what might be possible; none are approved technical specifications.",
+          "clue": "An exciting illustration is not proof that all three locations can be delivered."
+        },
+        {
+          "type": "FINANCE BRIEF",
+          "time": "09:24",
+          "title": "THE REAL BUDGET",
+          "body": "The company has £260,000 allocated across its 90-day improvement and contingency work. An existing client service agreement is worth £240,000 annually, but that future revenue is not spendable cash.",
+          "clue": "The new pilot has no guaranteed income and must fit the available reserve."
+        }
+      ],
+      "advice": [
+        "Separate the shortlisted invitation from an actual contract. Accessibility, public claims and approvals still need evidence.",
+        "Do not reserve three sites before checking locations, staffing and operational dependencies.",
+        "The partner wants imagination backed by a credible path, not a presentation full of promises.",
+        "The £260,000 is a 90-day company reserve. The existing £240,000 annual service contract cannot pay today's bills.",
+        "The sketches need offline and accessible alternatives before anyone treats the digital features as launch-ready.",
+        "Ask the teams who would welcome visitors; they may spot practical needs absent from the first concept."
+      ],
+      "plans": [
+        {
+          "name": "DESIGN THE PROOF",
+          "verb": "Verify before expanding",
+          "desc": "Check feasibility, accessibility and costs, then offer a phased proposal backed by evidence.",
+          "benefits": [
+            "Builds credible evidence",
+            "Protects future flexibility"
+          ],
+          "cost": "Checking the details takes time and temporarily slows creative momentum.",
+          "spend": 18000,
+          "delta": {
+            "legal": -11,
+            "ops": 6,
+            "workforce": 2,
+            "customer": -8
+          },
+          "trust": 8,
+          "fallout": "The partner welcomes a clear, verifiable approach. Your team has a smaller set of claims, but stronger evidence for each.",
+          "tag": "PROOF"
+        },
+        {
+          "name": "MAKE THE BIG BID",
+          "verb": "Explore the three-site vision",
+          "desc": "Build a bold three-location proposal and reserve specialist design capacity now.",
+          "benefits": [
+            "Creates excitement",
+            "Shows creative ambition"
+          ],
+          "cost": "Complexity, staffing and later revisions could push beyond today's assumptions.",
+          "spend": 32000,
+          "delta": {
+            "legal": 10,
+            "ops": 12,
+            "workforce": 7,
+            "customer": -18
+          },
+          "trust": 12,
+          "fallout": "The three-site concept draws attention. Finance and operations will need real evidence before anyone commits to delivering every location.",
+          "tag": "AMBITION",
+          "delay": {
+            "due": 3,
+            "cost": 9000,
+            "label": "Three-location feasibility and access checks",
+            "delta": {
+              "ops": 5
+            }
+          }
+        },
+        {
+          "name": "START SMALL, SCALE SMART",
+          "verb": "Start with one excellent site",
+          "desc": "Offer a well-defined first location with priced, optional expansion gates.",
+          "benefits": [
+            "Protects the reserve",
+            "Makes first delivery manageable"
+          ],
+          "cost": "The client might prefer a more dramatic launch proposition.",
+          "spend": 9000,
+          "delta": {
+            "legal": -5,
+            "ops": -3,
+            "workforce": -2,
+            "customer": 4
+          },
+          "trust": 3,
+          "fallout": "The partner can see the practical first step, although it asks what would justify a second or third location.",
+          "tag": "FOCUS"
+        }
+      ],
+      "signals": [
+        {
+          "name": "TESTED PROPOSAL",
+          "line": "We'll show which parts of this pilot are tested, funded and ready for review.",
+          "delta": {
+            "legal": -3,
+            "customer": -2
+          },
+          "trust": 2
+        },
+        {
+          "name": "EXPLORE THREE SITES",
+          "line": "We're developing the ambition for three locations, subject to evidence and approval.",
+          "delta": {
+            "legal": 4,
+            "workforce": -5,
+            "customer": -4
+          },
+          "trust": 5
+        },
+        {
+          "name": "PROVE ONE SITE",
+          "line": "Our first priority is one outstanding pilot; expansion will depend on verified results.",
+          "delta": {
+            "legal": -2,
+            "ops": -2,
+            "customer": 4
+          },
+          "trust": 3,
+          "delay": {
+            "due": 3,
+            "cost": 8000,
+            "label": "First-location demonstration review",
+            "delta": {
+              "customer": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "people",
+      "number": "02",
+      "time": "10:06",
+      "title": "THE PEOPLE BEHIND THE PLAN",
+      "kicker": "The cleverest idea needs people who can deliver it.",
+      "scene": "floor",
+      "base": 11000,
+      "brief": "The concept looks promising, but the operations board is crowded. A team responsible for existing clients is fully booked, educators suggest a simpler inclusive activity, and a qualified external crew offers short-term help. The proposal needs the right people, not just an enthusiastic presentation.",
+      "headline": "GREAT IDEAS NEED GREAT TEAMS.",
+      "question": "How will you bring people together without overloading them?",
+      "pressure": "Every hour moved to Spark is an hour not spent on an existing commitment.",
+      "evidence": [
+        {
+          "type": "CAPACITY BOARD",
+          "time": "09:56",
+          "title": "WHO IS AVAILABLE",
+          "body": "The project team has limited design capacity this week. Current client programmes must still operate on schedule; one senior team is already fully committed.",
+          "clue": "Additional assignments need either a revised schedule or reliable extra support."
+        },
+        {
+          "type": "STAFF WORKSHOP",
+          "time": "10:03",
+          "title": "AN IDEA FROM THE FLOOR",
+          "body": "Front-of-house and education colleagues propose a tactile, step-free interactive option that does not depend on an app or constant connectivity.",
+          "clue": "Inclusive design may be a creative advantage, not merely a compliance cost."
+        },
+        {
+          "type": "SUPPORT OFFER",
+          "time": "10:04",
+          "title": "THE OUTSIDE CREW",
+          "body": "A trained temporary crew can support the prototype and venue preparation. Its quote covers setup but requires an agreed handover and follow-up fee.",
+          "clue": "Extra capacity is useful only if the transition is funded and supervised."
+        }
+      ],
+      "advice": [
+        "Invite frontline accessibility insight early; an unsuitable concept costs far more to repair later.",
+        "Assign named owners to existing service commitments before borrowing their staff for Spark.",
+        "The partner will value evidence that real visitors helped shape the design.",
+        "Temporary support is a real expense now and a handover liability later. Cap the contract.",
+        "An offline-first alternative can make the experience easier to install and maintain.",
+        "People are more engaged when they help shape the project, but their time still needs protecting."
+      ],
+      "plans": [
+        {
+          "name": "CO-DESIGN THE EXPERIENCE",
+          "verb": "Let frontline ideas lead",
+          "desc": "Reserve time for a focused workshop with educators, visitor teams and delivery staff.",
+          "benefits": [
+            "Improves ownership",
+            "Surfaces accessibility ideas"
+          ],
+          "cost": "Managers must redirect part of their delivery time.",
+          "spend": 16000,
+          "delta": {
+            "workforce": -17,
+            "legal": -5,
+            "ops": 5,
+            "customer": -2
+          },
+          "trust": 4,
+          "fallout": "Staff return with practical improvements to the visitor experience, including an accessible offline activity.",
+          "tag": "COLLABORATE"
+        },
+        {
+          "name": "SET THE OWNERS",
+          "verb": "Give the team a clear plan",
+          "desc": "Appoint responsible leads, agree what existing work must continue and set deliverable milestones.",
+          "benefits": [
+            "Keeps work moving",
+            "Clarifies accountability"
+          ],
+          "cost": "A leadership-led timetable may overlook useful staff ideas.",
+          "spend": 8000,
+          "delta": {
+            "ops": -9,
+            "workforce": 14,
+            "legal": 3,
+            "customer": 3
+          },
+          "trust": -2,
+          "fallout": "The schedule becomes clearer quickly. A few team members would still like a say in the visitor experience.",
+          "tag": "CONTROL"
+        },
+        {
+          "name": "BUY BREATHING ROOM",
+          "verb": "Add specialist help",
+          "desc": "Hire a qualified temporary crew to protect current programmes while Spark develops.",
+          "benefits": [
+            "Adds delivery capacity",
+            "Reduces immediate pressure"
+          ],
+          "cost": "Onboarding and a later handover create extra commitments.",
+          "spend": 29000,
+          "delta": {
+            "workforce": -21,
+            "ops": -6,
+            "legal": 4,
+            "customer": -3
+          },
+          "trust": 3,
+          "fallout": "The additional crew makes space for the prototype. Finance records the agreed transition fee.",
+          "tag": "SUPPORT",
+          "delay": {
+            "due": 4,
+            "cost": 10000,
+            "label": "Qualified crew onboarding and handover",
+            "delta": {
+              "ops": 2
+            }
+          }
+        }
+      ],
+      "signals": [
+        {
+          "name": "INVITE THE TEAM",
+          "line": "The people delivering this experience will help shape its next version.",
+          "delta": {
+            "workforce": -6,
+            "legal": -2
+          },
+          "trust": 2
+        },
+        {
+          "name": "PUBLISH RESPONSIBILITIES",
+          "line": "We've assigned accountable leads and protected current customer commitments.",
+          "delta": {
+            "ops": -4,
+            "workforce": 5
+          },
+          "trust": 0
+        },
+        {
+          "name": "PROTECT CAPACITY",
+          "line": "We'll fund additional support while keeping existing services fully staffed.",
+          "delta": {
+            "workforce": -7,
+            "legal": 5
+          },
+          "trust": 4,
+          "delay": {
+            "due": 4,
+            "cost": 12000,
+            "label": "Temporary workforce capacity cover",
+            "delta": {
+              "workforce": -2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "partner",
+      "number": "03",
+      "time": "11:24",
+      "title": "THE PARTNER DEAL",
+      "kicker": "A deal that looks good today must still work at launch.",
+      "scene": "client",
+      "base": 14000,
+      "brief": "Three supplier options could power Project Spark. One is proven but expensive, one promises faster delivery with conditions, and an in-house team can build a simpler demonstration. The partner wants a defensible recommendation by 14:00, including accessibility evidence, clear owners and a credible delivery schedule.",
+      "headline": "THE BEST OFFER IS THE ONE YOU CAN DELIVER.",
+      "question": "Which partnership can you defend after the launch?",
+      "pressure": "Speed, independent proof and in-house control cannot all be maximised at once.",
+      "evidence": [
+        {
+          "type": "SUPPLIER MATRIX",
+          "time": "11:11",
+          "title": "THREE ROUTES",
+          "body": "Supplier A offers established delivery with a slower schedule. Supplier B can move faster if the company accepts milestone conditions. The in-house route is flexible but needs scarce specialist time.",
+          "clue": "Compare total obligations and reliability, not only headline spend."
+        },
+        {
+          "type": "ACCESSIBILITY CHECK",
+          "time": "11:17",
+          "title": "THE EARLY USER TEST",
+          "body": "A prototype interaction works for most testers. Screen-reader support and step-free access still need formal verification before a public commitment.",
+          "clue": "A successful demonstration is not a complete accessibility sign-off."
+        },
+        {
+          "type": "CONTRACT NOTES",
+          "time": "11:21",
+          "title": "THE FINE PRINT",
+          "body": "The proposed contract contains delivery milestones, privacy responsibilities and service conditions. The partner does not require an unconditional guarantee.",
+          "clue": "A bounded, evidenced commitment is more valuable than an impossible warranty."
+        }
+      ],
+      "advice": [
+        "Define measurable accessibility and contractual milestones before accepting the fastest timetable.",
+        "Independent verification consumes specialist time as well as money.",
+        "The partner values a named owner and a credible prototype more than glossy promises.",
+        "A low headline quote may hide future milestone costs and contingency spending.",
+        "Require data minimisation and offline continuity before selecting technology.",
+        "Protect staff workloads while using them to verify the proof-of-concept."
+      ],
+      "plans": [
+        {
+          "name": "CHOOSE PROVEN DELIVERY",
+          "verb": "Pay for verified capability",
+          "desc": "Commission an independent technical and accessibility review around a reliable supplier route.",
+          "benefits": [
+            "Builds evidence-based confidence",
+            "Reduces contractual uncertainty"
+          ],
+          "cost": "Audit and supplier coordination take time and money.",
+          "spend": 26000,
+          "delta": {
+            "legal": -10,
+            "customer": -17,
+            "ops": 5,
+            "workforce": 3
+          },
+          "trust": 15,
+          "fallout": "The partner receives independently reviewable milestones. Delivery teams now need to coordinate the proof.",
+          "tag": "ASSURANCE"
+        },
+        {
+          "name": "NEGOTIATE A FAST ROUTE",
+          "verb": "Trade speed for clear conditions",
+          "desc": "Agree a faster supplier timetable with named owners and contractual contingency checkpoints.",
+          "benefits": [
+            "Keeps momentum high",
+            "Makes responsibilities explicit"
+          ],
+          "cost": "Unverified dependencies may turn into additional cost.",
+          "spend": 12000,
+          "delta": {
+            "customer": -16,
+            "legal": 10,
+            "ops": 9,
+            "workforce": 4
+          },
+          "trust": 13,
+          "fallout": "The partner likes the pace, but the fast-track commitment creates a defined future exposure.",
+          "tag": "SPEED",
+          "delay": {
+            "due": 5,
+            "cost": 22000,
+            "label": "Fast-route contractual milestone contingency",
+            "delta": {
+              "customer": 10,
+              "legal": 6
+            }
+          }
+        },
+        {
+          "name": "BUILD THE ESSENTIALS",
+          "verb": "Show a working core",
+          "desc": "Use internal specialists to prove the minimum inclusive experience before extending the scope.",
+          "benefits": [
+            "Demonstrates real delivery",
+            "Retains technical control"
+          ],
+          "cost": "The team has less time for its other commitments.",
+          "spend": 18000,
+          "delta": {
+            "ops": -16,
+            "customer": -7,
+            "workforce": 12,
+            "legal": 4
+          },
+          "trust": 7,
+          "fallout": "The early demonstration works. The delivery lead now needs a sustainable specialist schedule.",
+          "tag": "PROTOTYPE"
+        }
+      ],
+      "signals": [
+        {
+          "name": "VERIFIED MILESTONES",
+          "line": "Here are the delivery checks, owners and dates we can substantiate.",
+          "delta": {
+            "customer": -5,
+            "legal": -3
+          },
+          "trust": 4
+        },
+        {
+          "name": "FAST TRACK WITH CHECKS",
+          "line": "We're targeting an accelerated pilot with verification at every milestone.",
+          "delta": {
+            "customer": -6,
+            "legal": 5,
+            "ops": 4
+          },
+          "trust": 7,
+          "delay": {
+            "due": 5,
+            "cost": 14000,
+            "label": "Accelerated pilot milestone review",
+            "delta": {
+              "legal": 4
+            }
+          }
+        },
+        {
+          "name": "PROOF BEFORE PROMISES",
+          "line": "We'll confirm prototype performance before making a wider commitment.",
+          "delta": {
+            "legal": -5,
+            "customer": 7
+          },
+          "trust": -3
+        }
+      ]
+    },
+    {
+      "id": "spotlight",
+      "number": "04",
+      "time": "13:12",
+      "title": "THE SPOTLIGHT",
+      "kicker": "Big interest brings bigger expectations.",
+      "scene": "press",
+      "base": 12000,
+      "brief": "At 13:12, the partner's marketing team shares a scheduled teaser of Project Spark. People immediately ask where they can visit, whether all three locations will open and if the experience will be accessible to everyone. The teaser depicts an unapproved concept, not a confirmed launch.",
+      "headline": "THE IDEA HAS ATTENTION. NOW EARN THE TRUST.",
+      "question": "How will you protect the excitement without promising a fantasy?",
+      "pressure": "The public is interested, but the site list and access checks are still conditional.",
+      "evidence": [
+        {
+          "type": "PUBLIC TEASER",
+          "time": "13:05",
+          "title": "THE CONCEPT GOES LIVE",
+          "body": "A creative teaser shows interactive pop-up spaces and asks people what they would like to explore. Several commenters assume all three locations have been approved.",
+          "clue": "Audience enthusiasm is real; an illustration is not an opening announcement."
+        },
+        {
+          "type": "APPROVAL REGISTER",
+          "time": "13:09",
+          "title": "WHAT IS CONFIRMED",
+          "body": "Only the pilot concept and proposal review have been approved. Venue availability, accessibility sign-off and final dates remain conditional.",
+          "clue": "Being shortlisted is not the same as receiving permission to open."
+        },
+        {
+          "type": "COMMUNITY FEEDBACK",
+          "time": "13:11",
+          "title": "THREE QUESTIONS",
+          "body": "A teacher asks about age suitability, a visitor asks about wheelchair access, and a local partner offers to help test the offline activities.",
+          "clue": "The questions can improve the project if the team listens."
+        }
+      ],
+      "advice": [
+        "Correct confusion about confirmed sites without dampening genuine interest.",
+        "Make public communication consistent with the actual delivery plan.",
+        "The partner wants confidence, not a promise the legal team cannot support.",
+        "Engaging community groups is worthwhile if the time and staffing are funded.",
+        "Share only verified prototype and access claims. Avoid claiming an untested feature works everywhere.",
+        "Listen to teachers and visitors; co-design is also an opportunity for the staff team."
+      ],
+      "plans": [
+        {
+          "name": "SHOW WHAT'S VERIFIED",
+          "verb": "Be clear and optimistic",
+          "desc": "Publish approved facts, correct location assumptions and identify the next checkable milestone.",
+          "benefits": [
+            "Protects public trust",
+            "Prevents a misleading launch claim"
+          ],
+          "cost": "Verification and careful review may reduce momentum briefly.",
+          "spend": 15000,
+          "delta": {
+            "legal": 2,
+            "customer": -12,
+            "workforce": -9,
+            "ops": 2
+          },
+          "trust": 10,
+          "fallout": "The teaser stays exciting, but now readers can distinguish what is real from what is still being designed.",
+          "tag": "CLARITY"
+        },
+        {
+          "name": "HOLD THE DETAIL",
+          "verb": "Confirm before announcing",
+          "desc": "Thank people for their interest and set a clear window for a detailed update.",
+          "benefits": [
+            "Avoids unsupported claims",
+            "Protects room for technical checks"
+          ],
+          "cost": "Leaving details unanswered allows some speculation.",
+          "spend": 9000,
+          "delta": {
+            "legal": -5,
+            "customer": 8,
+            "workforce": 6,
+            "ops": 0
+          },
+          "trust": -3,
+          "fallout": "The team avoids overpromising. The audience needs a specific and useful next update.",
+          "tag": "PATIENCE"
+        },
+        {
+          "name": "INVITE PEOPLE IN",
+          "verb": "Turn interest into co-design",
+          "desc": "Fund a short, moderated consultation with educators, local partners and accessibility testers.",
+          "benefits": [
+            "Improves inclusion",
+            "Builds a more useful design"
+          ],
+          "cost": "The extra consultation takes time and budget.",
+          "spend": 19000,
+          "delta": {
+            "legal": -7,
+            "customer": 5,
+            "workforce": -8,
+            "ops": 4
+          },
+          "trust": 4,
+          "fallout": "Visitors offer valuable refinements. The team must now decide which ideas are realistic for the pilot.",
+          "tag": "CO-DESIGN"
+        }
+      ],
+      "signals": [
+        {
+          "name": "CONFIRMED FACTS",
+          "line": "The project is shortlisted, with locations and dates still subject to approval.",
+          "delta": {
+            "legal": -4,
+            "workforce": -5,
+            "customer": -3
+          },
+          "trust": 4
+        },
+        {
+          "name": "OPEN INVITATION",
+          "line": "Tell us what would make these spaces useful, fun and accessible for you.",
+          "delta": {
+            "workforce": -4,
+            "customer": -4,
+            "legal": 3
+          },
+          "trust": 3
+        },
+        {
+          "name": "CHECK THE VENUES",
+          "line": "We'll announce opening dates after the venue and access checks are complete.",
+          "delta": {
+            "legal": -2,
+            "workforce": -8,
+            "customer": 7
+          },
+          "trust": 1
+        }
+      ]
+    },
+    {
+      "id": "reality",
+      "number": "05",
+      "time": "15:40",
+      "title": "THE REALITY CHECK",
+      "kicker": "The prototype is exciting. The conditions are not perfect.",
+      "scene": "warehouse",
+      "base": 17000,
+      "brief": "At 15:40, the venue dry run exposes an intermittent connection problem. The demonstration is not a public launch. A qualified backup supplier is available, while the internal team has a robust offline alternative. The client needs a credible plan for the evening board decision.",
+      "headline": "A GREAT PLAN SHOULD ALSO SURVIVE REALITY.",
+      "question": "What will you protect when the demo meets a practical limit?",
+      "pressure": "The connectivity fault is repeatable. There is no time to pretend it has vanished.",
+      "evidence": [
+        {
+          "type": "DEMO RUN LOG",
+          "time": "15:16",
+          "title": "THE INTERRUPTED TEST",
+          "body": "The interactive experience works when the venue connection is stable. In a repeatable test the network drops, and several screens stop updating.",
+          "clue": "A polished demo cannot replace an offline or supported continuity plan."
+        },
+        {
+          "type": "BACKUP QUOTE",
+          "time": "15:27",
+          "title": "THE SUPPORT ROUTE",
+          "body": "A vetted supplier can provide supervised fallback support. Activation has a realistic lead time and a funded transition and close-out cost.",
+          "clue": "Backup capacity reduces risk, but cannot be switched on without planning."
+        },
+        {
+          "type": "ACCESSIBILITY & STAFF CHECK",
+          "time": "15:34",
+          "title": "THE OPTION THAT WORKS",
+          "body": "An offline-first version remains usable for more visitors and needs less network support. Existing staff have limited time to adapt the programme.",
+          "clue": "Simpler design can improve resilience without pretending every feature is ready."
+        }
+      ],
+      "advice": [
+        "Document the fallback route and the actual access and venue checks.",
+        "Protect the essential visitor experience instead of chasing an unsupported full launch.",
+        "Tell the partner what passed and what failed in the prototype.",
+        "Budget for suppliers and staff after today's demonstration; promises persist.",
+        "Make offline operation part of the plan, not a hidden emergency shortcut.",
+        "Do not solve a technical problem by giving the existing staff unlimited unpaid work."
+      ],
+      "plans": [
+        {
+          "name": "FUND THE BACKUP",
+          "verb": "Protect the interactive plan",
+          "desc": "Hire a vetted fallback supplier with supervised transition and close-out responsibilities.",
+          "benefits": [
+            "Adds delivery resilience",
+            "Protects planned features"
+          ],
+          "cost": "This is the costliest response and creates a later supplier commitment.",
+          "spend": 38000,
+          "delta": {
+            "ops": -15,
+            "workforce": -5,
+            "customer": -5,
+            "legal": 2
+          },
+          "trust": 5,
+          "fallout": "The supplier can support the core experience. The team must account for follow-up work after the review.",
+          "tag": "RESILIENCE",
+          "delay": {
+            "due": 7,
+            "cost": 9000,
+            "label": "Backup supplier close-out and handover",
+            "delta": {}
+          }
+        },
+        {
+          "name": "REDESIGN WITH WHAT WORKS",
+          "verb": "Make offline-first the default",
+          "desc": "Simplify the demonstration for unreliable venues and redeploy qualified staff to the most important features.",
+          "benefits": [
+            "Protects accessibility",
+            "Reduces dependence on connectivity"
+          ],
+          "cost": "Several ambitious features are delayed and internal capacity is diverted.",
+          "spend": 24000,
+          "delta": {
+            "ops": -14,
+            "workforce": -4,
+            "legal": 2,
+            "customer": 6
+          },
+          "trust": 3,
+          "fallout": "The offline version is robust. The client sees a narrower but more credible demonstration.",
+          "tag": "SIMPLIFY",
+          "delay": {
+            "due": 6,
+            "cost": 12000,
+            "label": "Offline prototype rework and staff cover",
+            "delta": {
+              "ops": 6,
+              "customer": 4
+            }
+          }
+        },
+        {
+          "name": "RESET THE SCOPE",
+          "verb": "Agree a smaller reliable pilot",
+          "desc": "Ask the partner to review a one-location, accessible pilot with a priced expansion path.",
+          "benefits": [
+            "Protects cash and people",
+            "Keeps commitments deliverable"
+          ],
+          "cost": "Ambition is reduced and the client may renegotiate the scope.",
+          "spend": 11000,
+          "delta": {
+            "ops": 5,
+            "workforce": -11,
+            "customer": 12,
+            "legal": -3
+          },
+          "trust": -6,
+          "fallout": "The plan becomes simpler to deliver. The partner needs to agree the smaller scope before any launch promise is valid.",
+          "tag": "FOCUS"
+        }
+      ],
+      "signals": [
+        {
+          "name": "REPORT THE TEST",
+          "line": "Here are the prototype features that passed and the changes still needed.",
+          "delta": {
+            "customer": -5,
+            "legal": -2
+          },
+          "trust": 5
+        },
+        {
+          "name": "BACKUP PLAN",
+          "line": "We've defined a supported fallback for the critical experience and will verify each milestone.",
+          "delta": {
+            "customer": -8,
+            "legal": 5,
+            "ops": 3
+          },
+          "trust": 5,
+          "delay": {
+            "due": 6,
+            "cost": 10000,
+            "label": "Backup service assurance follow-up",
+            "delta": {
+              "customer": 9
+            }
+          }
+        },
+        {
+          "name": "RECHECK THE MILESTONE",
+          "line": "We'll confirm the next delivery target after the venue checks are complete.",
+          "delta": {
+            "ops": -2,
+            "customer": 9
+          },
+          "trust": -4
+        }
+      ]
+    },
+    {
+      "id": "final",
+      "number": "06",
+      "time": "17:30",
+      "title": "THE FINAL CALL",
+      "kicker": "Your team's plan is about to meet the board.",
+      "scene": "board",
+      "base": 9000,
+      "brief": "At 17:30, the partner and company board review your Project Spark proposal. They have the prototype evidence, team-capacity plan, public communications, £260,000 reserve ledger and every remaining commitment. No pilot has been awarded yet. The board is deciding whether your plan is credible enough to pursue, not magically signing a contract.",
+      "headline": "ONE LAST DECISION. WHAT WILL YOU MAKE REAL?",
+      "question": "Which next step could your team defend six weeks from now?",
+      "pressure": "The strongest ending must match the resources, people and promises you actually have.",
+      "evidence": [
+        {
+          "type": "FINANCIAL SUMMARY",
+          "time": "17:02",
+          "title": "THE REAL COST",
+          "body": "The 90-day reserve shows funded spending separately from remaining cash and contractual commitments that will fall due after today's meeting.",
+          "clue": "Future liabilities still matter even when they have not been paid yet."
+        },
+        {
+          "type": "PARTNER SCORECARD",
+          "time": "17:18",
+          "title": "THE READINESS REVIEW",
+          "body": "The partner is comparing feasibility, inclusive access, honest public promises, named delivery owners and operational evidence. No award decision has been made.",
+          "clue": "Readiness is not the same as a signed contract or guaranteed income."
+        },
+        {
+          "type": "THE BOARD QUESTION",
+          "time": "17:29",
+          "title": "WHAT WILL YOU STOP?",
+          "body": "The chair asks each team which features it would delay, which activities it would fund and which commitments it could deliver with confidence.",
+          "clue": "A smaller, funded plan may be stronger than an impossible promise."
+        }
+      ],
+      "advice": [
+        "Use clear ownership and verifiable commitments; do not promise full approval without evidence.",
+        "A sustainable pilot needs a resilient implementation and realistic staff capacity.",
+        "Make the partner's confidence depend on proof, not an invented contract award.",
+        "Pending commitments are liabilities, not imaginary free cash.",
+        "Fund real accessibility and offline checks before announcing readiness.",
+        "People need a workable schedule that does not depend on permanent last-minute overtime."
+      ],
+      "plans": [
+        {
+          "name": "PHASE IT, PROVE IT",
+          "verb": "Fund a transparent first phase",
+          "desc": "Approve accountable owners, independent checks and a phased rollout based on verified milestones.",
+          "benefits": [
+            "Creates lasting delivery confidence",
+            "Supports an inclusive launch plan"
+          ],
+          "cost": "The programme investment reduces the remaining reserve.",
+          "spend": 28000,
+          "delta": {
+            "legal": -13,
+            "customer": -10,
+            "workforce": -6,
+            "ops": 3
+          },
+          "trust": 13,
+          "fallout": "The board sees an accountable path forward. Every expansion step will require evidence and funding.",
+          "tag": "GOVERNANCE"
+        },
+        {
+          "name": "BACK THE BIGGER VISION",
+          "verb": "Accelerate with conditions",
+          "desc": "Offer a faster, more ambitious multi-location plan with explicit conditions and capacity milestones.",
+          "benefits": [
+            "Keeps partner enthusiasm high",
+            "Could improve a future rollout"
+          ],
+          "cost": "More pressure and a funded follow-up commitment remain.",
+          "spend": 18000,
+          "delta": {
+            "customer": -21,
+            "ops": -9,
+            "workforce": 10,
+            "legal": 5
+          },
+          "trust": 12,
+          "fallout": "The board sees strong ambition, but follow-up resources must be secured before expansion can be authorised.",
+          "tag": "AMBITION",
+          "delay": {
+            "due": 7,
+            "cost": 18000,
+            "label": "Accelerated multi-site milestone programme",
+            "delta": {}
+          }
+        },
+        {
+          "name": "DO ONE THING BRILLIANTLY",
+          "verb": "Earn expansion through proof",
+          "desc": "Propose one excellent, accessible site with measured outcomes and a staged expansion discussion.",
+          "benefits": [
+            "Preserves delivery capacity",
+            "Keeps the plan funded"
+          ],
+          "cost": "The partner may reduce immediate scope or ask for a new approval.",
+          "spend": 7000,
+          "delta": {
+            "ops": -11,
+            "workforce": -7,
+            "customer": 10,
+            "legal": -3
+          },
+          "trust": 4,
+          "fallout": "The plan protects money and focuses resources on a demonstrable success. Further locations remain conditional.",
+          "tag": "DISCIPLINE"
+        }
+      ],
+      "signals": [
+        {
+          "name": "OWN THE TRADE-OFFS",
+          "line": "Here is what we will fund, what we will delay and how progress will be measured.",
+          "delta": {
+            "legal": -5,
+            "customer": -6,
+            "workforce": -3
+          },
+          "trust": 6
+        },
+        {
+          "name": "ACCELERATE RESPONSIBLY",
+          "line": "We will pursue the next sites only as verified milestones and funding permit.",
+          "delta": {
+            "customer": -7,
+            "legal": 7,
+            "workforce": 8
+          },
+          "trust": 8,
+          "delay": {
+            "due": 7,
+            "cost": 16000,
+            "label": "Accelerated programme verification",
+            "delta": {}
+          }
+        },
+        {
+          "name": "SHOW THE FIRST RESULT",
+          "line": "We'll publish a verified first-site handover before proposing wider expansion.",
+          "delta": {
+            "legal": -2,
+            "customer": 3,
+            "workforce": 2,
+            "ops": -8
+          },
+          "trust": 2
+        }
+      ]
+    }
+  ],
+  "initialCash": 260000,
+  "annualContractValue": 240000,
+  "baseline": {
+    "legal": 47,
+    "ops": 38,
+    "workforce": 44,
+    "customer": 51,
+    "liquidity": 25
+  },
+  "variants": [
+    {
+      "title": "First site has limited access hours",
+      "effect": {
+        "legal": 4,
+        "ops": 2
+      },
+      "note": "The preferred venue has strict opening-hour limits and requires a separate access check."
+    },
+    {
+      "title": "A supplier needs early confirmation",
+      "effect": {
+        "legal": 6,
+        "customer": 3
+      },
+      "note": "One attractive quote expires before the funding committee meets."
+    },
+    {
+      "title": "Audience demand exceeds the pilot brief",
+      "effect": {
+        "customer": 5,
+        "workforce": 2
+      },
+      "note": "Community organisations are already asking whether additional venues will be included."
+    }
+  ]
+};
+g.BCContent=data;
 })(globalThis);
