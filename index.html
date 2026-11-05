@@ -107,6 +107,11 @@ body{font-family:var(--body);line-height:1.62;font-kerning:normal;text-rendering
 .case-thread b{font-size:12px;letter-spacing:.1em;text-transform:uppercase}
 .case-thread p{margin:8px 0 0;line-height:1.5}
 
+/* Social discussion cue: facilitation prompt, not scoring advice. */
+.team-dialogue{border-left:3px solid #ddb78f;border-top:1px solid #4e727d;border-bottom:1px solid #4e727d;background:#18303c;padding:17px 19px;margin:20px 0 28px;max-width:670px}
+.team-dialogue strong{font-size:11px;letter-spacing:.15em;color:#e5b68a}
+.team-dialogue p{margin:8px 0 0;font-size:15px;line-height:1.55;color:#d9e4e9}
+
 </style>
 </head>
 <body>
@@ -172,6 +177,8 @@ const data={
       "brief": "At 09:17, a national partner invites your company to pitch Project Spark: a 90-day pilot turning under-used spaces into welcoming, interactive experiences for businesses, schools and communities. The board proposal is due at 17:30. Up to three locations are possible, but nothing has been awarded. Your company has a separate £260,000 ninety-day improvement reserve and an existing £240,000-per-year service contract. Neither guarantees revenue from Project Spark.",
       "headline": "A BIG IDEA. SIX DECISIONS. YOUR TEAM'S CALL.",
       "question": "What will you promise before the details have been tested?",
+      "teamPrompt": "Hear two different voices: how would each option protect the people already delivering other work?",
+      "teamPrompt": "Which detail in the invitation is a fact, and which is still only an assumption? Agree on one thing you would verify first.",
       "pressure": "Excitement is real. So are the limits on money, staff time and proof.",
       "evidence": [
         {
@@ -476,6 +483,7 @@ const data={
       "brief": "Three supplier options could power Project Spark. One is proven but expensive, one promises faster delivery with conditions, and an in-house team can build a simpler demonstration. The partner wants a defensible recommendation by 14:00, including accessibility evidence, clear owners and a credible delivery schedule.",
       "headline": "THE BEST OFFER IS THE ONE YOU CAN DELIVER.",
       "question": "Which partnership can you defend after the launch?",
+      "teamPrompt": "Have someone defend the fastest supplier and someone defend the safest. What evidence would change either mind?",
       "pressure": "Speed, independent proof and in-house control cannot all be maximised at once.",
       "evidence": [
         {
@@ -629,6 +637,7 @@ const data={
       "brief": "At 13:12, the partner's marketing team shares a scheduled teaser of Project Spark. People immediately ask where they can visit, whether all three locations will open and if the experience will be accessible to everyone. The teaser depicts an unapproved concept, not a confirmed launch.",
       "headline": "THE IDEA HAS ATTENTION. NOW EARN THE TRUST.",
       "question": "How will you protect the excitement without promising a fantasy?",
+      "teamPrompt": "Look back at your team's earlier promise. Does the public teaser make that promise harder to keep?",
       "pressure": "The public is interested, but the site list and access checks are still conditional.",
       "evidence": [
         {
@@ -767,6 +776,7 @@ const data={
       "brief": "At 15:40, the venue dry run exposes an intermittent connection problem. The demonstration is not a public launch. A qualified backup supplier is available, while the internal team has a robust offline alternative. The client needs a credible plan for the evening board decision.",
       "headline": "A GREAT PLAN SHOULD ALSO SURVIVE REALITY.",
       "question": "What will you protect when the demo meets a practical limit?",
+      "teamPrompt": "Choose one feature you would protect at all costs — and one you would willingly delay. Can everyone agree?",
       "pressure": "The connectivity fault is repeatable. There is no time to pretend it has vanished.",
       "evidence": [
         {
@@ -926,6 +936,7 @@ const data={
       "brief": "At 17:30, the partner and company board review your Project Spark proposal. They have the prototype evidence, team-capacity plan, public communications, £260,000 reserve ledger and every remaining commitment. No pilot has been awarded yet. The board is deciding whether your plan is credible enough to pursue, not magically signing a contract.",
       "headline": "ONE LAST DECISION. WHAT WILL YOU MAKE REAL?",
       "question": "Which next step could your team defend six weeks from now?",
+      "teamPrompt": "Before the final vote, name one promise you can definitely deliver and one assumption the board must still challenge.",
       "pressure": "The strongest ending must match the resources, people and promises you actually have.",
       "evidence": [
         {
@@ -1532,7 +1543,7 @@ let rows="";for(let i=0;i<s.teamCount;i++)rows+='<div class="roster-row"><div cl
 return '<section class="lobby-layout"><div><div class="eyebrow">TEAM HQ / FORM YOUR TEAM</div><h1 class="display-sm">BUILD<br>YOUR <em>TEAM.</em></h1><p class="lead">Every team faces the same facts. What changes is the advice you trust, the risks you accept and the promises you make.</p><p class="copy">Championship rule: build a board-ready pilot plan, protect the £260k reserve and maintain viable delivery. The highest score alone does not guarantee victory. This shared-screen prototype does not provide secure or phone-private adviser intelligence.</p>'+trail()+'</div><div class="roster-board"><div class="board-head"><strong>THE TEAMS</strong><div class="count-control"><button type="button" data-action="count-down" aria-label="Remove team">−</button><b>'+s.teamCount+'</b><button type="button" data-action="count-up" aria-label="Add team">+</button></div></div><div class="roster-list">'+rows+'</div><div class="small">Minimum 2 · Maximum 4 · No player accounts</div><div class="action-line">'+button("begin","START THE STORY →","")+'</div></div></section>';
 }
 function brief(){
-const e=ep();return '<section class="brief-layout"><div class="brief-intro"><div class="eyebrow">EPISODE '+e.number+' / '+esc(e.time)+' / '+esc(e.kicker)+'</div><h1 class="display-sm">'+esc(e.title)+'</h1><p class="lead">'+esc(e.brief)+'</p>'+trail()+'<div class="action-line">'+button("evidence","INSPECT THE EVIDENCE →","")+'<span class="small">Three exhibits. Read the facts before you choose.</span></div></div><div class="memo"><div class="memo-meta"><span>09:17 / TEAM CHALLENGE</span><span>BOARD EYES ONLY</span></div><div class="eyebrow">SITUATION REPORT · '+esc(e.time)+'</div><h3>'+esc(e.headline)+'</h3><p>'+esc(e.brief)+'</p><p><strong>£260,000</strong> — original 90-day project reserve<br><strong>£240,000 / YEAR</strong> — annual existing service contract value</p><div class="stamp">ACTION REQUIRED</div></div></section>';
+const e=ep();return '<section class="brief-layout"><div class="brief-intro"><div class="eyebrow">EPISODE '+e.number+' / '+esc(e.time)+' / '+esc(e.kicker)+'</div><h1 class="display-sm">'+esc(e.title)+'</h1><p class="lead">'+esc(e.brief)+'</p>'+(e.teamPrompt?'<aside class="team-dialogue"><strong>TALK IT THROUGH</strong><p>'+esc(e.teamPrompt)+'</p></aside>':'')+trail()+'<div class="action-line">'+button("evidence","INSPECT THE EVIDENCE →","")+'<span class="small">Three exhibits. Read the facts before you choose.</span></div></div><div class="memo"><div class="memo-meta"><span>09:17 / TEAM CHALLENGE</span><span>BOARD EYES ONLY</span></div><div class="eyebrow">SITUATION REPORT · '+esc(e.time)+'</div><h3>'+esc(e.headline)+'</h3><p>'+esc(e.brief)+'</p><p><strong>£260,000</strong> — original 90-day project reserve<br><strong>£240,000 / YEAR</strong> — annual existing service contract value</p><div class="stamp">ACTION REQUIRED</div></div></section>';
 }
 function evidence(){
 const e=ep();let objects=e.evidence.map(function(d,i){return '<button type="button" class="artifact" data-action="open-evidence" data-index="'+i+'"><span class="type">EXHIBIT 0'+(i+1)+' · '+esc(d.type)+'</span><span class="name">'+esc(d.title)+'</span><span class="time">'+esc(d.time)+'</span>'+(s.viewed.includes(i)?'<span class="reviewed">REVIEWED ✓</span>':'')+'</button>';}).join("");
