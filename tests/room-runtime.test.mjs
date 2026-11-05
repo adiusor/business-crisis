@@ -282,7 +282,7 @@ try {
   assert.equal(JSON.stringify(projectorView.payload.state).includes('"players"'),false);
   assert.equal(JSON.stringify(projectorView.payload.state).includes('"privateTeam"'),false);
   assert.deepEqual(projectorView.payload.state.teams.map(t=>t.joined),[1,1]);
-  assert.equal(JSON.stringify(projectorView.payload.state).includes("Alice"),false);
+  assert.equal(projectorView.payload.state.rosterEvents.some(x=>x.nickname==="Alice"),true,"Arrival notification is public");
   assert.equal((await req("/api/rooms/" + roomCode + "/actions","POST",
     {type:"advance",expectedRevision:projectorView.payload.state.revision},projectorAccess)).response.status,403);
   const projectorWS=await socketFor(projectorAccess,roomCode);
@@ -688,12 +688,13 @@ try {
     await phoneB.locator("#player-actions select").last().selectOption("1");
     await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await hostUI.waitForFunction(()=>document.querySelector("#ready-notice")?.textContent?.includes("ALL TEAMS READY"));
-    assert.equal(await hostUI.locator("#host-share").isVisible(),false,"QR share hidden after game starts");
+    assert.equal(await hostUI.locator("#host-share").isVisible(),true,"Host can invite late entrants");
     assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
     assert.equal(await hostUI.locator("#room-code").isVisible(),false,"Room code hidden after start");
     // Network loss while a team is waiting must not lose its saved session.
     await phoneB.context().setOffline(true);
-    await hostUI.getByRole("button", {name: "START NEXT EPISODE"}).click();
+    await hostUI.locator("#host-ready-dialog").waitFor({state:"visible",timeout:10000});
+    await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
     await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});

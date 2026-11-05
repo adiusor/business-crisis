@@ -468,7 +468,7 @@ test("projector credential is independent from host and presents only public inf
   assert.ok(!("players" in view));
   assert.ok(!("privateTeam" in view));
   assert.ok(!("teamNameOptions" in view));
-  assert.equal(JSON.stringify(view).includes("SECRET_ALICE"),false);
+  assert.equal(view.rosterEvents.some(x=>x.nickname==="SECRET_ALICE"),true,"Join notice is deliberately public");
   assert.equal(JSON.stringify(view).includes("credentialHash"),false);
   assert.throws(()=>applyRoomAction(room,{role:"projector"},{type:"start",expectedRevision:room.revision}),/Only the host/);
   room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},10000);
@@ -531,7 +531,7 @@ test("players can move teams in lobby, update both captains and unblock host sta
   const projector=viewFor(room,{role:"projector"});
   assert.deepEqual(projector.teams.map(t=>t.joined),[2,1]);
   assert.equal("players" in projector,false);
-  assert.equal(JSON.stringify(projector).includes("Alice"),false);
+  assert.equal(projector.rosterEvents.some(x=>x.nickname==="Alice"),true,"Projector gets brief arrival notices");
   room=act(room,alice.actor,"change_team",{teamIndex:1});
   assert.equal(room.teams[0].captainId,eve.actor.playerId,"remaining player inherits captain");
   assert.equal(room.teams[1].captainId,bob.actor.playerId,"captain stays captain when joined by former captain");
