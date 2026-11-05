@@ -27,3 +27,11 @@ With two development/QA conversations contributing concurrently, a routine push 
 7. Post the deployed SHA and test result in Issue #11 and hand control back to the independent gameplay QA conversation. Physical phones and real participants are still required before commercial release.
 
 **Important:** A release marker is an *intent gate*, not an authentication boundary. Anyone with permission to push to the canonical branch can intentionally create such a commit. Use GitHub branch protection and required reviewer approvals for stronger separation; keep the staging creation key and Cloudflare token private. Never claim an in-progress Worker deployment is safe for live sessions solely because CI passed.
+
+## Release 2026-11-05 · Project Spark social / Episode 04–05 / reconnection
+
+- Explicit release authorised to the existing 09:17 staging Worker only.
+- Tested integrated PR #26 source: `d97d025db6f1647bf6f6d55987130a53eba99b34`, full CI success: https://github.com/adiusor/business-crisis/actions/runs/42116317904
+- Canonical merge base: `3c781522954dc871b72f878aeaf8d76178179bac`; its complete 60-file tree is identical to the tested source tree.
+- Included: interactive Project Spark demo, social discussion prompts, episode 04 promise teaser, episode 05 consequence-driven delivery, and Safari reconnection/session safety.
+- Keep all existing original Business Crisis staging, production and `main` untouched. Start a NEW room after publishing.
