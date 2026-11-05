@@ -428,7 +428,7 @@ try {
       "The original corporate cityscape appears on the entry screen");
     assert.ok(await phoneA.locator(".landing-city").evaluate(el=>
       el.getBoundingClientRect().height<=160),"Entry artwork is compact on 320px phones");
-    assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE LEAK/);
+    assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE STORY/);
     await phoneA.locator("#join-code").fill(uiCode.toLowerCase());
     await phoneA.locator("#join-code-form button.primary").click();
     await phoneA.locator("#join-form").waitFor({state: "visible"});
