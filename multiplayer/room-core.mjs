@@ -47,7 +47,7 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  const names=teamNames.map(x=>typeof x==="string"?x.trim():"");
  requireState(names.every(x=>x.length>=1&&x.length<=32)&&new Set(names.map(fold)).size===names.length,400,"Teams require unique names (1–32 characters)");
  return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
-  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,interventions:[],
+  expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,interventions:[],rosterEvents:[],
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
    roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},participatedIds:[],runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
@@ -56,7 +56,7 @@ export function authorize(room,hash){
  requireState(room&&room.version===3&&typeof hash==="string"&&/^[a-f0-9]{64}$/.test(hash),401,"Unauthorized");
  if(hash===room.hostHash)return {role:"host"};
  if(room.projectorHash&&hash===room.projectorHash)return {role:"projector"};
- const p=room.players.find(p=>p.credentialHash===hash);
+ const p=room.players.find(p=>!p.departed&&p.credentialHash===hash);
  requireState(!!p,401,"Unauthorized");
  return {role:"player",playerId:p.id};
 }
@@ -70,25 +70,35 @@ export function rotateProjector(room,newHash){
 // Default to the least populated team. Explicit player selection remains authoritative.
 export function balancedTeamIndex(room){
  requireState(room&&Array.isArray(room.teams)&&room.teams.length>=2,400,"Invalid room");
- const counts=room.teams.map((t,i)=>room.players.filter(p=>p.teamIndex===i).length);
+ const counts=room.teams.map((t,i)=>room.players.filter(p=>!p.departed&&p.teamIndex===i).length);
  const smallest=Math.min(...counts);
  return counts.indexOf(smallest);
 }
+function rosterEvent(room,kind,nickname,team,atMs=Date.now()){
+ room.rosterEvents=room.rosterEvents||[];
+ room.rosterEvents.push({seq:room.revision+1,kind,nickname,team,atMs});
+ room.rosterEvents=room.rosterEvents.slice(-18);
+}
+const liveMembers=(room,i)=>room.players.filter(p=>!p.departed&&p.teamIndex===i);
+const currentVoters=(room,i)=>room.players.filter(p=>p.teamIndex===i &&
+ (p.joinedRound??0)<=room.round&&(!p.departed||!!room.teams[i].votes?.[p.id]?.locked));
 export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId}){
- requireState(room.phase==="lobby",409,"Room already started; late joining is not enabled");
- requireState(room.players.length<MAX_PLAYERS,409,"Room join limit reached");
+ requireState(room.phase==="lobby"||room.phase==="advisers",409,"This room has finished");
+ requireState(room.players.filter(p=>!p.departed).length<MAX_PLAYERS&&room.players.length<120,409,"Room join limit reached");
  if(teamIndex===undefined||teamIndex===null)teamIndex=balancedTeamIndex(room);
  requireState(Number.isInteger(teamIndex)&&teamIndex>=0&&teamIndex<room.teams.length,400,"Invalid team");
  const nick=typeof nickname==="string"?nickname.trim():"";
  requireState(nick.length>=1&&nick.length<=24,400,"Nickname must contain 1–24 characters");
- requireState(!room.players.some(p=>fold(p.nickname)===fold(nick)),409,"Nickname already taken");
+ requireState(!room.players.some(p=>!p.departed&&fold(p.nickname)===fold(nick)),409,"Nickname already taken");
  requireState(typeof credentialHash==="string"&&/^[a-f0-9]{64}$/.test(credentialHash)&&credentialHash!==room.hostHash&&
   !room.players.some(p=>p.credentialHash===credentialHash),400,"Invalid participant credential");
  requireState(typeof playerId==="string"&&/^[\w-]{8,64}$/.test(playerId)&&
   !room.players.some(p=>p.id===playerId),400,"Invalid participant ID");
  const next=clone(room);
- next.players.push({id:playerId,nickname:nick,teamIndex,credentialHash});
+ next.players.push({id:playerId,nickname:nick,teamIndex,credentialHash,
+  joinedRound:next.phase==="advisers"?next.round+1:0});
  if(!next.teams[teamIndex].captainId)next.teams[teamIndex].captainId=playerId;
+ rosterEvent(next,"joined",nick,next.teams[teamIndex].name);
  next.revision++;
  return next;
 }
@@ -141,7 +151,7 @@ function decideTeam(room,teamIndex,ballot,atMs){
 // All team members must lock. A tied leader triggers a private debate/runoff, never
 // an arbitrary client decision. The countdown continues during all runoff votes.
 function resolveVotes(room,teamIndex,nowMs){
- const t=room.teams[teamIndex],members=room.players.filter(p=>p.teamIndex===teamIndex);
+ const t=room.teams[teamIndex],members=currentVoters(room,teamIndex);
  if(!members.length||!members.every(p=>t.votes?.[p.id]?.locked))return;
  const tally=new Map();
  for(const p of members){
@@ -180,12 +190,13 @@ function resolveVotes(room,teamIndex,nowMs){
  t.votes={};
 }
 export function privateVoteStatus(room,player){
- const t=room.teams[player.teamIndex],members=room.players.filter(p=>p.teamIndex===player.teamIndex);
+ const t=room.teams[player.teamIndex],members=currentVoters(room,player.teamIndex);
  // Expose vote progress, not the leading proposal. Early tallies can bias
  // undecided teammates; full ballots are resolved only inside the room engine.
  const votes=t.votes||{};
  return {lockedVotes:members.filter(p=>votes[p.id]?.locked).length,
   totalMembers:members.length,
+  canVote:!player.departed&&(player.joinedRound??0)<=room.round,
   myVote:votes[player.id]?.locked?clone(votes[player.id].ballot):null,
   runoff:t.runoff?clone(t.runoff):null};
 }
@@ -264,12 +275,12 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
    409,"Room changed; refresh state and retry");
  }
  const next=clone(room),isHost=actor&&actor.role==="host";
- const player=!isHost&&actor&&actor.role==="player"&&next.players.find(p=>p.id===actor.playerId);
+ const player=!isHost&&actor&&actor.role==="player"&&next.players.find(p=>!p.departed&&p.id===actor.playerId);
  const type=command.type;
  if(type==="set_captain"){
   requireState(isHost,403,"Only the host can transfer captainship");
   requireState(next.phase==="lobby"||next.phase==="advisers",409,"Captainship changes are closed");
-  const target=next.players.find(p=>p.id===command.playerId);
+  const target=next.players.find(p=>!p.departed&&p.id===command.playerId);
   requireState(!!target,404,"Participant not found");
   const team=next.teams[target.teamIndex];
   requireState(team.captainId!==target.id,409,"Already the team captain");
@@ -278,7 +289,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  }else if(type==="remove_player"){
   requireState(isHost,403,"Only the host can remove a participant");
   requireState(next.phase==="lobby"||next.phase==="advisers",409,"Participant removal is closed");
-  const target=next.players.find(p=>p.id===command.playerId);
+  const target=next.players.find(p=>!p.departed&&p.id===command.playerId);
   requireState(!!target,404,"Participant not found");
   const team=next.teams[target.teamIndex];
   if(next.phase==="advisers"){
@@ -289,18 +300,27 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
    requireState(!(team.participatedIds||[]).includes(target.id) &&
     !team.votes?.[target.id]?.locked,409,
     "A participant who voted this episode cannot be removed");
-   requireState(next.players.filter(p=>p.teamIndex===target.teamIndex).length>1,409,
+   requireState(currentVoters(next,target.teamIndex).length>1,409,
     "Cannot remove the last member of a team during an episode");
   }
   next.players=next.players.filter(p=>p.id!==target.id);
+   rosterEvent(next,"removed",target.nickname,team.name,nowMs);
   if(team.captainId===target.id)
-   team.captainId=next.players.find(p=>p.teamIndex===target.teamIndex)?.id||null;
+   team.captainId=liveMembers(next,target.teamIndex)[0]?.id||null;
   // During play, removing a missing (unvoted) participant can reveal a
   // definitive winning vote among the remaining members. Resolve precisely
   // once using the unchanged server-authoritative economics and clock.
   if(next.phase==="advisers")resolveVotes(next,target.teamIndex,nowMs);
   logIntervention(next,"removed",team.name,nowMs);
- }else if(type==="change_team"){
+ }else if(type==="leave_room"){
+   requireState(!!player,403,"Only a joined player can leave");
+   requireState(next.phase==="lobby"||next.phase==="advisers",409,"Game finished");
+   const team=next.teams[player.teamIndex],name=team.name;
+   player.departed=true;
+   if(team.captainId===player.id)team.captainId=liveMembers(next,player.teamIndex)[0]?.id||null;
+   if(next.phase==="advisers"&&!team.locked)resolveVotes(next,player.teamIndex,nowMs);
+   rosterEvent(next,"left",player.nickname,name,nowMs);
+  }else if(type==="change_team"){
   requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can change teams");
   const destination=command.teamIndex;
   requireState(Number.isInteger(destination)&&destination>=0&&destination<next.teams.length,400,"Invalid destination team");
@@ -309,7 +329,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   player.teamIndex=destination;
   // Captain handover follows stable join order to avoid orphaned leadership.
   if(next.teams[previous].captainId===player.id)
-   next.teams[previous].captainId=next.players.find(p=>p.teamIndex===previous)?.id||null;
+   next.teams[previous].captainId=liveMembers(next,previous)[0]?.id||null;
   if(!next.teams[destination].captainId)
    next.teams[destination].captainId=player.id;
  }else if(type==="rename_team"){
@@ -327,6 +347,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  }else if(type==="select_advisers"||type==="lock_advisers"||type==="submit_decision"||type==="lock_vote"){
   requireState(!!player,403,"Only a participant can submit a decision");
   requireState(next.phase==="advisers",409,"Adviser selection is closed");
+   requireState((player.joinedRound??0)<=next.round,409,"Joined mid-episode; your first vote is in the next episode");
   const clock=clockFor(next,nowMs);
   requireState(clock.stage!=="closed",409,"The four-minute window has ended");
   const t=next.teams[player.teamIndex];
@@ -358,7 +379,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
     // Backwards compatibility for one-player rooms. Never allow the captain to
     // override other players' votes or commit on behalf of multiple members.
     requireState(t.captainId===player.id,403,"Only your team's captain can confirm selections");
-    requireState(next.players.filter(p=>p.teamIndex===player.teamIndex).length===1,409,
+    requireState(currentVoters(next,player.teamIndex).length===1,409,
       "Every team member must lock an individual vote");
     const vote=ballotFor(next,command);
     t.votes={[player.id]:{ballot:vote,locked:true}};
@@ -401,7 +422,7 @@ function lastTeamImpact(economic){
 }
 export function viewLobby(room){
  return {code:room.code,phase:room.phase,revision:room.revision,teamNameOptions:TEAM_NAME_POOL.slice(),
-  teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length}))};
+  teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length}))};
 }
 export function viewFor(room,actor,nowMs=Date.now()){
  requireState(actor&&["host","player","projector"].includes(actor.role),401,"Unauthorized");
@@ -411,26 +432,26 @@ export function viewFor(room,actor,nowMs=Date.now()){
    revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,question:episode.question,pressure:episode.pressure,evidence:episode.evidence}:null,
-   lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),
-   teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
+   lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),
+   teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
     votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
     lockedAtMs:t.lockedAtMs||null})),
    verdict:room.phase==="complete"?finalVerdict(room):null};
  }
  const player=actor.role==="player"?room.players.find(p=>p.id===actor.playerId):null;
- requireState(actor.role==="host"||!!player,401,"Unauthorized");
+ requireState(actor.role==="host"||!!player&&!player.departed,401,"Unauthorized");
  const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
-  lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
-  players:room.players.map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
-  ...(actor.role==="host"?{hostRoster:room.players.map(p=>({
+  lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
+  players:room.players.filter(p=>!p.departed).map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
+  ...(actor.role==="host"?{hostRoster:room.players.filter(p=>!p.departed).map(p=>({
     id:p.id,nickname:p.nickname,teamIndex:p.teamIndex,
     captain:room.teams[p.teamIndex].captainId===p.id,
     hasVoted:(room.teams[p.teamIndex].participatedIds||[]).includes(p.id) ||
       !!room.teams[p.teamIndex].votes?.[p.id]?.locked
   }))}:{}),
-  teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,
+  teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,
    ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
    roundPenalty:t.roundPenalty,votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
    lockedAtMs:t.lockedAtMs||null})),
