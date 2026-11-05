@@ -119,19 +119,29 @@
       $("join-caption").textContent = data.phase==="advisers" ?
         "GAME IN PROGRESS · Join immediately. Teams still preparing can take your vote now; otherwise you vote next episode." :
         "Choose your nickname and team. No account needed. Everyone votes each episode.";
-      const target = $("join-team"), old = target.value;
+      // A named, explicitly selected team is the default. Previously AUTO
+      // appeared as the first option; people believed they had joined the
+      // team shown on screen, but the server could assign them elsewhere.
+      const target=$("join-team"),previous=target.value;
       target.replaceChildren();
-      const automatic = node("option",data.phase==="advisers"?
-        "AUTO — smallest team (vote timing may vary)":"AUTO — assign to the smallest team");
-      automatic.value = "auto"; target.append(automatic);
-      data.teams.forEach((team, index) => {
+      data.teams.forEach((team,index)=>{
         const status=data.phase==="advisers"?
           (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):"";
-        const opt = node("option", team.name + " · " + team.joined + " joined"+status);
-        opt.value = String(index);
-        target.append(opt);
+        const option=node("option",team.name+" · "+team.joined+" joined"+status);
+        option.value=String(index);target.append(option);
       });
-      target.value = [...target.options].some(o => o.value === old) ? old : "auto";
+      const auto=node("option","AUTO-ASSIGN / SMALLEST TEAM");
+      auto.value="auto";target.append(auto);
+      const recommended=data.teams.reduce((best,t,i)=>
+        t.joined<data.teams[best].joined?i:best,0);
+      const initial=previous&&[...target.options].some(o=>o.value===previous)?
+        previous:String(recommended);
+      target.value=initial;
+      $("join-team-selection").textContent=initial==="auto"?
+        "The game will place you on the smallest team.":
+        "Selected: "+data.teams[Number(initial)].name+
+          (data.phase==="advisers"&& !data.teams[Number(initial)].canVoteThisEpisode?
+            " · You can vote from next episode.":"");
       show("join");
     } catch (e) { show("join"); error(e.message); }
   }
@@ -1457,6 +1467,13 @@
       error("Enter a valid 4-character room code, for example 7KMP."); return;
     }
     location.assign("/join?room=" + encodeURIComponent(code));
+  });
+  $("join-team").addEventListener("change",()=>{
+    const index=$("join-team").value;
+    const option=$("join-team").selectedOptions[0];
+    $("join-team-selection").textContent=index==="auto"?
+      "The game will place you on the smallest team.":
+      "Selected: "+option?.textContent.split(" · ")[0];
   });
   $("join-form").addEventListener("submit", async e => {
     e.preventDefault(); error("");

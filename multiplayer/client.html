@@ -65,7 +65,8 @@
           <label for="join-name">Your nickname</label>
           <input id="join-name" maxlength="24" required autocomplete="nickname" placeholder="How should your team know you?">
           <label for="join-team">Join a team</label>
-          <select id="join-team" required></select>
+          <select id="join-team" required aria-describedby="join-team-selection"></select>
+          <p id="join-team-selection" class="join-team-selected" role="status" aria-live="polite"></p>
           <button type="submit" class="primary">JOIN THE INCIDENT</button>
         </form>
       </section>

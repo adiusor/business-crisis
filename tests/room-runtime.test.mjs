@@ -393,8 +393,10 @@ try {
     await phoneA.locator("#join-form").waitFor({state: "visible"});
     assert.match(phoneA.url(),new RegExp("room="+uiCode+"$"),"Manual 4-character code finds the right room");
     await phoneA.locator("#join-name").fill("Mobile Alice");
-    assert.equal(await phoneA.locator("#join-team").inputValue(),"auto");
-    await phoneA.locator("#join-team").selectOption("auto");
+    assert.equal(await phoneA.locator("#join-team").inputValue(),"0",
+      "A real named team, not AUTO, must be selected on first opening");
+    assert.match(await phoneA.locator("#join-team-selection").textContent(),/Selected:/);
+    // Do not touch the dropdown: joining must accept the already-selected team.
     await phoneA.locator("#join-form button.primary").click();
     await phoneA.locator("#room-screen").waitFor({state: "visible", timeout: 10000});
     assert.equal(await phoneA.locator("#game-rules .rule-card").count(),6);
