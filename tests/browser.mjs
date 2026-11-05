@@ -97,7 +97,7 @@ await click("next-round");
 }
 assert.equal(await page.locator(".rank").count(),teams);assertions++;
 await checkTypography(page,"verdict "+width);
-const championship=await page.evaluate(()=>{const teams=JSON.parse(localStorage.getItem("business-crisis-cinematic-v2")).teams;const r=BCRules.championshipResult(teams);return {hasChampion:!!r.champion,leader:r.leader.team.name};});
+const championship=await page.evaluate(()=>{const teams=JSON.parse(localStorage.getItem("0917-project-spark-v1")).teams;const r=BCRules.championshipResult(teams);return {hasChampion:!!r.champion,leader:r.leader.team.name};});
 const verdictText=await page.locator(".verdict-hero").innerText();
 if(championship.hasChampion)assert.match(verdictText,/BOARDROOM CHAMPION/);
 else {assert.match(verdictText,/STRONGEST TEAM RESPONSE/);assert.match(verdictText,/HIGHEST SCORE/);}
@@ -105,7 +105,7 @@ assertions+=2;
 assert.equal(await page.locator("details.case-file").count(),teams);assertions++;
 if(teams===2&&width===1440)await shot("05-verdict-desktop");
 if(width===320)await shot("05-verdict-mobile-320");
-const state=await page.evaluate(()=>JSON.parse(localStorage.getItem("business-crisis-cinematic-v2")));
+const state=await page.evaluate(()=>JSON.parse(localStorage.getItem("0917-project-spark-v1")));
 assert.equal(state.teams.length,teams);assertions++;
 for(const t of state.teams){assert.equal(t.history.length,6);assert.equal(t.nextRound,6);assert.equal(t.cash,260000-t.ledger.reduce((sum,x)=>sum+x.amount,0));assertions+=3;}
 const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
@@ -118,7 +118,7 @@ async function verifySaveRecovery(){
  const page=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
  try{
   await page.goto(url);
-  const key="business-crisis-cinematic-v2";
+  const key="0917-project-spark-v1";
   // A superficially plausible but incomplete session used to crash the view.
   await page.evaluate(key=>localStorage.setItem(key,JSON.stringify({phase:"decision",round:0,teamCount:2,teams:[],names:["A","B"]})),key);
   await page.reload();
