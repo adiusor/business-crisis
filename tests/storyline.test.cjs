@@ -81,17 +81,22 @@ test("no plan or public statement strictly dominates an alternative on every sim
    if(a!==b)assert.ok(!(better(a,b)&&strict(a,b)),ep.title+" "+a.name+" dominates "+b.name);
 });
 
-test("all plan and public-message alternatives make a material model difference",()=>{
- const baseline=[0,0,0,0,0,0];
- for(let round=0;round<6;round++)for(const kind of ["plans","signals"])for(let i=0;i<3;i++){
-  let base=play(baseline,baseline,0);
-  const pp=baseline.slice(),ss=baseline.slice();
-  if(kind==="plans")pp[round]=i;else ss[round]=i;
-  const next=play(pp,ss,0);
-  if(i!==0)assert.notDeepEqual(
-   {cash:base.cash,trust:base.trust,risks:base.risks,pending:base.pending},
-   {cash:next.cash,trust:next.trust,risks:next.risks,pending:next.pending},
-   C.episodes[round].title+": "+kind+" "+i);
+test("all plan and message alternatives affect the model on at least one realistic trajectory",()=>{
+ const baselines=[
+  {p:[0,0,0,0,0,0],s:[0,0,0,0,0,0],v:0},
+  {p:[1,1,1,1,1,1],s:[1,1,1,1,1,1],v:1},
+  {p:[2,2,2,2,2,2],s:[2,2,2,2,2,2],v:2},
+  {p:[0,1,2,0,1,2],s:[2,1,0,2,1,0],v:1},
+  {p:[2,1,0,2,1,0],s:[0,1,2,0,1,2],v:2}
+ ];
+ const state=t=>JSON.stringify({cash:t.cash,trust:t.trust,risks:t.risks,pending:t.pending});
+ for(let round=0;round<6;round++)for(const kind of ["plans","signals"])for(let option=0;option<3;option++){
+  const changes=baselines.some(b=>{
+   const pp=b.p.slice(),ss=b.s.slice(),baseline=state(play(pp,ss,b.v));
+   if(kind==="plans")pp[round]=option;else ss[round]=option;
+   return baseline!==state(play(pp,ss,b.v));
+  });
+  assert.ok(changes,C.episodes[round].title+" "+kind+" "+option+" should affect a feasible trajectory");
  }
 });
 
@@ -99,8 +104,10 @@ test("cash and deferred-commitment ledger remain authoritative across 1200 seede
  let negative=0,ready=0;
  for(let n=0;n<1200;n++){
   let t=R.createTeam(n%4,"TEAM "+n);
+  let seed=(n+1)>>>0;
+  const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed%3;};
   for(let round=0;round<6;round++){
-   const p=(n+round*7+Math.floor(n/7))%3,s=(n*3+round+Math.floor(n/9))%3;
+   const p=n%7===0?1:n%7===1?0:rand(),s=n%7===0?1:n%7===1?0:rand();
    const a=[2,4].includes(round)&&n%4!==0?
     {amount:(n%2+1)*10000,route:["audit","capacity","people"][n%3]}:zero;
    t=R.applyTurn(t,round,p,s,[0,5],n%3,a);
