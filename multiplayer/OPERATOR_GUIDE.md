@@ -47,3 +47,11 @@ The 720p projector lobby keeps room code, QR and team readiness on a single scre
 
 ## Local-only results and download clarity
 The Boardroom action is **DOWNLOAD RESULTS · PDF**: one click downloads a locally generated PDF containing public rankings, visual charts, and all six episode comparisons. Results are never sent by email and no email feature is planned. The fictional forwarded email in the story is unrelated to results delivery.
+
+## Untimed preparation before timed decisions (Issue #11 follow-up)
+
+In a new room, Host first presses **OPEN UNTIMED TEAM PREPARATION**. Each team then reads the actual episode evidence and its captain selects **two confidential advisers**, without any active decision timer. The host/projector sees only an **advisers ready** indicator, not adviser names or confidential briefings. Teammates can discuss the private advice together. Once all teams have their advisers, Host presses **START 3-MINUTE TEAM DECISION**, creating the same server-owned 180-second window and 60-second reserve as before. Ballots are rejected before that start, and adviser changes are rejected after it. Hosts can transfer captainship or remove mistaken joins during preparation. New participants joining during preparation are eligible to vote when timed play starts.
+
+When all teams finish an episode, Host can still show the public next-episode preview before advancing. **START NEXT EPISODE** now opens another untimed adviser preparation stage rather than immediately starting the next timer. This happens across all six episodes. The legacy `start` action directly from a lobby remains supported only for compatibility with old room clients and existing automated tests. No new game variant, scoring formula or financial outcome is introduced. The Host, Join, and Projector roles are unchanged.
+
+**QA requirement:** Browser-check projector layouts at 1280×720 and phones at 320/390px; verify no token or adviser leakage, no vote before timer, host cannot start until all advisers ready, 2–4-team six-episode playthrough, and delayed joins. Do not deploy to staging from this branch.
