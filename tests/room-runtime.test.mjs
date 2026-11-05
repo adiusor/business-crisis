@@ -368,8 +368,21 @@ try {
     await commercial.locator('.hero a[href="#try-a-decision"]').click();
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
-    await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/three-site concept draws attention/i);
+    assert.equal(await commercial.locator(".demo-evidence").count(),3,
+      "Preview begins with three verifiable, discoverable clues");
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),false,
+      "Consequences stay concealed until a real choice is committed");
+    await commercial.locator(".demo-evidence").first().locator("summary").click();
+    assert.match(await commercial.locator(".demo-evidence[open]").innerText(),/signed contract|not yet guaranteed/i);
+    await commercial.locator('.demo-choice input[value="1"]').check();
+    await commercial.locator("#demo-decision-form button[type=submit]").click();
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),true);
+    assert.equal(await commercial.locator(".demo-result:not([hidden])").count(),1);
+    assert.match(await commercial.locator(".demo-result:not([hidden])").innerText(),
+      /three-site concept draws attention/i);
+    await commercial.locator("#demo-replay").click();
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),false,
+      "A replay hides the consequence and resets the decision");
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -609,6 +622,11 @@ try {
       "Facilitator may not remove a team's only member during a live round");
 
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE INVITATION|OPPORTUNITY/);
+    assert.equal(await phoneA.locator(".scene-team-prompt").count(),1,
+      "Participants get a meaningful conversation starter in every episode");
+    assert.match(await phoneA.locator(".scene-team-prompt").innerText(),/verify first/i);
+    assert.equal(await projected.locator(".scene-team-prompt").count(),0,
+      "A social facilitator cue must not clutter the projector view");
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     assert.equal(await phoneA.locator(".scene-directive").count(),1,
       "The live incident shows a distinctive, actionable dilemma");
