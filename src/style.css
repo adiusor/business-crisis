@@ -92,3 +92,7 @@ body{font-family:var(--body);line-height:1.62;font-kerning:normal;text-rendering
 
 /* Prevent the lobby grid from retaining its desktop minimum width on phones. */
 @media(max-width:800px){.lobby-layout{grid-template-columns:minmax(0,1fr)}.lobby-layout>*,.roster-board,.board-head{min-width:0}.board-head{flex-wrap:wrap}.board-head strong{overflow-wrap:anywhere}}
+
+.case-thread{margin:18px 0;padding:14px 18px;border-left:3px solid #dab78e;background:rgba(124,172,164,.16)}
+.case-thread b{font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.case-thread p{margin:8px 0 0;line-height:1.5}
