@@ -31,9 +31,9 @@ plans:[
 {name:"PUT CLIENTS FIRST",verb:"Lead with communication",desc:"Keep essential services running and brief the client promptly while technical verification begins.",benefits:["Preserves client confidence","Keeps critical work moving"],cost:"Unverified exposure persists until the evidence review catches up.",spend:9000,delta:{legal:12,ops:-3,workforce:-2,customer:-14},trust:12,delay:{due:2,cost:13000,label:"Late forensic remediation",delta:{legal:5}},fallout:"The client values the direct call and a named contact. Security asks for extra remediation because the source is still unresolved.",tag:"RELATIONSHIP"}
 ],
 signals:[
-{name:"FACTS ONLY",line:"We have confirmed an unauthorised distribution and are investigating.",delta:{legal:-3,customer:-2},trust:2},
-{name:"OPEN LETTER",line:"We will publish a verified timeline and corrective actions.",delta:{legal:4,workforce:-5,customer:-4},trust:5},
-{name:"NO IMPACT",line:"There will be no impact on service.",delta:{legal:10,ops:5,customer:-5},trust:7,delay:{due:3,cost:8000,label:"Unfunded service assurance",delta:{customer:7}}}
+{name:"VERIFIED FACTS",line:"We have identified an unexpected distribution and are verifying the facts.",delta:{legal:-3,customer:-2},trust:2},
+{name:"OPEN UPDATE",line:"We will share a verified timeline, accountable owners and corrective steps.",delta:{legal:4,workforce:-5,customer:-4},trust:5},
+{name:"SERVICE ASSURANCE",line:"Our plan is to maintain essential services while we verify the controls.",delta:{legal:6,ops:3,customer:-5},trust:6,delay:{due:3,cost:8000,label:"Service assurance contingency",delta:{customer:7}}}
 ]},
 {id:"floor",number:"02",time:"10:06",title:"THE FLOOR",kicker:"Clarity and motivation can change the outcome.",scene:"floor",base:11000,
 brief:"The draft references 40 roles, two depots and a hiring freeze. Colleagues are sharing screenshots and asking questions. A team leader says the afternoon shift may decline extra hours until management explains the proposal.",
@@ -57,9 +57,9 @@ plans:[
 {name:"BACK THE TEAM",verb:"Provide tangible support",desc:"Offer capped retention incentives and a time-limited overtime arrangement alongside staff consultation.",benefits:["Supports staff coverage","Acknowledges extra effort"],cost:"Extra financial commitments reduce future flexibility.",spend:29000,delta:{workforce:-21,ops:-6,legal:4,customer:-3},trust:3,delay:{due:4,cost:10000,label:"Temporary overtime guarantee",delta:{liquidity:4}},fallout:"The rota fills, and employees see practical support. Finance now tracks the time-limited payroll commitment.",tag:"CASH"}
 ],
 signals:[
-{name:"INVITE QUESTIONS",line:"No final decisions have been approved. Ask us directly.",delta:{workforce:-6,legal:-2},trust:2},
-{name:"PROTECT SERVICE",line:"Our first priority is uninterrupted delivery.",delta:{ops:-4,workforce:5},trust:0},
-{name:"PROMISE JOBS",line:"No one will lose their role as a result of this.",delta:{workforce:-8,legal:12},trust:4,delay:{due:4,cost:12000,label:"Unfunded workforce promise",delta:{legal:6}}}
+{name:"INVITE QUESTIONS",line:"No final changes are approved; here is how to ask questions and contribute.",delta:{workforce:-6,legal:-2},trust:2},
+{name:"EXPLAIN THE PLAN",line:"We will protect service today while creating time for an open conversation.",delta:{ops:-4,workforce:5},trust:0},
+{name:"PAUSE ROLE CHANGES",line:"We will pause proposed role changes while formal consultation is organised.",delta:{workforce:-7,legal:5},trust:4,delay:{due:4,cost:12000,label:"Temporary consultation and staffing protection",delta:{legal:6}}}
 ]},
 {id:"client",number:"03",time:"11:24",title:"THE CLIENT MEETING",kicker:"Trust is an opportunity you can earn.",scene:"client",base:14000,
 brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00 and a service guarantee that the board can sign.",
@@ -83,9 +83,9 @@ plans:[
 {name:"PROVE SERVICE VALUE",verb:"Show operational evidence",desc:"Focus specialists on measurable delivery improvements and demonstrate progress before wider assurances.",benefits:["Shows operational progress","Builds practical confidence"],cost:"Concentrating delivery work on a few specialists risks fatigue.",spend:18000,delta:{ops:-16,customer:-7,workforce:12,legal:4},trust:7,fallout:"The delivery dashboard improves. The team needs a sustainable rota to maintain those results.",tag:"EXECUTION"}
 ],
 signals:[
-{name:"SIGNED MILESTONES",line:"Here are the controls we can verify, with owners and dates.",delta:{customer:-5,legal:-3},trust:4},
-{name:"BOARD GUARANTEE",line:"The board guarantees full recovery within 48 hours.",delta:{customer:-6,legal:10,ops:4},trust:8,delay:{due:5,cost:14000,label:"Board guarantee remediation",delta:{legal:4}}},
-{name:"NO NEW PROMISES",line:"We will report when our assessment is complete.",delta:{legal:-5,customer:7},trust:-3}
+{name:"VERIFIED MILESTONES",line:"Here are the controls, owners and dates we can substantiate.",delta:{customer:-5,legal:-3},trust:4},
+{name:"RECOVERY TARGET",line:"Our target is full recovery within 48 hours, with verification at each stage.",delta:{customer:-6,legal:5,ops:4},trust:7,delay:{due:5,cost:14000,label:"Board guarantee remediation",delta:{legal:4}}},
+{name:"EVIDENCE FIRST",line:"We will give you a verified progress update before extending our commitments.",delta:{legal:-5,customer:7},trust:-3}
 ]},
 {id:"press",number:"04",time:"13:12",title:"THE PUBLIC CONVERSATION",kicker:"Your response can set a constructive example.",scene:"press",base:12000,
 brief:"A business reporter has obtained the memo and asks for comment within 30 minutes. An employee has posted a contradictory account online. The story is moving beyond the company.",
@@ -109,9 +109,9 @@ plans:[
 {name:"PROTECT CONFIDENTIALITY",verb:"Set responsible boundaries",desc:"Ask the journalist to protect personal details while providing an authorised factual clarification.",benefits:["Protects sensitive information","Maintains a constructive channel"],cost:"Legal review and careful wording can delay clarity.",spend:19000,delta:{legal:-7,customer:5,workforce:3,ops:2},trust:1,fallout:"Sensitive personal information is withheld. The broader concerns remain, and colleagues still need a clear explanation.",tag:"CONFRONTATION"}
 ],
 signals:[
-{name:"CORRECT THE RECORD",line:"The document is a draft. No final restructuring decision has been approved.",delta:{legal:-4,workforce:-5,customer:-3},trust:4},
-{name:"APOLOGISE BROADLY",line:"We apologise for every concern this has caused.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
-{name:"REFUSE COMMENT",line:"We will not comment on internal company matters.",delta:{legal:-2,workforce:7,customer:6},trust:-5}
+{name:"CORRECT THE RECORD",line:"This is a draft; no final restructuring decision has been approved.",delta:{legal:-4,workforce:-5,customer:-3},trust:4},
+{name:"ACKNOWLEDGE CONCERNS",line:"We understand the concerns and will answer with verified information.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
+{name:"STAFF FIRST",line:"We are briefing colleagues directly before sharing further public detail.",delta:{legal:-2,workforce:-5,customer:7},trust:1}
 ]},
 {id:"warehouse",number:"05",time:"15:40",title:"THE DELIVERY TEST",kicker:"Plans count only when the team can deliver.",scene:"warehouse",base:17000,
 brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
@@ -135,9 +135,9 @@ plans:[
 {name:"RENEGOTIATE PRIORITIES",verb:"Focus on what matters",desc:"Agree a short-term priority order with the client, protecting critical work and employee capacity.",benefits:["Protects frontline capacity","Uses cash responsibly"],cost:"A change of scope needs an agreed concession.",spend:11000,delta:{ops:5,workforce:-11,customer:12,legal:-3},trust:-6,fallout:"The most important delivery remains viable. The client requests a fair adjustment for rescheduled work.",tag:"TRADE-OFF"}
 ],
 signals:[
-{name:"MILESTONE ALERT",line:"This is the at-risk milestone and our revised recovery path.",delta:{customer:-5,legal:-2},trust:5},
-{name:"EVERYTHING ON TRACK",line:"All delivery commitments remain on schedule.",delta:{customer:-4,legal:8,ops:6},trust:5,delay:{due:6,cost:10000,label:"Unverified delivery assurance",delta:{customer:9}}},
-{name:"INTERNAL ONLY",line:"No external update until the shipment is complete.",delta:{ops:-2,customer:9},trust:-4}
+{name:"MILESTONE ALERT",line:"Here are the priority milestones and a realistic recovery path.",delta:{customer:-5,legal:-2},trust:5},
+{name:"CONFIDENT UPDATE",line:"Our priority commitments remain on track, with specific contingencies.",delta:{customer:-4,legal:5,ops:3},trust:5,delay:{due:6,cost:10000,label:"Customer assurance contingency",delta:{customer:9}}},
+{name:"VERIFY BEFORE UPDATING",line:"We will confirm the next milestone after operational checks are complete.",delta:{ops:-2,customer:9},trust:-4}
 ]},
 {id:"board",number:"06",time:"17:30",title:"THE NEXT MOVE",kicker:"Choose the company you want to build.",scene:"board",base:9000,
 brief:"The board has your incident log, the cash ledger and the client's final questions. You cannot undo the morning. You can choose what kind of recovery the company will fund.",
@@ -161,9 +161,9 @@ plans:[
 {name:"FOCUS & DELIVER",verb:"Choose sustainable scope",desc:"Prioritise services you can reliably deliver and offer the client an honest scope review.",benefits:["Preserves future capacity","Makes commitments manageable"],cost:"A narrower offer may reduce confidence and revenue.",spend:7000,delta:{ops:-5,workforce:12,customer:15,legal:-3},trust:-14,fallout:"The company protects the reserve and clarifies its offer. The client asks for a case for revised scope.",tag:"DISCIPLINE"}
 ],
 signals:[
-{name:"OWN THE TRADE-OFFS",line:"Here is what we will fund, what we will stop, and how progress will be verified.",delta:{legal:-5,customer:-6,workforce:-3},trust:6},
-{name:"PROMISE EVERYTHING",line:"We will restore every commitment without exception.",delta:{customer:-7,legal:12,workforce:9},trust:9,delay:{due:7,cost:16000,label:"Unfunded board-wide guarantee",delta:{liquidity:5}}},
-{name:"CLOSE THE FILE",line:"The incident is resolved and normal business has resumed.",delta:{legal:9,customer:8,workforce:5},trust:-6}
+{name:"OWN THE TRADE-OFFS",line:"Here is what we will fund, what we will stop and how we will report progress.",delta:{legal:-5,customer:-6,workforce:-3},trust:6},
+{name:"BUILD MOMENTUM",line:"We will accelerate the most important commitments with published milestones.",delta:{customer:-7,legal:7,workforce:8},trust:8,delay:{due:7,cost:16000,label:"Accelerated milestone investment",delta:{liquidity:5}}},
+{name:"SHARE THE NEXT STEPS",line:"The immediate response is under control; longer-term improvements continue.",delta:{legal:-2,customer:3,workforce:2},trust:2}
 ]}
 ];
 g.BCContent={advisers:advisers,episodes:episodes,initialCash:260000,annualContractValue:240000,baseline:{legal:47,ops:38,workforce:44,customer:51,liquidity:25},variants:[
