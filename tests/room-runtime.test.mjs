@@ -369,7 +369,7 @@ try {
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
     await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/sensitive access route is closed/i);
+    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/three-site concept draws attention/i);
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -812,7 +812,7 @@ try {
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "Two chosen advisers remain after the ballot locks");
     assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
-    assert.match(await phoneA.locator(".aftershock-report").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/DESIGN THE PROOF/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
     assert.equal(await phoneB.locator(".aftershock-report").count(),0,
@@ -900,7 +900,7 @@ try {
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
       "Previous consequence folds away so it does not delay the next timed vote");
-    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/DESIGN THE PROOF/);
     await phoneA.locator(".aftershock-summary").click();
     assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/partner welcomes/i);
     await phoneA.locator(".recap-details summary").click();
