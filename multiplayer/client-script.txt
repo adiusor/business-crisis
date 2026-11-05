@@ -13,6 +13,9 @@
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
   let roomCode = validRoomCode(codeFromUrl) ? codeFromUrl : "";
   let credential = null;
+  // Ignore HTTP responses begun under a token that has since been revoked,
+  // replaced or discarded. A delayed Safari fetch must not resurrect a room.
+  let sessionEpoch = 0;
   let state = null;
   let socket = null;
   let retryHandle = null;
@@ -72,15 +75,22 @@
     return payload;
   }
   function saveSession(token) {
+    sessionEpoch++;
     try { sessionStorage.setItem(roleKey(roomCode), token); } catch (_) { /* non-persistent preview */ }
     credential = token;
   }
   function dropSession() {
+    sessionEpoch++;
     try { sessionStorage.removeItem(roleKey(roomCode)); } catch (_) {}
     credential = null;
   }
   async function getState() {
-    return request("/api/rooms/" + roomCode + "/state", {headers: {authorization: "Bearer " + credential}});
+    const epoch=sessionEpoch,token=credential,code=roomCode;
+    if(!token)throw Object.assign(new Error("Session no longer active"),{staleSession:true});
+    const result=await request("/api/rooms/" + code + "/state", {headers: {authorization: "Bearer " + token}});
+    if(epoch!==sessionEpoch||token!==credential||code!==roomCode)
+      throw Object.assign(new Error("Old session response ignored"),{staleSession:true});
+    return result;
   }
   async function lobby() {
     if (!roomCode) { show("create"); return; }
@@ -426,6 +436,12 @@
       if(e.pressure)dilemma.append(node("span",e.pressure,"scene-pressure"));
       dilemma.append(node("span","Find the strongest trade-off — not a perfect answer.","scene-pressure"));
       copy.append(dilemma);
+    }
+    if(e.teamPrompt && state.viewer.role!=="projector"){
+      const talk=node("aside",null,"scene-team-prompt");
+      talk.append(node("small","TALK IT THROUGH · BEFORE YOU VOTE"));
+      talk.append(node("p",e.teamPrompt));
+      copy.append(talk);
     }
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
@@ -1646,7 +1662,8 @@
     }
   }
   function setConnection(online) {
-    $("connection").textContent = online ? "LIVE SYNC" : "RECONNECTING";
+    $("connection").textContent = online ? "LIVE SYNC" :
+      navigator.onLine ? "RECONNECTING" : "OFFLINE · RECONNECT TO CONTINUE";
     $("connection").classList.toggle("live", online);
   }
   function stopAccess(message) {
@@ -1697,9 +1714,10 @@
           if (!credential || !navigator.onLine) return;
           try {showRoom((await getState()).state);}
           catch (e) {
+            if(e.staleSession)return;
             if (e.httpStatus === 401 || e.httpStatus === 410) {stopAccess(e.message);return;}
           }
-          connect();
+          if(credential&&navigator.onLine)connect();
         }, retryDelay);
         retryDelay = Math.min(retryDelay * 2, 15000);
       });
@@ -1713,6 +1731,7 @@
       if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type: "snapshot"}));
       else connect();
     } catch (e) {
+      if(e.staleSession)return;
       if (e.httpStatus === 401 || e.httpStatus === 410) stopAccess(e.message);
       else setConnection(false);
     }
@@ -1730,6 +1749,7 @@
       showRoom(restored);
       connect();
     } catch (e) {
+      if(e.staleSession)return;
       if (e.httpStatus === 401 || e.httpStatus === 410) { stopAccess(e.message); return; }
       setConnection(false); error("Cannot restore room yet: " + e.message);
     }
@@ -1882,7 +1902,11 @@
     }catch(e){error(e.message);}
   });
   window.addEventListener("online", () => {setConnection(false);refreshConnection();});
-  window.addEventListener("offline", () => setConnection(false));
+  window.addEventListener("offline", () => {
+    // Keep the room session and any private, server-locked ballot. Only the
+    // transient transport is disconnected; reconnect uses the same token.
+    setConnection(false);
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshConnection();
   });

@@ -183,3 +183,14 @@ test("the boardroom never invents a signed Project Spark award",()=>{
  assert.doesNotMatch(JSON.stringify({history:t.history,outcome:o}),/has signed|was awarded|contract signed|guaranteed income/i);
  assert.equal(R.championshipResult([t,{...t,id:1,name:"OTHER"}]).leader.team.name,"PROJECT SPARK");
 });
+test("all six Project Spark chapters supply a purposeful public collaboration prompt",()=>{
+ const prompts=C.episodes.map(ep=>ep.teamPrompt);
+ assert.equal(prompts.length,6);
+ assert.equal(new Set(prompts).size,6);
+ for(const [i,p] of prompts.entries()){
+  assert.equal(typeof p,"string",C.episodes[i].title+" prompt missing");
+  assert.ok(p.length>=65&&p.length<=190,C.episodes[i].title+" prompt length");
+  assert.doesNotMatch(p,/correct answer|highest scoring|choose plan [0-9]|private ballot/i,
+    "A discussion prompt must not instruct or reveal the secret winning plan");
+ }
+});

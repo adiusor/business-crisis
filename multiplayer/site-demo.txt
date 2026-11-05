@@ -1,0 +1,32 @@
+"use strict";
+// Public, no-account first-choice trial. No storage, analytics, network requests,
+// simulation score, or real-room credentials.
+(function(){
+  const form=document.getElementById("demo-decision-form");
+  const outcome=document.getElementById("demo-outcome");
+  const replay=document.getElementById("demo-replay");
+  if(!form||!outcome||!replay)return;
+  const commit=form.querySelector('button[type="submit"]');
+  const cards=Array.from(outcome.querySelectorAll("[data-demo-result]"));
+  form.addEventListener("submit",function(event){
+    event.preventDefault();
+    const selected=form.querySelector('input[name="demo-plan"]:checked');
+    if(!selected)return;
+    const index=selected.value;
+    for(const card of cards)card.hidden=card.dataset.demoResult!==index;
+    outcome.hidden=false;
+    if(commit)commit.hidden=true;
+    for(const choice of form.querySelectorAll('input[name="demo-plan"]'))choice.disabled=true;
+    outcome.focus({preventScroll:true});
+    outcome.scrollIntoView({block:"nearest",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
+  });
+  replay.addEventListener("click",function(){
+    form.reset();
+    for(const choice of form.querySelectorAll('input[name="demo-plan"]'))choice.disabled=false;
+    for(const card of cards)card.hidden=true;
+    outcome.hidden=true;
+    if(commit)commit.hidden=false;
+    const first=form.querySelector('input[name="demo-plan"]');
+    if(first)first.focus();
+  });
+})();

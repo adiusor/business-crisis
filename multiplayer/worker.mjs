@@ -7,6 +7,7 @@ import CLIENT_SCRIPT from "./client-script.txt";
 import CLIENT_ART from "./client-art.txt";
 import CLIENT_PDF from "./client-pdf.txt";
 import SITE_STYLE from "./site-style.txt";
+import SITE_DEMO from "./site-demo.txt";
 import {publicPath,renderPublicPage,robotsText,sitemapXml,sharingSvg,faviconSvg} from "./site.mjs";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
   clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
@@ -64,6 +65,8 @@ export default {
         }
         if (url.pathname === "/site-style.css")
           return htmlResponse(SITE_STYLE,"text/css; charset=utf-8");
+        if (url.pathname === "/site-demo.js")
+          return htmlResponse(SITE_DEMO,"text/javascript; charset=utf-8",{"x-robots-tag":"noindex"});
         if (url.pathname === "/robots.txt")
           return new Response(robotsText(url.origin,env),{headers:{...HEADERS,"content-type":"text/plain; charset=utf-8","x-robots-tag":"noindex"}});
         if (url.pathname === "/sitemap.xml") {
