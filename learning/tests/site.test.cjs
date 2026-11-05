@@ -5,7 +5,7 @@ const fs=require("node:fs");
 const path=require("node:path");
 const root=path.resolve(__dirname,"..");
 const read=name=>fs.readFileSync(path.join(root,name),"utf8");
-const files=["index.html","corporate-team-building.html","agency-partners.html","leadership-training.html","business-universities.html","preview.html"];
+const files=["index.html","corporate-team-building.html","agency-partners.html","leadership-training.html","business-universities.html","ro.html","preview.html"];
 const links=[...files.filter(f=>f!=="preview.html")];
 test("each audience page is distinct, complete and isolated from search indexing during research",()=>{
  const titles=new Set(),descs=new Set();
@@ -45,4 +45,12 @@ test("classroom claims and all four buyer pages describe prototype limitations",
  assert.match(edu,/Unit 20/);
  assert.match(edu,/not.*Pearson|Pearson.*not/i);
  assert.match(edu,/Harvard.*not|not.*Harvard/i);
+});
+
+test("Romanian localisation is honest about language and capacity",()=>{
+ const html=read("ro.html");
+ assert.match(html,/<html lang="ro">/);
+ assert.match(html,/momentan doar în engleză|doar în engleză|în engleză/);
+ assert.match(html,/25 de telefoane/);
+ assert.match(read("index.html"),/href="\.\/ro\.html"/);
 });
