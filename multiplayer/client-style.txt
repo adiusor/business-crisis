@@ -1429,3 +1429,19 @@ body.projector-mode:not(.in-game) #round-recap{display:none!important}
 .scene-team-prompt small{display:block;margin-bottom:6px;font-size:10px;letter-spacing:.14em;font-weight:800;color:#f1c699}
 .scene-team-prompt p{margin:0;font-size:clamp(13px,1.35vw,16px);line-height:1.55;color:#dbe8e9}
 .projector-mode .scene-team-prompt{display:none}
+
+/* Episode-04 promise callback: visible to the owning team only, never on projector. */
+.spotlight-twist{border:1px solid #bd9a66;border-left:4px solid #eab276;background:linear-gradient(145deg,#263743,#152c38);padding:20px 22px;margin:13px 0 18px;max-width:780px}
+.spotlight-twist small{display:block;font-size:10px;line-height:1.5;color:#f4c99c;letter-spacing:.12em;font-weight:800}
+.spotlight-twist-title{display:block;font-size:clamp(18px,2vw,25px);color:#fff3e1;letter-spacing:.025em;margin:8px 0}
+.spotlight-twist p{font-size:clamp(13px,1.4vw,16px);line-height:1.55;color:#e2edf1;margin:8px 0 13px;max-width:58ch}
+.projector-mode .spotlight-twist{display:none}
+@media(max-width:700px){.spotlight-twist{padding:15px 16px;margin:8px 0 13px}}
+
+/* Episode 05: a ledger-grounded private team readiness check, never on projector. */
+.delivery-test{border:1px solid #78ada2;border-left:4px solid #9bd4c3;background:linear-gradient(145deg,#193b3b,#132f3e);padding:20px 22px;margin:13px 0 18px;max-width:780px}
+.delivery-test small{display:block;font-size:10px;line-height:1.5;color:#b5e7d4;letter-spacing:.12em;font-weight:800}
+.delivery-test-title{display:block;font-size:clamp(18px,2vw,25px);color:#f5fff7;margin:8px 0}
+.delivery-test p{font-size:clamp(13px,1.4vw,16px);line-height:1.55;color:#e0edec;margin:8px 0 13px;max-width:58ch}
+.projector-mode .delivery-test{display:none}
+@media(max-width:700px){.delivery-test{padding:15px 16px;margin:8px 0 13px}}
