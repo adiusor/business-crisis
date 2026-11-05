@@ -80,9 +80,21 @@ function rosterEvent(room,kind,nickname,team,atMs=Date.now()){
  room.rosterEvents=room.rosterEvents.slice(-18);
 }
 const liveMembers=(room,i)=>room.players.filter(p=>!p.departed&&p.teamIndex===i);
+// Joining early is genuine participation, not a spectator state. Late arrivals
+// can vote immediately only before their team casts any ballot, with at least
+// a minute left in the penalty-free window. Existing votes/deadlines never reset.
+function canJoinCurrentEpisode(room,i,nowMs=Date.now()){
+ if(room.phase==="lobby")return true;
+ if(room.phase!=="advisers")return false;
+ const t=room.teams[i],clock=clockFor(room,nowMs);
+ return !!clock&&!t.locked&&!t.runoff&&clock.stage==="normal"&&
+  clock.normalEndsAt-nowMs>=60000 &&
+  !Object.values(t.votes||{}).some(x=>x.locked) &&
+  !(t.participatedIds||[]).length;
+}
 const currentVoters=(room,i)=>room.players.filter(p=>p.teamIndex===i &&
  (p.joinedRound??0)<=room.round&&(!p.departed||!!room.teams[i].votes?.[p.id]?.locked));
-export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId}){
+export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId},nowMs=Date.now()){
  requireState(room.phase==="lobby"||room.phase==="advisers",409,"This room has finished");
  requireState(room.players.filter(p=>!p.departed).length<MAX_PLAYERS&&room.players.length<120,409,"Room join limit reached");
  if(teamIndex===undefined||teamIndex===null)teamIndex=balancedTeamIndex(room);
@@ -96,7 +108,7 @@ export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId}){
   !room.players.some(p=>p.id===playerId),400,"Invalid participant ID");
  const next=clone(room);
  next.players.push({id:playerId,nickname:nick,teamIndex,credentialHash,
-  joinedRound:next.phase==="advisers"?next.round+1:0});
+  joinedRound:canJoinCurrentEpisode(next,teamIndex,nowMs)?next.round:next.round+1});
  if(!next.teams[teamIndex].captainId)next.teams[teamIndex].captainId=playerId;
  rosterEvent(next,"joined",nick,next.teams[teamIndex].name);
  next.revision++;
@@ -422,9 +434,10 @@ function lastTeamImpact(economic){
   pendingLiability:last.pendingLiability,paidDeferred:last.paidDeferred.slice(),
   timedOut:!!last.timedOut};
 }
-export function viewLobby(room){
+export function viewLobby(room,nowMs=Date.now()){
  return {code:room.code,phase:room.phase,revision:room.revision,teamNameOptions:TEAM_NAME_POOL.slice(),
-  teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length}))};
+  teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,
+   canVoteThisEpisode:canJoinCurrentEpisode(room,i,nowMs)}))};
 }
 export function viewFor(room,actor,nowMs=Date.now()){
  requireState(actor&&["host","player","projector"].includes(actor.role),401,"Unauthorized");
@@ -438,6 +451,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
    teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
     votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
+    eligibleVoters:currentVoters(room,i).length,
     lockedAtMs:t.lockedAtMs||null})),
    verdict:room.phase==="complete"?finalVerdict(room):null};
  }
@@ -456,6 +470,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
   teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,
    ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
    roundPenalty:t.roundPenalty,votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
+   eligibleVoters:currentVoters(room,i).length,
    lockedAtMs:t.lockedAtMs||null})),
   verdict:room.phase==="complete"?finalVerdict(room):null};
  if(!player)return {...shared,viewer:{role:"host"}};

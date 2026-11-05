@@ -46,10 +46,10 @@ test("joining allows late arrival without changing current votes, requires uniqu
   room = act(room, host, "start");
   const newcomer=enter(room,"Late",0,3);
   room=newcomer.room;
-  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.canVote,false);
-  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.totalMembers,1);
+  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.canVote,true);
+  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.totalMembers,2);
   assert.equal(room.teams[0].locked,false);
-  assert.throws(()=>act(room,newcomer.actor,"select_advisers",{advisers:[0,1]}),/Joined mid-episode/);
+  assert.equal(viewFor(room,host).teams[0].eligibleVoters,2);
   assert.match(JSON.stringify(viewFor(room,host).rosterEvents),/Late/);
   assert.equal(room.phase, "advisers");
   let capped = fixture().room;
@@ -960,11 +960,11 @@ test("late arrivals do not reset a clock or prolong current votes; they vote nex
  const b=enter(room,"Bob",1,42);room=b.room;
  room=act(room,host,"start");
  const start=room.startedAtMs;
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:0});
  const late=enter(room,"Late",0,43);room=late.room;
  assert.equal(room.startedAtMs,start);
  assert.equal(viewFor(room,late.actor).privateTeam.voting.canVote,false);
- room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
- room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:0});
  assert.equal(room.teams[0].locked,true);
  room=act(room,b.actor,"select_advisers",{advisers:[0,1]});
  room=act(room,b.actor,"lock_vote",{planIndex:0,signalIndex:0});
@@ -993,4 +993,36 @@ test("explicit departure revokes access without erasing committed decisions",()=
  assert.match(JSON.stringify(viewFor(room,host).rosterEvents),/left/);
  assert.equal(JSON.stringify(viewFor(room,{role:"projector"})).includes("credentialHash"),false);
  assert.throws(()=>act(room,alice.actor,"lock_vote",{planIndex:2,signalIndex:2}),/Only a participant/);
+});
+
+// Eligibility is explicit and fair to the people already voting.
+test("a newcomer can vote the current round before anyone votes; a later arrival cannot",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,60);room=a.room;
+ const b=enter(room,"Bob",1,61);room=b.room;
+ room=act(room,host,"start");
+ const join=enter(room,"Newcomer",0,62);room=join.room;
+ assert.equal(viewFor(room,join.actor).privateTeam.voting.canVote,true);
+ assert.equal(viewFor(room,join.actor).privateTeam.voting.totalMembers,2);
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].locked,false);
+ const tooLate=enter(room,"Later",0,63);room=tooLate.room;
+ assert.equal(viewFor(room,tooLate.actor).privateTeam.voting.canVote,false);
+ assert.equal(viewFor(room,host).teams[0].joined,3);
+ assert.equal(viewFor(room,host).teams[0].eligibleVoters,2);
+ room=act(room,join.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].locked,true);
+});
+test("a team cannot add an extra required voter with less than a minute remaining",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,65);room=alice.room;
+ const bob=enter(room,"Bob",1,66);room=bob.room;
+ const start=1000000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},start);
+ const late=joinRoom(room,{nickname:"Visitor",teamIndex:0,playerId:"player-0067",
+   credentialHash:hash("participant-67")},start+ROUND_MS-50000);
+ assert.equal(viewFor(late,{role:"player",playerId:"player-0067"}).privateTeam.voting.canVote,false);
+ assert.equal(viewFor(late,host).teams[0].eligibleVoters,1);
+ assert.equal(viewLobby(late,start+ROUND_MS-50000).teams[0].canVoteThisEpisode,false);
 });

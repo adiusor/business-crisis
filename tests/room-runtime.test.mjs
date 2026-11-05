@@ -628,27 +628,6 @@ try {
     await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
-    // A late player may enter a running episode without altering the current
-    // electorate, vote window or locked decisions. All connected roles get a
-    // short named presence notification; projector still has no private votes.
-    const lateUI=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
-    lateUI.on("pageerror",err=>browserErrors.push(err.message));
-    await lateUI.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
-    await lateUI.locator("#join-form").waitFor({state:"visible",timeout:10000});
-    assert.match(await lateUI.locator("#join-caption").textContent(),/GAME IN PROGRESS/);
-    await lateUI.locator("#join-name").fill("Late Charlie");
-    await lateUI.locator("#join-team").selectOption("0");
-    await lateUI.locator("#join-form button.primary").click();
-    await lateUI.locator("#room-screen").waitFor({state:"visible",timeout:12000});
-    assert.match(await lateUI.locator(".vote-finished").textContent(),/JOINED MID-EPISODE/);
-    assert.equal(await lateUI.locator(".submit-game").count(),0,
-      "Joining after the timer starts must never introduce an extra required ballot");
-    await hostUI.waitForFunction(()=>
-      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
-      null,{timeout:12000});
-    await projected.waitForFunction(()=>
-      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
-      null,{timeout:12000});
     assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
       "Six original illustrated adviser portraits appear in multiplayer");
     assert.equal(await phoneA.locator(".jump-decision").count(),1);
@@ -659,19 +638,23 @@ try {
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
-      "After choosing advisers, their full two briefings must display below the portrait grid");
+      "The two chosen adviser briefings appear immediately under a short heading");
+    assert.equal(await phoneA.locator(".adviser-portrait").count(),0,
+      "The six-card adviser picker collapses after selection to reduce phone scrolling");
+    assert.equal(await phoneA.locator(".adviser-edit").count(),1,
+      "A captain may still change the pair before any teammate has voted");
     const adviserOrder=await phoneA.evaluate(()=>{
-      const grid=document.querySelector("#player-actions .choice-grid"),
+      const grid=document.querySelector("#player-actions .strategy-grid"),
         advice=document.querySelector(".chosen-advisers");
-      return Boolean(grid&&advice&&(grid.compareDocumentPosition(advice)&Node.DOCUMENT_POSITION_FOLLOWING));
+      return Boolean(grid&&advice&&(advice.compareDocumentPosition(grid)&Node.DOCUMENT_POSITION_FOLLOWING));
     });
-    assert.equal(adviserOrder,true,"The selected adviser intelligence must never render above the adviser picker");
+    assert.equal(adviserOrder,true,"Selected adviser advice must precede strategic decisions without duplicate portraits");
     assert.equal(await phoneA.locator(".strategy-grid .strategy-choice").count(),3);
     assert.equal(await phoneA.locator(".team-pulse").count(),0,
       "No live strategy popularity gauge should influence an undecided player");
-    assert.ok(await phoneA.locator(".adviser-portrait").first().evaluate(el=>
-      Number.parseFloat(getComputedStyle(el.parentElement.querySelector("small")).fontSize)>=11),
-      "Adviser roles must be legible at 320px");
+    assert.ok(await phoneA.locator(".chosen-adviser-copy small").first().evaluate(el=>
+      Number.parseFloat(getComputedStyle(el).fontSize)>=11),
+      "Chosen adviser role stays readable at 320px");
     assert.equal(await phoneA.getByRole("combobox",{name:"Choose a statement"}).count(),1,
       "Decision controls must have real accessible labels");
     assert.equal(await phoneA.locator(".strategy-tradeoffs[open]").count(),0);
@@ -722,6 +705,27 @@ try {
     const frozen=await phoneA.locator("#timer").textContent();
     await delay(1200);
     assert.equal(await phoneA.locator("#timer").textContent(),frozen,"A team that locked early has a frozen timer");
+    // A late player may enter a running episode without altering the current
+    // electorate, vote window or locked decisions. All connected roles get a
+    // short named presence notification; projector still has no private votes.
+    const lateUI=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
+    lateUI.on("pageerror",err=>browserErrors.push(err.message));
+    await lateUI.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
+    await lateUI.locator("#join-form").waitFor({state:"visible",timeout:10000});
+    assert.match(await lateUI.locator("#join-caption").textContent(),/GAME IN PROGRESS/);
+    await lateUI.locator("#join-name").fill("Late Charlie");
+    await lateUI.locator("#join-team").selectOption("0");
+    await lateUI.locator("#join-form button.primary").click();
+    await lateUI.locator("#room-screen").waitFor({state:"visible",timeout:12000});
+    assert.match(await lateUI.locator(".vote-finished").textContent(),/JOINED MID-EPISODE/);
+    assert.equal(await lateUI.locator(".submit-game").count(),0,
+      "Joining after the timer starts must never introduce an extra required ballot");
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
+      null,{timeout:12000});
+    await projected.waitForFunction(()=>
+      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
+      null,{timeout:12000});
     const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
     await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
     await phoneB.locator('[data-plan="1"]').click();

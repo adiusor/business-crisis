@@ -57,6 +57,7 @@
   let exposureOpen = null;
   let decisionNear = false;
   let voteSending = false;
+  let adviserEditOpen = false;
   let lastRosterSeq = null;
   let presenceDismiss = null;
   let hostReadySeen = null;
@@ -115,14 +116,17 @@
       $("join-form").hidden = false;
       $("join-code-form").hidden = true;
       $("join-caption").textContent = data.phase==="advisers" ?
-        "GAME IN PROGRESS · Choose your name and team. You may watch this episode and vote from the next one." :
+        "GAME IN PROGRESS · Join immediately. Teams still preparing can take your vote now; otherwise you vote next episode." :
         "Choose your nickname and team. No account needed. Everyone votes each episode.";
       const target = $("join-team"), old = target.value;
       target.replaceChildren();
-      const automatic = node("option", "AUTO — assign to the smallest team");
+      const automatic = node("option",data.phase==="advisers"?
+        "AUTO — smallest team (vote timing may vary)":"AUTO — assign to the smallest team");
       automatic.value = "auto"; target.append(automatic);
       data.teams.forEach((team, index) => {
-        const opt = node("option", team.name + " · " + team.joined + " joined");
+        const status=data.phase==="advisers"?
+          (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):"";
+        const opt = node("option", team.name + " · " + team.joined + " joined"+status);
         opt.value = String(index);
         target.append(opt);
       });
@@ -145,7 +149,7 @@
         (team.timedOut ? "TIMEOUT" : team.locked ? "LOCKED" : "CHOOSING");
       const rhs = node("span", status, "meta");
       if (state.phase === "advisers" && !team.locked)
-        rhs.append(node("small", (team.votesSubmitted || 0) + "/" + count + " VOTED"));
+        rhs.append(node("small", (team.votesSubmitted || 0) + "/" + (team.eligibleVoters ?? count) + " VOTED"));
       if (team.penaltyPoints) rhs.append(node("small", "−" + team.penaltyPoints + " TIME PTS"));
       if (state.phase === "advisers") {
         const clock = node("small","");
@@ -259,7 +263,7 @@
       const item=node("div",null,"ticker-team"+(t.locked?" is-ready":""));
       item.append(node("strong",t.name));
       item.append(node("span",t.timedOut?"MISSED DEADLINE":t.locked?
-        "TEAM READY":(t.votesSubmitted||0)+"/"+t.joined+" VOTED","ticker-status"));
+        "TEAM READY":(t.votesSubmitted||0)+"/"+(t.eligibleVoters??t.joined)+" VOTED","ticker-status"));
       const clock=node("small",null,"ticker-clock");
       clock.dataset.teamClock=String(i);item.append(clock);target.append(item);
     }
@@ -623,7 +627,7 @@
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
       privateData.economic,privateData.lastImpact,privateData.voting?.myVote,privateData.voting?.runoff,
-      privateData.voting?.canVote,
+      privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
     if(!force && playerRenderKey===snapshotKey){
@@ -692,7 +696,8 @@
       "Only vote progress is shown before the team decides. The most popular complete proposal wins; a tie triggers a private revote."));
     target.append(progress);
 
-    if (state.viewer.captain && !voting.runoff) {
+    if (state.viewer.captain && !voting.runoff &&
+        (privateData.advisers.length!==2||adviserEditOpen)) {
       target.append(node("h3", "01 / CAPTAIN — SELECT TWO ADVISERS", "section-label"));
       target.append(node("p", "Once saved, the briefings are available privately to all your teammates."));
       const grid = node("div", null, "choice-grid");
@@ -719,10 +724,26 @@
         try {await action({type:"select_advisers", advisers:draftPicks.slice()});}
         catch (e) {error(e.message);}
       }, "secondary", draftPicks.length !== 2 || voting.lockedVotes > 0));
+      if(privateData.advisers.length===2)
+        target.append(button("KEEP CURRENT ADVISERS",()=>{
+          adviserEditOpen=false;draftPicks=privateData.advisers.slice();
+          renderPlayerActions(true);
+        },"secondary"));
+
     }
     // Their advice belongs directly below the six adviser portraits, never
     // several screens above the strategy and statement choices.
-    if(privateData.intelligence.length)target.append(renderChosenAdvisers(privateData));
+    if(privateData.intelligence.length){
+      target.append(renderChosenAdvisers(privateData));
+      if(state.viewer.captain&&!adviserEditOpen&&!voting.runoff &&
+         voting.lockedVotes===0&&!mine.locked){
+        target.append(button("CHANGE MY TWO ADVISERS",()=>{
+          adviserEditOpen=true;draftPicks=privateData.advisers.slice();
+          renderPlayerActions(true);
+          target.querySelector(".choice-grid")?.scrollIntoView({block:"nearest"});
+        },"secondary adviser-edit"));
+      }
+    }
     if (privateData.advisers.length !== 2) {
       target.append(node("p", "Waiting for the captain to choose two advisers. The team clock is running."));
       return;
@@ -1132,6 +1153,7 @@
       draftRound = state.round;
       exposureOpen = null;
       voteSending = false;
+      adviserEditOpen=false;
       evidenceFolderOpen = null;
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
@@ -1248,7 +1270,9 @@
           method: "POST", headers: {authorization: "Bearer " + credential},
           body: JSON.stringify({...command,...voteScope, expectedRevision: state.revision})
         });
-        if (command.type === "select_advisers") draftPicks = null;
+        if (command.type === "select_advisers"){
+          draftPicks = null;adviserEditOpen=false;
+        }
         showRoom(response.state);
         return;
       } catch (e) {
