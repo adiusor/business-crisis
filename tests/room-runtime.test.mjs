@@ -305,8 +305,12 @@ try {
 
 
   // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
-  const {chromium} = await import("playwright");
-  const browser = await chromium.launch({headless: true, args: ["--no-sandbox"]});
+  // The same complete room journey runs in Chromium and Safari's WebKit engine.
+  const browserName=process.env.BC_BROWSER==="webkit"?"webkit":"chromium";
+  const engines=await import("playwright");
+  const browser=await engines[browserName].launch({headless:true,
+    ...(browserName==="chromium"?{args:["--no-sandbox"]}:{})});
+  const screenshotDir=browserName==="webkit"?"screenshots/webkit":"screenshots";
   try {
     const hostUI = await browser.newPage({viewport: {width: 1440, height: 900}, reducedMotion: "reduce"});
     const phoneA = await browser.newPage({viewport: {width: 320, height: 720}, reducedMotion: "reduce"});
@@ -354,7 +358,7 @@ try {
     const rulesOverflow=await phoneA.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
     assert.ok(rulesOverflow<=1,"Rules must not overflow a 320px phone: "+rulesOverflow);
     await (await import("node:fs/promises")).mkdir(path.join(root,"screenshots"),{recursive:true});
-    await phoneA.screenshot({path:path.join(root,"screenshots","08-briefing-phone-320.png"),fullPage:true});
+    await phoneA.screenshot({path:path.join(root,screenshotDir,"08-briefing-phone-320.png"),fullPage:true});
     await phoneA.locator("#game-rules summary").click();
     assert.equal(await phoneA.locator("#game-rules").evaluate(el=>el.open),false);
     await phoneB.goto(base + "/join?room=" + uiCode);
@@ -444,7 +448,7 @@ try {
       "Recent facilitator changes are visible on the public projector");
     assert.match(await projected.locator("#projector-intervention").textContent(),/TRANSFERRED CAPTAINSHIP/);
     assert.equal(await projected.locator("#rules-host-note").isVisible(),false);
-    await projected.screenshot({path:path.join(root,"screenshots","09-briefing-projector-1280.png"),fullPage:true});
+    await projected.screenshot({path:path.join(root,screenshotDir,"09-briefing-projector-1280.png"),fullPage:true});
     assert.match(await projected.locator("#projector-join-link").getAttribute("href"),
       new RegExp("/join\\?room="+uiCode+"$"));
     const projectionQR=await projected.locator("#projector-qr").evaluate(async img=>{
@@ -619,10 +623,10 @@ try {
     await projected.keyboard.press("Escape");
     assert.equal(await projected.locator(".evidence-item[open]").count(),0,
       "Escape restores the single-screen incident");
-    await projected.screenshot({path:path.join(root,"screenshots","12-projection-actual-720p.png"),
+    await projected.screenshot({path:path.join(root,screenshotDir,"12-projection-actual-720p.png"),
       fullPage:false});
-    await phoneA.screenshot({path:path.join(root,"screenshots","10-design-v4-player-320.png"),fullPage:true});
-    await projected.screenshot({path:path.join(root,"screenshots","11-design-v4-projection-1280.png"),fullPage:true});
+    await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
+    await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
     assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
       "Six original illustrated adviser portraits appear in multiplayer");
@@ -721,7 +725,7 @@ try {
     assert.ok(overflow <= 1, "New 320px lobby overflow: " + overflow);
     await (await import("node:fs/promises")).mkdir(path.join(root, "screenshots"), {recursive: true});
     await phoneA.screenshot({path: path.join(root, "screenshots", "06-room-mobile-320.png"), fullPage: true});
-    await projected.screenshot({path:path.join(root,"screenshots","07-projector-1280.png"),fullPage:true});
+    await projected.screenshot({path:path.join(root,screenshotDir,"07-projector-1280.png"),fullPage:true});
     // A complete room can render and export a stand-alone human-readable report.
     const reportHost=await browser.newPage({viewport:{width:1366,height:900},acceptDownloads:true});
     reportHost.on("pageerror",err=>browserErrors.push(err.message));
