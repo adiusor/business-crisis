@@ -570,6 +570,11 @@ try {
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".strategy-grid .strategy-choice").count(),3);
+    assert.equal(await phoneA.locator(".team-pulse").count(),0,
+      "No live strategy popularity gauge should influence an undecided player");
+    assert.ok(await phoneA.locator(".adviser-portrait").first().evaluate(el=>
+      Number.parseFloat(getComputedStyle(el.parentElement.querySelector("small")).fontSize)>=11),
+      "Adviser roles must be legible at 320px");
     assert.equal(await phoneA.getByRole("combobox",{name:"Choose a statement"}).count(),1,
       "Decision controls must have real accessible labels");
     assert.equal(await phoneA.locator(".strategy-tradeoffs[open]").count(),0);

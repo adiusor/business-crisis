@@ -181,20 +181,13 @@ function resolveVotes(room,teamIndex,nowMs){
 }
 export function privateVoteStatus(room,player){
  const t=room.teams[player.teamIndex],members=room.players.filter(p=>p.teamIndex===player.teamIndex);
+ // Expose vote progress, not the leading proposal. Early tallies can bias
+ // undecided teammates; full ballots are resolved only inside the room engine.
  const votes=t.votes||{};
- const tally=new Map();
- for(const p of members){
-  const vote=votes[p.id];
-  if(!vote?.locked)continue;
-  const k=ballotKey(vote.ballot),entry=tally.get(k);
-  if(entry)entry.count++;
-  else tally.set(k,{ballot:vote.ballot,count:1});
- }
  return {lockedVotes:members.filter(p=>votes[p.id]?.locked).length,
   totalMembers:members.length,
   myVote:votes[player.id]?.locked?clone(votes[player.id].ballot):null,
-  runoff:t.runoff?clone(t.runoff):null,
-  tally:[...tally.values()].map(x=>({...x,ballot:clone(x.ballot)}))};
+  runoff:t.runoff?clone(t.runoff):null};
 }
 export function expireRoom(room,nowMs=Date.now()){
  const clock=clockFor(room,nowMs);

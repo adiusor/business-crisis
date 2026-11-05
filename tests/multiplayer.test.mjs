@@ -116,6 +116,11 @@ test("captain selects advisers; every teammate must vote before team clock stops
   assert.equal(room.teams[0].locked,false);
   assert.equal(room.teams[0].economic.nextRound,0);
   assert.equal(viewFor(room,mate.actor).privateTeam.voting.lockedVotes,1);
+  const captainView=viewFor(room,a.actor).privateTeam.voting;
+  assert.equal(captainView.myVote,null,"Captain may only inspect their own ballot");
+  assert.equal(Object.hasOwn(captainView,"tally"),false,"Early vote preferences must not leak to teammates");
+  assert.doesNotMatch(JSON.stringify(captainView),/planIndex|signalIndex/,
+    "Before a runoff, a teammate must not receive another person's proposal");
   assert.throws(()=>act(room,mate.actor,"lock_vote",{planIndex:0,signalIndex:1}),/already locked/);
   assert.throws(()=>act(room,a.actor,"select_advisers",{advisers:[1,3]}),/cannot change/);
   room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:1});

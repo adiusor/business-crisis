@@ -476,25 +476,6 @@
     wrap.append(select);
     return wrap;
   }
-  function updateTeamPulse(target,voting,mine){
-    const pulse=target.querySelector(".team-pulse");
-    if(!pulse)return;
-    const show=!mine.locked&&!voting.runoff&&voting.lockedVotes>0;
-    pulse.hidden=!show;
-    if(!show)return;
-    pulse.querySelector(".pulse-count").textContent=
-      voting.lockedVotes+" / "+voting.totalMembers+" VOTES";
-    const totals=[0,0,0];
-    for(const entry of voting.tally||[])
-      if(entry.ballot&&totals[entry.ballot.planIndex]!==undefined)
-        totals[entry.ballot.planIndex]+=entry.count;
-    for(const bar of pulse.querySelectorAll("[data-pulse-plan]")){
-      const count=totals[Number(bar.dataset.pulsePlan)]||0;
-      bar.querySelector(".pulse-value").textContent=String(count);
-      bar.querySelector(".pulse-fill").style.width=
-        Math.min(100,Math.round(count/voting.totalMembers*100))+"%";
-    }
-  }
   function renderTeamAftershock(impact) {
     // Read the full consequence when a decision locks; collapse the old file
     // next episode so a three-minute ballot stays ahead of retrospective reading.
@@ -545,7 +526,6 @@
         const voting=privateData.voting;
         label.textContent="YOUR TEAM / "+voting.lockedVotes+" OF "+voting.totalMembers+" VOTES LOCKED";
       }
-      updateTeamPulse(target,privateData.voting,mine);
       return;
     }
     playerRenderKey=snapshotKey;
@@ -590,30 +570,8 @@
     progress.append(node("p", mine.locked ?
       (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
-      "Every player locks a complete proposal. Most votes wins; a tie sends your team into a private revote."));
+      "Only vote progress is shown before the team decides. The most popular complete proposal wins; a tie triggers a private revote."));
     target.append(progress);
-    if(state.episode){
-      const pulse=node("section",null,"team-pulse");
-      pulse.hidden=true;
-      pulse.append(node("strong","TEAM STRATEGY PULSE"));
-      pulse.append(node("small","0 / 0 VOTES","pulse-count"));
-      const rows=node("div",null,"pulse-rows");
-      state.episode.plans.forEach((plan,i)=>{
-        const row=node("div",null,"pulse-row");
-        row.dataset.pulsePlan=String(i);
-        const caption=node("div",null,"pulse-caption");
-        caption.append(node("span",String.fromCharCode(65+i)+" · "+plan.name),
-          node("strong","0","pulse-value"));
-        const track=node("div",null,"pulse-track");
-        track.append(node("span",null,"pulse-fill"));
-        row.append(caption,track);rows.append(row);
-      });
-      pulse.append(rows);
-      pulse.append(node("small","STRATEGY TREND ONLY · THE FULL PACKAGE IS THE VOTE",
-        "pulse-footnote"));
-      target.append(pulse);
-      updateTeamPulse(target,voting,mine);
-    }
     if (privateData.intelligence.length) {
       const dossier=node("details",null,"intel-dossier");
       dossier.open=expandedIntel;
@@ -629,7 +587,7 @@
     }
     if (mine.locked) return;
     if (voting.myVote) {
-      target.append(node("p", "YOUR VOTE IS LOCKED. Keep discussing with your team. The timer stops when everyone votes and a winning proposal emerges."));
+      target.append(node("p", "YOUR VOTE IS LOCKED. Individual choices stay private while teammates finish. Your clock stops when the team result is settled."));
       return;
     }
     if (state.viewer.captain && !voting.runoff) {
