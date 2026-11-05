@@ -885,6 +885,16 @@ try {
       ["40","2","AT RISK"],"The workforce incident only displays facts from its evidence");
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
+    // Story continuity should be actual UI content, private to its team's player.
+    await phoneA.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
+    await phoneB.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
+    assert.match(await phoneA.locator(".team-story-thread").textContent(),/verification trail/i);
+    assert.match(await phoneB.locator(".team-story-thread").textContent(),/access restrictions/i);
+    assert.equal(await hostUI.locator(".team-story-thread").count(),0,
+      "Facilitator must not see individual team story bridges");
+    assert.equal(await projected.locator(".team-story-thread").count(),0,
+      "Public projector must not see private story bridges");
+
 
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
@@ -929,6 +939,11 @@ try {
       "The final board vote must fit on 720p without scroll: "+JSON.stringify(verdictFit));
     assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
     assert.equal(await reportHost.locator(".report-team").count(),2);
+    assert.equal(await reportHost.locator(".report-numeric-breakdown").count(),2,
+      "Both teams should get a fully reconciled numeric score explanation");
+    assert.equal(await reportHost.locator(".report-learning-notes").count(),4,
+      "Both teams should get documented strengths and constructive next steps");
+
     assert.equal(await reportHost.locator(".report-epilogue").count(),1,
       "Final report acknowledges that the sender is not identified");
     assert.match(await reportHost.locator(".report-epilogue").innerText(),/not been identified/);
@@ -964,6 +979,11 @@ try {
     assert.match(pdfContent,/FINAL TEAM RANKINGS/);
     assert.match(pdfContent,/CHALLENGE SNAPSHOT/);
     assert.match(pdfContent,/WHAT EACH TEAM CHOSE/);
+    assert.match(pdfContent,/THE MATH BEHIND|WHAT THE MODEL MEASURED/,
+      "The PDF also contains a plain-language calculation section");
+    assert.match(pdfContent,/WHAT THIS TEAM PROTECTED/,
+      "The PDF has the positive learning debrief for each team");
+
     assert.match(pdfContent,/\/Count (?:[7-9]|[1-9][0-9])/);
     assert.doesNotMatch(pdfContent,/mailto:|emailjs|sendgrid|credentialHash/i);
     assert.doesNotMatch(pdfContent,new RegExp(hostToken));
