@@ -296,18 +296,25 @@ if(risk.ops>75)score-=11;
 if(team.cash<25000&&team.cash>=0)score-=7;
 score=clamp(Math.round(score),0,100);
 let status="AT RISK";
-if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
-else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
-else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
+const isEvent=DATA.scenarioType==="event";
+if(isEvent){
+  if(team.cash<0||risk.customer>=86||risk.ops>=90)status="UNVIABLE";
+  else if(risk.customer<=42&&risk.ops<=56&&risk.workforce<=60&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="STRONG OPENING";
+  else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="VIABLE WITH WORK";
+}else{
+  if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
+  else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
+  else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
+}
 const reasons=[];
-if(team.cash<0)reasons.push("Response spending exceeded the £260,000 fund.");
+if(team.cash<0)reasons.push("Response spending exceeded the "+(isEvent?"event response":"£260,000 response")+" fund.");
 else if(team.cash<25000)reasons.push("The remaining response reserve is thin.");
 if(unpaid>0)reasons.push("£"+unpaid.toLocaleString("en-GB")+" of contingent commitments remain.");
 if(risk.customer>65)reasons.push("Customer exposure remains elevated.");
 if(risk.ops>65)reasons.push("Operational delivery remains fragile.");
 if(risk.workforce>65)reasons.push("Workforce capacity is under strain.");
 if(risk.legal>65)reasons.push("Legal and compliance issues remain unresolved.");
-if(team.trust>=70)reasons.push("Direct, credible communication helped preserve client confidence.");
+if(team.trust>=70)reasons.push(isEvent?"Clear communication helped preserve stakeholder trust.":"Direct, credible communication helped preserve client confidence.");
 if(!reasons.length)reasons.push("The company retains sufficient cash and has contained the most serious exposures.");
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
 }
@@ -315,7 +322,7 @@ function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).so
 // Scores compare performance. The title requires the flagship renewal to be signed.
 function championshipResult(teams){
 const ranked=rankTeams(teams);
-const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
+const eligible=ranked.filter(x=>x.outcome.status===(DATA.scenarioType==="event"?"STRONG OPENING":"RENEWED")&&x.team.cash>=0&&x.team.risks.ops<=56);
 const champion=eligible[0]||null;
 const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score&&x.team.cash===champion.team.cash):[];
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
@@ -334,6 +341,7 @@ if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 // Original fictional educational scenario; deliberately independent from the existing 09:17 story.
 const scene={
   "id": "opening-night",
+  "scenarioType": "event",
   "title": "Opening Night",
   "subtitle": "Six scenes. One launch. A thousand unexpected possibilities.",
   "studio": "FIELDWORK HOUSE",
@@ -1392,11 +1400,64 @@ g.BCLearningExperience=Object.freeze(beats);
 ;
 (function(g){
 "use strict";
+// A bounded, evidence-grounded narrative branch for each completed decision.
+// These are reminders of actual committed strategies, not invented numeric effects.
+const branches=Object.freeze({
+ invitation:{
+   "CAP THE GUEST LIST":"The guest list is capped, but disappointed registrants are still asking how places were allocated. Staff need a consistent answer.",
+   "ADD A SECOND SESSION":"The second event slot remains conditional on staffing and safety approval. Your team is already discussing who will cover it.",
+   "KEEP THE HYPE":"Registrations kept climbing after your team left the invitation ambiguous. Front-of-house staff now inherit the clarification problem."
+ },
+ people:{
+   "CO-DESIGN THE ROTA":"Sam's rotation idea is on the table. The supply handover now has a named team lead, though staff still need practice with the new process.",
+   "PAY THE EXTRA HOURS":"The rota has coverage, but promised extra shifts will be paid later. Finance carries the commitment into the supplier conversation.",
+   "DIRECT THE FLOOR":"Managers imposed a quick plan. The supplier problem arrives before the unresolved staff concerns have been properly heard."
+ },
+ supplier:{
+   "NEGOTIATE TWO SOURCES":"You secured a second supply option. Ingredient checks and a coordinated handover are now operational priorities, not abstract advantages.",
+   "PAY FOR PRIORITY":"Your team bought a costly priority delivery. The sponsor will want proof that the promise is being monitored and can be kept.",
+   "HOLD THE ORIGINAL ORDER":"There will not be enough original guest packs for everyone. The sponsor and staff are hearing requests for an honest recovery offer."
+ },
+ culture:{
+   "SET CLEAR BOUNDARIES":"You clarified approval rights. When the partner deal arrives, you can separate sponsor branding from operational decision authority.",
+   "PUT THE SPONSOR FIRST":"The sponsor has additional control over messaging. Its upcoming contract offer could make that dependency harder to reverse.",
+   "TURN THE MEME INTO A CAMPAIGN":"The joke travelled further, but the approval chain remains unclear. The partner's proposal will test who can actually sign off."
+ },
+ partner:{
+   "BUILD A BOUNDED PARTNERSHIP":"You proposed limited VIP places and a review period. Tonight's team can plan around the offered terms, while the wider deal remains subject to agreement.",
+   "SIGN EXCLUSIVITY":"You agreed to a large VIP allocation and exclusivity. Community guests have fewer places, and future programme commitments remain on the ledger.",
+   "BACK THE LOCAL COALITION":"You chose a smaller non-exclusive relationship. The opening remains community-led, but the lost upside is a real strategic trade-off."
+ },
+ opening:{
+   "MAKE THE TEAM THE HEADLINE":"You funded follow-through and recognised the people who made the opening possible. Cash decreased to support that promise.",
+   "GO BIG NEXT MONTH":"You announced expansion before learning the full cost of tonight. The outstanding expansion commitments are not automatically funded.",
+   "PROTECT THE RESERVE":"You chose liquidity and measured learning over another announcement. Partners hoping for immediate expansion will need a clear explanation."
+ }
+});
+function interlude(history,round){
+ if(!Array.isArray(history)||round<=0||round>5)return null;
+ const last=history[round-1];
+ if(!last || !last.episode)return null;
+ const mapping=branches[Object.keys(branches)[round-1]];
+ const text=mapping?.[last.plan]||last.fallout;
+ return {round:last.round,plan:last.plan,text,priorCash:last.cash,pendingLiability:last.pendingLiability};
+}
+function ending(history){
+ if(!Array.isArray(history)||history.length!==6)return null;
+ const last=history[5];return branches.opening[last.plan]||last.fallout;
+}
+g.BCLearningBranches=Object.freeze({interlude,ending,branches});
+})(globalThis);
+
+;
+(function(g){
+"use strict";
 // The preview deliberately uses the exact same deterministic BCCreateRules engine
 // that powers the original incident. It is NOT a real-time multi-device room.
 const C=g.BCLearningContent;
 const R=g.BCCreateRules(C);
 const X=g.BCLearningExperience;
+const B=g.BCLearningBranches;
 const KEY="bip-opening-night-preview-v1";
 const TEAMS=["THE SPARKS","TEAM HORIZON","THE MAKERS","THE WILD CARDS"];
 const MODES={
@@ -1490,8 +1551,8 @@ function investmentMarkup(){
 function play(){
  if(active<0||active>=session.teams.length){screen="team";return teamPicker();}
  const t=session.teams[active],ep=C.episodes[session.round],beat=X[ep.id];
- const previous=t.economic.history.at(-1);
- const echo=previous?'<div class="notes"><p class="eyebrow">PREVIOUSLY, YOUR TEAM CHOSE '+esc(previous.plan)+'</p><p>'+esc(previous.fallout)+'</p><p class="small subtle">The economic consequences of that choice are already in your cash, risk and commitments.</p></div>':"";
+ const previous=B.interlude(t.economic.history,session.round);
+ const echo=previous?'<div class="notes"><p class="eyebrow">AN EARLIER DECISION RETURNS · '+esc(previous.plan)+'</p><p>'+esc(previous.text)+'</p><p class="small subtle">That earlier choice has already changed your cash ledger, trust, risk and outstanding commitments.</p></div>':"";
  const cards=C.advisers.map((a,i)=>'<button class="choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
  const selections=draft.advisers.length;
  const dossier=draft.revealed?'<div class="notes" aria-label="Confidential adviser notes"><p class="eyebrow">TWO PRIVATE TEAM PERSPECTIVES</p>'+draft.advisers.map(i=>'<p><b>'+esc(C.advisers[i].name)+':</b> '+esc(ep.advice[i])+'</p>').join("")+'</div>':"";
@@ -1542,16 +1603,17 @@ function recap(){
 function final(){
  const ranked=R.rankTeams(session.teams.map(t=>t.economic)),leader=ranked[0];
  const every=ranked.map((x,i)=>'<article class="panel"><span class="eyebrow">RANK '+(i+1)+' · '+esc(x.team.name)+'</span>'+
- '<h3>'+x.outcome.score+' / 100</h3>'+
+ '<h3>'+x.outcome.score+' / 100</h3><p><b>Event health:</b> '+esc(x.outcome.status)+'</p>'+
  '<div class="metric"><span>Available cash</span><b>'+money(x.team.cash)+'</b></div>'+
  '<div class="metric"><span>Trust index</span><b>'+x.team.trust+'/100</b></div>'+
  '<div class="metric"><span>Outstanding commitments</span><b>'+money(x.outcome.unpaid)+'</b></div>'+
- '<p>'+esc(x.outcome.reasons.join(" "))+'</p></article>').join("");
+ '<p>'+esc(x.outcome.reasons.join(" "))+'</p>'+
+ '<p class="hint"><b>Your final decision:</b> '+esc(B.ending(x.team.history)||"The team has completed its event response.")+'</p></article>').join("");
  return '<section class="section"><p class="eyebrow">FIELDWORK HOUSE / THE FINAL CHAPTER</p>'+
  '<h1 class="title">What your team <em>made possible.</em></h1>'+
  '<p class="lead">The doors opened. The mystery behind the unclear invitation has a mundane but useful explanation: the wrong draft was published from the scheduler. It was a missed handover, not a villain. The real story is what happened when people had to work together.</p>'+
  '<div class="leader"><p class="eyebrow">HIGHEST SIMULATED PERFORMANCE</p><div class="winner">'+esc(leader.team.name)+'</div>'+
- '<p>'+leader.outcome.score+' / 100 · An illustrative comparison, not a diagnosis of real leadership skill.</p></div>'+
+ '<p>'+leader.outcome.score+' / 100 · Event health: '+esc(leader.outcome.status)+' · An illustrative comparison, not a diagnosis of real leadership skill.</p></div>'+
  '<div class="report">'+every+'</div>'+
  '<div class="debrief"><p class="eyebrow">DEBRIEF / '+esc(MODES[session.mode].label)+'</p>'+
  '<h3>Move from play to insight</h3><p>'+esc(MODES[session.mode].debrief)+'</p>'+
