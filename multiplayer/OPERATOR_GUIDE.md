@@ -6,7 +6,7 @@
 - Keep the **host tab** open on your Mac throughout the session. It contains the host credential. Losing browser session storage can lose host access; a separate recovery account is not yet supported.
 - If using a shared screen, generate the separate **read-only projector link**. Project that page, **not** the host page. The projector shows the lobby room code and scannable join QR, but never the host key or private team advice.
 - Ask players to scan the QR, choose a unique nickname and join a team. There must be at least one person per team to start. Participants may switch teams before START. The current ceiling is **30 total**, not 30 per team; that is not a verified real-device capacity.
-- Read the six **Rules of Engagement** aloud (around one minute) while people join. The briefing is visible on projector and phones, then collapses after START. All roles can also open an **untimed public preview** of episode 1 (brief, question and three evidence exhibits) in the lobby; no adviser intelligence is released.
+- Read the six **Rules of Engagement** aloud (around one minute) while people join. The briefing is visible on projector and phones, then collapses after START. Host and players can also open an **untimed public preview** of episode 1 (brief, question and three evidence exhibits) in the lobby; the projector instead retains its QR/teams-first 720p layout. No adviser intelligence is released.
 
 ## During each episode
 - You are the facilitator, not a voting participant. Each team captain chooses **two confidential advisers** for that episode.
