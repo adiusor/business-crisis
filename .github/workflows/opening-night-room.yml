@@ -1,0 +1,40 @@
+name: Opening Night isolated multiplayer core
+on:
+  push:
+    branches: ["feature/opening-night-room-engine"]
+    paths:
+      - "learning/multiplayer/**"
+      - "learning/story.js"
+      - "src/rules.js"
+      - ".github/workflows/opening-night-room.yml"
+  pull_request:
+    branches: ["feature/business-in-play-learning-v1"]
+    paths:
+      - "learning/multiplayer/**"
+      - "learning/story.js"
+      - "src/rules.js"
+      - ".github/workflows/opening-night-room.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  server-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate room engine source
+        run: |
+          node --check learning/multiplayer/room-core.mjs
+          node --check learning/multiplayer/room-core.test.mjs
+      - name: Verify 25 simulated players, six rounds, privacy and state authority
+        run: node --test learning/multiplayer/room-core.test.mjs
+      - name: Verify original multiplayer remains unchanged
+        run: node --test tests/multiplayer.test.mjs
+      - name: Verify original and educational economic rules
+        run: |
+          node --test learning/tests/game.test.cjs
+          node --test tests/storyline.test.cjs
