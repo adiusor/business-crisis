@@ -942,7 +942,12 @@
     const header = node("header", null, "report-head");
     header.append(node("p", "BUSINESS CRISIS / THE 09:17 INCIDENT", "report-eyebrow"));
     header.append(node("h2", "THE BOARDROOM VERDICT"));
-    header.append(node("p", "Six decisions. One crisis. Real consequences.", "report-subhead"));
+    header.append(node("p", "Six decisions. One crisis. One team walks into the boardroom with the strongest result.", "report-subhead"));
+    if(window.BCPreviewArt?.scene){
+      const art=node("div",null,"report-scene-art");
+      art.innerHTML=window.BCPreviewArt.scene("board");
+      art.setAttribute("aria-hidden","true");header.append(art);
+    }
     const winner = node("div", null, "report-winner");
     winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "NO CONFIRMED RENEWAL", "report-kicker"));
     winner.append(node("strong", verdict.hasChampion ? verdict.champions.join(" / ") :
@@ -984,43 +989,56 @@
         const metric = node("div", null, "report-metric");
         metric.append(node("small",label),node("strong",value));metrics.append(metric);
       }
-      card.append(metrics);
-      card.append(renderCashTrajectory(team));
+      const deepDive=node("details",null,"report-advanced");
+      deepDive.append(node("summary","VIEW TEAM PERFORMANCE / CASH & RISKS"));
+      deepDive.append(metrics,renderCashTrajectory(team));
       if (team.reasons.length) {
         const reasons=node("div",null,"report-reasons");
         reasons.append(node("h5","WHY THIS OUTCOME"));
         for(const reason of team.reasons)reasons.append(node("p",reason));
-        card.append(reasons);
+        deepDive.append(reasons);
       }
+      card.append(deepDive);
       ranks.append(card);
     });
     sheet.append(ranks);
-    sheet.append(node("h3", "THE DECISION TRAIL", "report-section-title"));
-    sheet.append(node("p", "Each episode records the actual team response and its operating cost. A missed deadline is shown as no response, never as a fabricated choice.", "report-explain"));
-    const timelines = node("div", null, "report-timelines");
-    for(const team of verdict.ranked){
-      const wrap=node("section",null,"report-team-timeline");
-      wrap.append(node("h4",team.name));
-      const cases=node("div",null,"report-episodes");
-      for(const round of team.decisions){
+    // A six-chapter head-to-head comparison, default collapsed for teambuilding.
+    // The underlying facts are the final server verdict, never a fabricated chart.
+    const trail=node("details",null,"decision-trail");
+    trail.append(node("summary","COMPARE ALL TEAMS · 6 EPISODES / THE DECISION TRAIL"));
+    trail.append(node("p","Each chapter shows how the teams responded to the same crisis. Open a round to compare strategies, costs and consequences.","decision-trail-intro"));
+    const comparison=node("div",null,"round-comparison");
+    for(let i=0;i<6;i++){
+      const roundLine=node("details",null,"compare-round");
+      const firstDecision=verdict.ranked[0]?.decisions[i];
+      const top=node("summary",null,"compare-round-title");
+      top.append(node("span","EP "+String(i+1).padStart(2,"0")),
+        node("strong",firstDecision?.episode||"THE INCIDENT"),
+        node("small","COMPARE "+verdict.ranked.length+" TEAMS"));
+      roundLine.append(top);
+      const cells=node("div",null,"compare-teams");
+      for(const team of verdict.ranked){
+        const round=team.decisions[i];
         const item=node("article",null,"report-episode");
-        const top=node("div",null,"report-episode-top");
-        top.append(node("span","EPISODE "+String(round.round).padStart(2,"0"),"report-episode-number"));
-        top.append(node("strong",round.episode));
-        if(round.timedOut)top.append(node("span","DEADLINE MISSED","report-missed"));
-        item.append(top);
-        item.append(node("p",round.plan+" / "+round.signal,"report-choice-line"));
+        item.append(node("strong",team.name,"compare-team-name"));
+        if(round.timedOut)item.append(node("span","DEADLINE MISSED","report-missed"));
+        item.append(node("p",round.plan,"report-choice-line"));
+        item.append(node("p","PUBLIC STATEMENT / "+round.signal,"compare-statement"));
         const figures=node("div",null,"report-episode-metrics");
-        figures.append(node("span","RESPONSE SPEND "+cash(round.spent)));
-        figures.append(node("span","CASH "+cash(round.cash)));
+        figures.append(node("span","SPENT "+cash(round.spent)));
         figures.append(node("span","TRUST "+round.trust+"/100"));
         item.append(figures);
-        if(round.fallout)item.append(node("p",round.fallout,"report-fallout"));
-        cases.append(item);
+        if(round.fallout){
+          const why=node("details",null,"compare-consequence");
+          why.append(node("summary","WHAT HAPPENED NEXT"),
+            node("p",round.fallout,"report-fallout"));
+          item.append(why);
+        }
+        cells.append(item);
       }
-      wrap.append(cases);timelines.append(wrap);
+      roundLine.append(cells);comparison.append(roundLine);
     }
-    sheet.append(timelines);
+    trail.append(comparison);sheet.append(trail);
     const coda=node("aside",null,"report-epilogue");
     coda.append(node("strong","ONE FINAL UNANSWERED QUESTION"));
     coda.append(node("p","The original sender has not been identified. A contractor access log was evidence of access, not proof of responsibility. This verdict evaluates how each team responded to the crisis — it does not invent an attribution."));
@@ -1048,10 +1066,12 @@
     actions.append(button("PRINT / SAVE AS PDF",()=>window.print(),"primary"));
     actions.append(button("SAVE VISUAL REPORT (.HTML)",()=>{
       // Self-contained readable file; intentionally no JS, token, room code or user emails.
+      const exported=sheet.cloneNode(true);
+      exported.querySelectorAll("details").forEach(item=>{item.open=true;});
       const html = "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">" +
         "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">" +
         "<title>BUSINESS CRISIS — Boardroom Verdict</title><style>" +
-        REPORT_EXPORT_CSS + "</style></head><body>" + sheet.outerHTML + "</body></html>";
+        REPORT_EXPORT_CSS + "</style></head><body>" + exported.outerHTML + "</body></html>";
       const file = new Blob([html],{type:"text/html;charset=utf-8"});
       const href=URL.createObjectURL(file),a=node("a");
       a.href=href;a.download="business-crisis-boardroom-verdict.html";
