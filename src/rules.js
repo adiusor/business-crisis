@@ -169,6 +169,71 @@ function applySpotlightTwist(team,round){
  }
  return twist;
 }
+// Episode 05 is a common real connectivity fault with a TEAM-SPECIFIC delivery
+// stress test. Prior commitments and reserve coverage matter. It predicts no
+// supplier award, charges no fictional expense and never alters another team.
+function deliveryTest(team,round){
+ if(round!==4||!team||!Array.isArray(team.history)||team.history.length<4)return null;
+ const [invitation,people,supplier,spotlight]=team.history;
+ const due=team.pending.filter(x=>x.due<=5).reduce((total,x)=>total+x.cost,0);
+ const future=team.pending.filter(x=>x.due>5).reduce((total,x)=>total+x.cost,0);
+ const reserveAfterObligations=team.cash-DATA.episodes[4].base-due-future;
+ let result;
+ if(team.history.some(h=>h.timedOut)){
+  result={id:"missing-owner",title:"THE BACKUP HAS NO OWNER",
+   text:"Earlier decisions were missed. During the network fault nobody can confirm all the handovers or which fallback has been authorised. The team needs a named owner before the proposal can claim readiness.",
+   result:"An unanswered earlier decision left the test without a fully accountable backup route, increasing delivery and partner exposure.",
+   delta:{ops:7,workforce:3,customer:3},trust:-2};
+ }else if(reserveAfterObligations<75000){
+  result={id:"reserve-squeeze",title:"THE PLAN MEETS THE LEDGER",
+   text:"Your reserve, after the known operating charge and existing future commitments, has limited cover for unexpected support. The offline prototype is an option, but the team cannot promise a new supplier without agreeing what gets funded or delayed.",
+   result:"Thin reserve coverage limited the company's ability to absorb a new reliability cost. Scope or funding must be reviewed rather than pretending the fallback is paid for.",
+   delta:{ops:6,customer:4,legal:2},trust:-2};
+ }else if((invitation.planIndex===1||invitation.signalIndex===1)&&supplier.planIndex===1){
+  result={id:"fast-track",title:"THE FAST TRACK HITS A ROADBLOCK",
+   text:"Your earlier three-location ambition and fast supplier milestones depend on a connected demonstration. The failed network check exposes a gap the team must renegotiate before claiming it can open on schedule.",
+   result:"The ambitious fast-track route increased technical and contractual pressure when the prototype connection failed.",
+   delta:{ops:7,legal:4,customer:3},trust:-2};
+ }else if(people.planIndex===2&&supplier.planIndex===0){
+  result={id:"supported-backup",title:"THE CREW IS ALREADY PREPARED",
+   text:"You funded specialist capacity and selected verified delivery checks. The venue network still fails, but a qualified team can test a supported fallback while regular programmes continue.",
+   result:"Earlier external capacity and independent verification reduced delivery and staffing exposure during the dry run.",
+   delta:{ops:-8,workforce:-6,customer:-2},trust:2};
+ }else if(people.planIndex===0&&supplier.planIndex===2){
+  result={id:"staff-offline",title:"AN IDEA FROM THE FLOOR SAVES THE DEMO",
+   text:"Your co-design workshop suggested an offline visitor activity, and the internal specialists built the core prototype. It can keep running without a stable connection, although those same specialists still have other work.",
+   result:"Earlier staff co-design made the test more resilient, while in-house delivery still required staff-capacity management.",
+   delta:{ops:-7,legal:-2,workforce:3},trust:2};
+ }else if(supplier.planIndex===0){
+  result={id:"verified-route",title:"VERIFICATION PAYS OFF",
+   text:"You selected independent technical checks. The network fault is documented and the verified supplier route gives the partner a realistic fallback review, although it still needs approval.",
+   result:"Prior supplier verification reduced uncertainty around the failed demonstration and improved partner confidence.",
+   delta:{ops:-6,customer:-3},trust:2};
+ }else if(invitation.planIndex===2||invitation.signalIndex===2){
+  result={id:"focused-route",title:"ONE SITE IS EASIER TO RECOVER",
+   text:"Your first-site strategy kept the initial prototype small enough to adapt. The team can concentrate the offline fallback on one verified location, but any larger public teaser still needs correction.",
+   result:"Earlier scope discipline reduced the operational impact of the failure, while expansion questions remained open.",
+   delta:{ops:-5,workforce:-2,customer:2},trust:1};
+ }else{
+  result={id:"single-point",title:"ONE SMALL FAULT, MANY BIG QUESTIONS",
+   text:"The network fault reveals a dependency that your team has not fully tested. A delivery lead must choose which features can safely work offline before the board presentation.",
+   result:"An incomplete contingency plan increased delivery and partner pressure during the connectivity test.",
+   delta:{ops:5,customer:2},trust:-1};
+ }
+ // The cash signal is a modest, separate readiness consequence. The precise
+ // modelled coverage is derived only from recorded ledger and commitments.
+ const reserveStrong=reserveAfterObligations>=130000;
+ if(reserveStrong&&result.id!=="reserve-squeeze"&&result.id!=="missing-owner"){
+  result={...result,delta:{...result.delta,ops:(result.delta.ops||0)-2},trust:result.trust+1,
+   result:result.result+" The reserve still had room for a controlled, independently approved response."};
+ }
+ return {...result,reserveBand:reserveAfterObligations<75000?"tight":reserveStrong?"strong":"managed"};
+}
+function applyDeliveryTest(team,round){
+ const challenge=deliveryTest(team,round);
+ if(challenge){addRisk(team,challenge.delta);team.trust=clamp(team.trust+challenge.trust,0,100);}
+ return challenge;
+}
 function storyContext(team,round){
  if(!team||!Array.isArray(team.history)||!Number.isInteger(round)||round<=0||round>=DATA.episodes.length)return null;
  const prev=team.history[round-1];
@@ -187,7 +252,7 @@ function storyContext(team,round){
  if(team.risks[key]>68)pressures.push(RISK_FOLLOWUP[key]);
  return {previousRound:round,fromPlan:prev.plan,lead:lead,pressure:pressures.slice(0,2).join(" ")};
 }
-function adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight){
+function adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight,delivery){
  let main=plan.fallout;
  // A prewritten success line must never claim an action was fully funded
  // after the cumulative fund has already turned negative.
@@ -198,6 +263,7 @@ function adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight){
  }
  const lines=[main,SIGNAL_MOMENTS[round]?.[signalIndex]||"The public message is now part of the company's record."];
  if(spotlight)lines.unshift("EARLIER PROMISES UNDER THE SPOTLIGHT: "+spotlight.result);
+ if(delivery)lines.unshift("THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS: "+delivery.result);
  if(due.length){
    const paid=due.reduce((sum,x)=>sum+x.cost,0);
    lines.push("Earlier promises have now cost £"+paid.toLocaleString("en-GB")+" in this chapter.");
@@ -221,9 +287,11 @@ const alloc=allocation||{amount:0,route:null};
 assert(alloc&&Number.isInteger(alloc.amount)&&[0,10000,20000].includes(alloc.amount),"Allocation must be £0, £10k or £20k");
 assert(alloc.amount===0||([2,4].includes(round)&&ALLOCATIONS.some(x=>x.id===alloc.route)),"Invalid allocation route or episode");
 const team=deepCopy(input),plan=episode.plans[planIndex],signal=episode.signals[signalIndex];
+const delivery=deliveryTest(team,round);
 const leadIn=storyContext(team,round);
 const due=startEpisode(team,round,variant);
 const spotlight=applySpotlightTwist(team,round);
+if(delivery){addRisk(team,delivery.delta);team.trust=clamp(team.trust+delivery.trust,0,100);}
 expense(team,round,plan.spend,plan.name,"strategy");
 if(alloc.amount>0){
 const route=ALLOCATIONS.find(x=>x.id===alloc.route),factor=alloc.amount/10000;
@@ -238,7 +306,7 @@ if(plan.delay)team.pending.push({id:"plan-"+(round+1),due:plan.delay.due,cost:pl
 if(signal.delay)team.pending.push({id:"signal-"+(round+1),due:signal.delay.due,cost:signal.delay.cost,label:signal.delay.label,delta:deepCopy(signal.delay.delta||{})});
 recalcLiquidity(team);
 const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.amount,0);
-team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,leadIn:leadIn?leadIn.lead:null,fallout:adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight),spotlight:spotlight?{id:spotlight.id,title:spotlight.title,result:spotlight.result}:null,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
+team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,leadIn:leadIn?leadIn.lead:null,fallout:adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight,delivery),delivery:delivery?{id:delivery.id,title:delivery.title,result:delivery.result,reserveBand:delivery.reserveBand}:null,spotlight:spotlight?{id:spotlight.id,title:spotlight.title,result:spotlight.result}:null,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
 team.nextRound++;
 return team;
 }
@@ -248,8 +316,9 @@ assert(input&&typeof input==="object","Missing team state");
 assert(Number.isInteger(round)&&round>=0&&round<DATA.episodes.length,"Invalid episode");
 assert(input.nextRound===round,"Episode already committed or out of order");
 assert(Number.isInteger(variant)&&variant>=0&&variant<DATA.variants.length,"Invalid common scenario variant");
-const team=deepCopy(input),episode=DATA.episodes[round],leadIn=storyContext(team,round),due=startEpisode(team,round,variant);
+const team=deepCopy(input),episode=DATA.episodes[round],leadIn=storyContext(team,round),delivery=deliveryTest(input,round),due=startEpisode(team,round,variant);
 const spotlight=applySpotlightTwist(team,round);
+if(delivery){addRisk(team,delivery.delta);team.trust=clamp(team.trust+delivery.trust,0,100);}
 addRisk(team,{legal:4,ops:8,workforce:5,customer:10});
 team.trust=clamp(team.trust-10,0,100);
 recalcLiquidity(team);
@@ -257,8 +326,9 @@ const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.
 team.history.push({round:round+1,episode:episode.title,time:episode.time,
 plan:"NO RESPONSE",planIndex:null,signal:"NO PUBLIC STATEMENT",signalIndex:null,
 advisers:[],allocation:null,timedOut:true,leadIn:leadIn?leadIn.lead:null,
-fallout:(spotlight?"EARLIER PROMISES UNDER THE SPOTLIGHT: "+spotlight.result+" ":"")+"No strategic response was authorised before the deadline. Mandatory costs continued and unresolved exposures deteriorated.",
+fallout:(spotlight?"EARLIER PROMISES UNDER THE SPOTLIGHT: "+spotlight.result+" ":"")+(delivery?"THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS: "+delivery.result+" ":"")+"No strategic response was authorised before the deadline. Mandatory costs continued and unresolved exposures deteriorated.",
 spotlight:spotlight?{id:spotlight.id,title:spotlight.title,result:spotlight.result}:null,
+delivery:delivery?{id:delivery.id,title:delivery.title,result:delivery.result,reserveBand:delivery.reserveBand}:null,
 roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,
 risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
 team.nextRound++;
@@ -327,6 +397,6 @@ const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
 }
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,storyContext:storyContext,spotlightTwist:spotlightTwist,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,storyContext:storyContext,spotlightTwist:spotlightTwist,deliveryTest:deliveryTest,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);
