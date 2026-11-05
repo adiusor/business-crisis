@@ -35,7 +35,7 @@ try{
      assert.equal(heading.trim(),labels[round]);
      assert.ok(await page.locator('[aria-label="Team collaboration challenge"]').count());
      assert.equal(await page.locator(".scene-illustration").count(),1,"Every scene needs an original illustration");
-     assert.ok(await page.locator("#case-file summary").isVisible(),"Evidence must be accessible without forcing reading");
+     assert.ok(await page.locator("#case-file > summary").isVisible(),"Evidence must be accessible without forcing reading");
      if(round===0&&i===0&&viewportWidth<=390){
        const y=await page.locator('.scene-jump a[href="#consult"]').evaluate(el=>el.getBoundingClientRect().top);
        assert.ok(y<820,"The primary adviser action must be visible in the first mobile viewport: "+y);
