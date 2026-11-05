@@ -235,3 +235,26 @@ test("direct liquidity effects are not advertised when liquidity is computed fro
    "Deferred commitments already enter liquidity through future cash coverage");
  }
 });
+
+test("the final board vote offers three competitive strategies, each with defensible wins",()=>{
+ const results=Array.from({length:3},()=>({strong:0,renewalReady:0,highest:0}));
+ for(let n=0;n<729;n++){
+  let v=n,plans=[];
+  for(let i=0;i<6;i++){plans.push(v%3);v=Math.floor(v/3);}
+  let team=R.createTeam(0,"STRATEGY");
+  for(let i=0;i<6;i++)team=R.applyTurn(team,i,plans[i],0,[0,1],0);
+  const outcome=R.evaluate(team);
+  const slot=results[plans[5]];
+  slot.strong+=+(outcome.score>=85);
+  slot.renewalReady+=+(outcome.status==="RENEWED");
+  slot.highest=Math.max(slot.highest,outcome.score);
+ }
+ for(let i=0;i<3;i++){
+  assert.ok(results[i].strong>=5,"Final route "+i+" needs a credible path to a strong score");
+  assert.ok(results[i].renewalReady>=20,"Final route "+i+" needs a path to renewal readiness");
+ }
+ assert.ok(C.episodes[5].plans[0].delta.legal<C.episodes[5].plans[1].delta.legal);
+ assert.ok(C.episodes[5].plans[1].delta.customer<C.episodes[5].plans[0].delta.customer);
+ assert.ok(C.episodes[5].plans[2].spend<C.episodes[5].plans[0].spend);
+ assert.ok(C.episodes[5].plans[2].delta.workforce<0,"Honest smaller scope should protect staff capacity");
+});
