@@ -408,7 +408,7 @@
     box.replaceChildren();
     const number = Number(e.number), top = node("div",null,"scene-topline");
     top.append(node("span","EPISODE "+e.number+" / 06","eyebrow"));
-    top.append(node("span",e.time+" / LIVE INCIDENT","scene-timestamp"));
+    top.append(node("span",e.time+" / LIVE CHALLENGE","scene-timestamp"));
     box.append(top);
     const hero=node("div",null,"scene-hero"),copy=node("div",null,"scene-copy");
     copy.append(node("p",e.kicker,"scene-kicker"));
@@ -419,12 +419,13 @@
       dilemma.append(node("small","THE DECISION"));
       dilemma.append(node("p",e.question,"scene-question"));
       if(e.pressure)dilemma.append(node("span",e.pressure,"scene-pressure"));
+      dilemma.append(node("span","Find the strongest trade-off — not a perfect answer.","scene-pressure"));
       copy.append(dilemma);
     }
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
     const progress=node("ol",null,"episode-progress");
-    ["THE SEND","THE FLOOR","THE ULTIMATUM","THE HEADLINE","THE BOTTLENECK","THE BOARD VOTE"].forEach((name,i)=>{
+    ["THE SEND","THE FLOOR","THE CLIENT MEETING","THE PUBLIC CONVERSATION","THE DELIVERY TEST","THE NEXT MOVE"].forEach((name,i)=>{
       const item=node("li",null,i+1===number?"is-current":i+1<number?"is-past":"");
       const marker=node("span",String(i+1).padStart(2,"0"),"episode-index");
       marker.setAttribute("aria-hidden","true");
@@ -441,7 +442,7 @@
     const brief=node("details",null,"briefing-details");
     brief.open=briefingOpen;
     brief.addEventListener("toggle",()=>{briefingOpen=brief.open;});
-    brief.append(node("summary","READ THE INCIDENT BRIEF · FULL CONTEXT"));
+    brief.append(node("summary","READ THE FULL STORY · FULL CONTEXT"));
     brief.append(node("p",e.brief,"episode-intro"));
     brief.append(button("CLOSE FULL BRIEF",()=>{
       brief.open=false;brief.querySelector("summary").focus();
@@ -1008,6 +1009,9 @@
     wrap.append(legend);
     return wrap;
   }
+  function friendlyStatus(status){
+    return ({RENEWED:"RENEWAL-READY",CONDITIONAL:"MOMENTUM TO BUILD", "AT RISK":"IMPROVEMENTS TO MAKE", LOST:"RESET AND REBUILD"})[status]||status;
+  }
   function renderResults() {
     const target = $("results");
     target.replaceChildren();
@@ -1018,9 +1022,9 @@
     if(state.viewer.role==="projector"){
       // An uncluttered public finale; host and players keep the full report.
       const stage=node("section",null,"projection-verdict");
-      stage.append(node("small","EPISODE 06 / THE BOARD VOTE","projection-verdict-kicker"),
+      stage.append(node("small","EPISODE 06 / THE NEXT MOVE","projection-verdict-kicker"),
         node("h2","THE BOARDROOM VERDICT"));
-      stage.append(node("p",verdict.hasChampion?"BOARDROOM CHAMPION":"NO BOARDROOM CHAMPION",
+      stage.append(node("p",verdict.hasChampion?"BOARDROOM CHAMPION":"HIGHEST TEAM SCORE",
         "projection-champion-label"));
       stage.append(node("h3",verdict.hasChampion?verdict.champions.join(" / "):
         "LEADING RESPONSE · "+verdict.leader,"projection-champion"));
@@ -1029,34 +1033,34 @@
         const entry=node("article",null,"projection-rank");
         entry.append(node("span",String(i+1).padStart(2,"0"),"projection-rank-number"));
         const identity=node("div",null,"projection-rank-name");
-        identity.append(node("strong",team.name),node("small",team.status));
+        identity.append(node("strong",team.name),node("small",friendlyStatus(team.status)));
         entry.append(identity,node("strong",team.score+" / 100","projection-rank-score"),
           node("span",cash(team.cash)+" CASH · "+team.trust+"/100 TRUST","projection-rank-metrics"));
         ranks.append(entry);
       });
       stage.append(ranks);
-      stage.append(node("p","A champion must secure renewal, solvent funds and viable operations. Highest score alone is not enough.","projection-verdict-foot"));
+      stage.append(node("p","Highest score recognises the strongest simulated response. Championship also requires renewal readiness, cash and viable delivery.","projection-verdict-foot"));
       target.append(stage);
       return;
     }
     const sheet = node("section", null, "report-sheet");
     sheet.id = "boardroom-report";
     const header = node("header", null, "report-head");
-    header.append(node("p", "BUSINESS CRISIS / THE 09:17 INCIDENT", "report-eyebrow"));
+    header.append(node("p", "THE 09:17 CHALLENGE / SIX DECISIONS", "report-eyebrow"));
     header.append(node("h2", "THE BOARDROOM VERDICT"));
-    header.append(node("p", "Six decisions. One crisis. The board has reached its verdict.", "report-subhead"));
+    header.append(node("p", "Six decisions. Many possible outcomes. See what your team made possible.", "report-subhead"));
     if(window.BCPreviewArt?.scene){
       const art=node("div",null,"report-scene-art");
       art.innerHTML=window.BCPreviewArt.scene("board");
       art.setAttribute("aria-hidden","true");header.append(art);
     }
     const winner = node("div", null, "report-winner");
-    winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "NO CONFIRMED RENEWAL", "report-kicker"));
+    winner.append(node("span", verdict.hasChampion ? "BOARDROOM CHAMPION" : "HIGHEST TEAM SCORE", "report-kicker"));
     winner.append(node("strong", verdict.hasChampion ? verdict.champions.join(" / ") :
-      "BEST CRISIS RESPONSE · " + verdict.leader));
+      "STRONGEST TEAM RESPONSE · " + verdict.leader));
     winner.append(node("p", verdict.hasChampion ?
-      "The winning team secured renewal eligibility and the strongest adjusted score. Exact ties share the title; otherwise cash breaks score ties." :
-      "No team met every renewal criterion. The highest-ranked team still receives recognition for its relative crisis performance; a conditional or at-risk contract is not the same as a lost contract."));
+      "Your team met the simulation's renewal criteria and earned the strongest adjusted score. Exact ties share the title; otherwise remaining cash breaks ties." :
+      "Every team completed the challenge. This team earned the highest simulated score; no team met all the renewal criteria. The result shows what to build on next."));
     header.append(winner);
     sheet.append(header);
     sheet.append(node("h3", "FINAL TEAM RANKINGS", "report-section-title"));
@@ -1070,7 +1074,7 @@
       identity.append(node("span", "RANK " + String(index + 1).padStart(2, "0"), "report-rank-number"));
       identity.append(node("h4", team.name));
       identity.append(node("span", team.eligible && verdict.champions.includes(team.name) ?
-        "CHAMPION" : team.status, "report-status"));
+        "CHAMPION" : friendlyStatus(team.status), "report-status"));
       const score = node("div", null, "report-final-score");
       score.append(node("strong", team.score));
       score.append(node("span", "/ 100"));
@@ -1110,9 +1114,10 @@
     awards.append(node("h3","BEYOND THE SCOREBOARD","report-section-title"));
     const awardGrid=node("div",null,"boardroom-awards-grid");
     const awardSpecs=[
-      ["THE CLIENT'S TRUST","HIGHEST CLIENT TRUST","trust",true," / 100"],
-      ["THE CASH GUARDIAN","MOST RESPONSE CASH LEFT","cash",true,""],
-      ["THE CLOCKKEEPER","FEWEST TIME PENALTY POINTS","timingPenalty",false," PTS LOST"]
+      ["THE TRUST BUILDERS","HIGHEST CLIENT TRUST","trust",true," / 100"],
+      ["THE RISK NAVIGATORS","LOWEST AVERAGE BUSINESS RISK","avgRisk",false," / 100"],
+      ["THE RESOURCE STRATEGISTS","MOST RESPONSE CASH LEFT","cash",true,""],
+      ["THE TIMING PROS","FEWEST TIME PENALTY POINTS","timingPenalty",false," PTS LOST"]
     ];
     for(const [title,description,field,higher,suffix] of awardSpecs){
       const values=verdict.ranked.map(t=>Number(t[field]));
@@ -1137,7 +1142,7 @@
     const expensive=Math.max(...episodeSpend);
     const expensiveRound=episodeSpend.indexOf(expensive);
     const stats=node("section",null,"verdict-facts");
-    stats.append(node("h3","THE CRISIS, IN TWO CHARTS AND ONE SURPRISE","report-section-title"));
+    stats.append(node("h3","YOUR TEAM'S JOURNEY, IN THREE NUMBERS","report-section-title"));
     const statGrid=node("div",null,"verdict-facts-grid");
     const ringStat=(headline,value,detail,numerator,denominator,accent)=>{
       const article=node("article",null,"verdict-fact");
@@ -1167,7 +1172,7 @@
       copy.append(node("strong",headline),node("p",detail));
       article.append(copy);return article;
     };
-    statGrid.append(ringStat("THE CLOCK WON HOW MANY TIMES?",
+    statGrid.append(ringStat("HOW OFTEN DID THE CLOCK RUN OUT?",
       (totalDecisions-answered)+"",answered+" of "+totalDecisions+
       " team responses beat the hard deadline.",totalDecisions-answered,totalDecisions,"#be796d"));
     statGrid.append(ringStat("THE BEST TRUST INDEX",
@@ -1184,7 +1189,7 @@
     // The underlying facts are the final server verdict, never a fabricated chart.
     const trail=node("details",null,"decision-trail");
     trail.append(node("summary","COMPARE ALL TEAMS · 6 EPISODES / THE DECISION TRAIL"));
-    trail.append(node("p","Each chapter shows how the teams responded to the same crisis. Open a round to compare strategies, costs and consequences.","decision-trail-intro"));
+    trail.append(node("p","Each chapter shows how teams chose their own response. Open a round to compare strategies, costs and consequences.","decision-trail-intro"));
     const comparison=node("div",null,"round-comparison");
     for(let i=0;i<6;i++){
       const roundLine=node("details",null,"compare-round");
@@ -1219,10 +1224,10 @@
     trail.append(comparison);sheet.append(trail);
     const coda=node("aside",null,"report-epilogue");
     coda.append(node("strong","ONE FINAL UNANSWERED QUESTION"));
-    coda.append(node("p","The original sender has not been identified. A contractor access log was evidence of access, not proof of responsibility. This verdict evaluates how each team responded to the crisis — it does not invent an attribution."));
+    coda.append(node("p","The original sender has not been identified. A contractor access log was evidence of access, not proof of responsibility. This verdict evaluates how each team responded to the unexpected distribution — it does not invent an attribution."));
     sheet.append(coda);
     const footer=node("footer",null,"report-foot");
-    footer.append(node("strong","BUSINESS CRISIS / THE 09:17 INCIDENT"));
+    footer.append(node("strong","THE 09:17 CHALLENGE / SIX DECISIONS"));
     footer.append(node("p","Illustrative economic simulation for gameplay, not a financial projection. Personal ballots, adviser choices and participant names are excluded from the report."));
     sheet.append(footer);
     target.append(sheet);
@@ -1246,7 +1251,7 @@
         const bytes=window.BCReportPDF.build(verdict);
         const file=new Blob([bytes],{type:"application/pdf"});
         const href=URL.createObjectURL(file),a=node("a");
-        a.href=href;a.download="business-crisis-boardroom-verdict.pdf";
+        a.href=href;a.download="the-0917-challenge-team-results.pdf";
         document.body.append(a);a.click();a.remove();
         setTimeout(()=>URL.revokeObjectURL(href),10000);
       }catch(e){error("PDF download failed: "+e.message);}
