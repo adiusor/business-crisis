@@ -1181,3 +1181,124 @@ test("timeout records no winning ballot and consequence context is derived from 
   room.teams[1].economic.history[0].cash);
  assert.equal(viewFor(room,{role:"projector"},start+ROUND_MS+GRACE_MS+1).nextPreview.number,"02");
 });
+
+
+test("untimed preparation requires all two-adviser picks, does not expose secrets, and starts an exact server-owned clock",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1401);room=alice.room;
+ const bob=enter(room,"Bob",1,1402);room=bob.room;
+ const projector={role:"projector"};
+ assert.throws(()=>act(room,alice.actor,"start_prep"),/Only the host/);
+ room=act(room,host,"start_prep");
+ assert.equal(room.phase,"prep");
+ assert.equal(room.usePrepPhase,true);
+ assert.equal(room.startedAtMs,null);
+ assert.equal(clockFor(room),null);
+ assert.equal(viewFor(room,alice.actor).privateTeam.voting.canVote,false);
+ assert.equal(viewFor(room,alice.actor).episode.evidence.length,3);
+ assert.equal(viewFor(room,projector).episode.evidence.length,3);
+ assert.equal(viewFor(room,host).clock,null);
+ assert.throws(()=>act(room,host,"start"),/All team captains/);
+ assert.throws(()=>act(room,alice.actor,"lock_vote",{planIndex:0,signalIndex:0}),/Voting opens only/);
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+ assert.equal(viewFor(room,host).teams[0].advisersReady,true);
+ assert.equal(viewFor(room,host).teams[1].advisersReady,false);
+ assert.equal(viewFor(room,projector).teams[0].advisersReady,true);
+ assert.equal(viewFor(room,alice.actor).privateTeam.intelligence.length,2);
+ assert.deepEqual(viewFor(room,bob.actor).privateTeam.advisers,[]);
+ for(const actor of [host,projector,bob.actor])
+   assert.equal(JSON.stringify(viewFor(room,actor)).includes('"advisers":[0,4]'),false);
+ assert.throws(()=>act(room,host,"start"),/All team captains/);
+ room=act(room,bob.actor,"select_advisers",{advisers:[1,5]});
+ const start=1_000_000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},start);
+ assert.equal(room.phase,"advisers");
+ assert.equal(room.startedAtMs,start);
+ assert.equal(clockFor(room,start).normalEndsAt,start+ROUND_MS);
+ assert.equal(clockFor(room,start+ROUND_MS).stage,"grace");
+ assert.throws(()=>applyRoomAction(room,alice.actor,{
+   type:"select_advisers",advisers:[1,2],expectedRevision:room.revision},start+1),/locked once the decision clock starts/);
+ room=applyRoomAction(room,alice.actor,{
+   type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},start+1000);
+ room=applyRoomAction(room,bob.actor,{
+   type:"lock_vote",planIndex:1,signalIndex:1,expectedRevision:room.revision},start+2000);
+ assert.equal(room.teams.every(t=>t.locked),true);
+ assert.equal(room.teams.every(t=>t.economic.nextRound===1),true);
+ room=applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},start+3000);
+ assert.equal(room.phase,"prep");
+ assert.equal(room.round,1);
+ assert.equal(room.startedAtMs,null);
+ assert.equal(clockFor(room,start+4000),null);
+ assert.equal(room.teams.every(t=>t.advisers.length===0),true);
+ assert.equal(viewFor(room,host).episode.number,"02");
+ assert.equal(viewFor(room,alice.actor).privateTeam.intelligence.length,0);
+ assert.throws(()=>act(room,host,"start"),/All team captains/);
+});
+
+test("untimed preparation plays all six episodes for two, three and four teams",()=>{
+ for(const count of [2,3,4]){
+  let {room,host}=fixture(Array.from({length:count},(_,i)=>"TEAM "+i));
+  const players=[];
+  for(let i=0;i<count;i++){
+   const entry=enter(room,"Member"+i,i,1600+count*10+i);
+   room=entry.room;players.push(entry.actor);
+  }
+  room=act(room,host,"start_prep");
+  for(let round=0;round<6;round++){
+   assert.equal(room.phase,"prep");
+   assert.equal(room.round,round);
+   assert.equal(room.startedAtMs,null);
+   assert.equal(clockFor(room),null);
+   const unchanged=expireRoom(room,Date.now()+ROUND_MS+GRACE_MS);
+   assert.equal(unchanged,room,"Untimed preparation cannot time out a response");
+   for(const actor of players)room=act(room,actor,"select_advisers",{advisers:[0,1]});
+   const at=10_000_000+round*1_000_000;
+   room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
+   assert.equal(room.startedAtMs,at);
+   assert.equal(room.teams.every(t=>t.economic.nextRound===round),true);
+   for(const [i,actor] of players.entries()){
+    room=applyRoomAction(room,actor,{
+     type:"lock_vote",planIndex:i%3,signalIndex:(i+round)%3,
+     expectedRevision:room.revision},at+1000+i*100);
+   }
+   assert.equal(room.teams.every(t=>t.locked),true);
+   assert.equal(room.teams.every(t=>t.economic.nextRound===round+1),true);
+   assert.equal(room.teams.every(t=>t.economic.history.length===round+1),true);
+   if(round<5)assert.equal(viewFor(room,host).nextPreview.number,String(round+2).padStart(2,"0"));
+   room=applyRoomAction(room,host,{type:"advance",expectedRevision:room.revision},at+10000);
+   if(round<5)assert.equal(room.phase,"prep");
+  }
+  assert.equal(room.phase,"complete");
+  assert.equal(finalVerdict(room).ranked.length,count);
+  for(const team of room.teams){
+   assert.equal(team.economic.cash,globalThis.BCContent.initialCash-
+     team.economic.ledger.reduce((sum,item)=>sum+item.amount,0));
+  }
+ }
+});
+
+test("late arrivals join untimed preparation without altering the clock or private adviser selection",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,1901);room=a.room;
+ const b=enter(room,"Bob",1,1902);room=b.room;
+ room=act(room,host,"start_prep");
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ const newcomer=enter(room,"Latecomer",0,1903);room=newcomer.room;
+ assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.canVote,false);
+ assert.equal(viewFor(room,newcomer.actor).privateTeam.intelligence.length,2);
+ assert.equal(room.startedAtMs,null);
+ assert.equal(viewFor(room,host).teams[0].joined,2);
+ room=act(room,b.actor,"select_advisers",{advisers:[2,3]});
+ const at=2_000_000;
+ room=applyRoomAction(room,host,{type:"start",expectedRevision:room.revision},at);
+ assert.equal(viewFor(room,newcomer.actor,at+1).privateTeam.voting.canVote,true);
+ room=applyRoomAction(room,a.actor,{
+   type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+1000);
+ assert.equal(room.teams[0].locked,false,"Latecomer gets a real vote, not an invisible spectator slot");
+ room=applyRoomAction(room,newcomer.actor,{
+   type:"lock_vote",planIndex:0,signalIndex:0,expectedRevision:room.revision},at+2000);
+ assert.equal(room.teams[0].locked,true);
+ assert.equal(room.teams[0].voteResolution.votes,2);
+ assert.equal(room.teams[0].economic.history.length,1);
+ assert.equal(room.startedAtMs,at,"No late join resets the server clock");
+});
