@@ -1,11 +1,14 @@
 import {strict as assert} from "node:assert";
 import {fileURLToPath,pathToFileURL} from "node:url";
 import path from "node:path";
+import fs from "node:fs";
 import {chromium,webkit} from "playwright";
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../..");
 const publicPreview=pathToFileURL(path.join(root,"learning/preview.html")).href;
 const publicLanding=pathToFileURL(path.join(root,"learning/index.html")).href;
+const shots=path.join(root,"screenshots","learning");
+fs.mkdirSync(shots,{recursive:true});
 const browserName=process.env.BIP_BROWSER==="webkit"?"webkit":"chromium";
 const browser=await ({webkit,chromium})[browserName].launch({headless:true});
 const browserErrors=[];
@@ -17,6 +20,7 @@ const isVisible=selector=>page.locator(selector).isVisible();
 try{
  await page.goto(publicLanding);
  assert.match(await page.title(),/Business in Play/);
+ await page.screenshot({path:path.join(shots,`${browserName}-${viewportWidth}-landing.png`),fullPage:true});
  const previewLink=await page.locator('a[href="./preview.html"]').count();
  assert.ok(previewLink>=1,"Commercial review website must link directly to the experience");
  await page.goto(publicPreview);
@@ -30,6 +34,7 @@ try{
      const heading=await page.locator("h1.title").textContent();
      assert.equal(heading.trim(),labels[round]);
      assert.ok(await page.locator('[aria-label="Team collaboration challenge"]').count());
+     if(round===0&&i===0)await page.screenshot({path:path.join(shots,`${browserName}-${viewportWidth}-first-scene.png`),fullPage:true});
      assert.equal(await page.locator('[data-action="adviser"]').count(),6);
      await tap('[data-action="adviser"][data-index="0"]');
      await tap('[data-action="adviser"][data-index="1"]');
@@ -65,6 +70,7 @@ try{
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
  assert.ok(overflow<=2,"No sideways overflow in final report: "+overflow);
  assert.deepEqual(browserErrors,[],"No browser runtime exceptions");
+ await page.screenshot({path:path.join(shots,`${browserName}-${viewportWidth}-finale.png`),fullPage:true});
  console.log(JSON.stringify({status:"PASS",browser:browserName,width:viewportWidth,episodes:6,teamTurns:12,download:file.suggestedFilename(),overflow,errors:browserErrors.length}));
 }catch(error){
  console.error("Learning game browser journey FAILED",error);
