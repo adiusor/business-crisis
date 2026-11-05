@@ -46,6 +46,13 @@ jobs:
         run: BIP_BROWSER=chromium BIP_WIDTH=1280 node learning/tests/browser.mjs
       - name: Run 12-turn game and download in Safari-like WebKit
         run: BIP_BROWSER=webkit BIP_WIDTH=390 node learning/tests/browser.mjs
+      - name: Save real browser screenshots for design review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opening-night-real-browser-screenshots
+          path: screenshots/learning/
+          if-no-files-found: ignore
       - name: Check that experimental pages are noindex and nothing deploys
         run: |
           grep -q 'noindex,nofollow,noarchive' learning/index.html
