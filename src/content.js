@@ -9,9 +9,9 @@ const advisers=[
 {id:"people",name:"RUTH BELL",role:"PEOPLE DIRECTOR",color:"#c4ae94",line:"Rumours spread faster than corrections."}
 ];
 const episodes=[
-{id:"send",number:"01",time:"09:17",title:"THE SEND",kicker:"A confidential file has escaped",scene:"mail",base:8000,
-brief:"A restructuring memo has reached 600 employees and three major clients. The £240,000-a-year renewal is suddenly in question. The sender is unknown. Your board wants an answer before lunch.",
-headline:"600 EMPLOYEES. THREE CLIENTS. ONE EMAIL.",question:"Do you contain the leak or keep service moving?",pressure:"The sender is unknown. Your response will be judged before the facts are complete.",
+{id:"send",number:"01",time:"09:17",title:"THE SEND",kicker:"One unexpected message. One leadership opportunity.",scene:"mail",base:8000,
+brief:"At 09:17 an internal transformation proposal reaches 600 employees and three major clients. No restructuring decision has been approved. A £240,000-a-year client renewal is approaching, and the board needs a credible plan before lunch.",
+headline:"ONE EMAIL. SIX DECISIONS. YOUR TEAM'S CALL.",question:"How will you protect trust and keep the business moving?",pressure:"The cause is unverified. Balance openness, security and continuity.",
 evidence:[
 {type:"LEAKED EMAIL",time:"09:17",title:"THE FORWARDED MEMO",body:"Subject: RESTRUCTURING — STRICTLY CONFIDENTIAL. The email distribution list includes all staff and three external client contacts. The attachment contains internal cost reductions and a proposed change to service coverage.",clue:"The message was sent, not merely drafted. Deleting it cannot recall copies."},
 {type:"ACCESS LOG",time:"09:12",title:"THE OPEN SESSION",body:"A temporary contractor account accessed the shared documents folder five minutes before the send. The session was due to expire the previous evening.",clue:"An active session is evidence of access, not proof of who sent the email."},
@@ -35,9 +35,9 @@ signals:[
 {name:"OPEN LETTER",line:"We will publish a verified timeline and corrective actions.",delta:{legal:4,workforce:-5,customer:-4},trust:5},
 {name:"NO IMPACT",line:"There will be no impact on service.",delta:{legal:10,ops:5,customer:-5},trust:7,delay:{due:3,cost:8000,label:"Unfunded service assurance",delta:{customer:7}}}
 ]},
-{id:"floor",number:"02",time:"10:06",title:"THE FLOOR",kicker:"Your employees have seen the plan",scene:"floor",base:11000,
-brief:"The leaked memo mentions 40 roles, two depots and a hiring freeze. Staff are comparing screenshots. A team leader says the afternoon shift may refuse overtime.",
-headline:"THE RUMOUR IS NOW THE STORY.",question:"Do you protect the shift or confront the rumour?",pressure:"The proposal is unsigned. The next rota is already fragile.",
+{id:"floor",number:"02",time:"10:06",title:"THE FLOOR",kicker:"Clarity and motivation can change the outcome.",scene:"floor",base:11000,
+brief:"The draft references 40 roles, two depots and a hiring freeze. Colleagues are sharing screenshots and asking questions. A team leader says the afternoon shift may decline extra hours until management explains the proposal.",
+headline:"PEOPLE NEED ANSWERS. THE BUSINESS NEEDS THEM.",question:"How will you engage the team and protect today's service?",pressure:"Proposed role changes are unsigned. An immediate staffing gap still needs a solution.",
 evidence:[
 {type:"STAFF CHAT",time:"09:44",title:"THE SCREENSHOT",body:"A message with the heading 'THEY ALREADY DECIDED' has been reposted hundreds of times. It quotes a preliminary cost model as a final decision.",clue:"The document is real. The interpretation is not yet verified."},
 {type:"SHIFT ROSTER",time:"10:01",title:"THE COVERAGE GAP",body:"Two supervisors have requested leave and four experienced team members are refusing additional hours pending an explanation.",clue:"The next 24 hours are more fragile than the monthly staffing forecast."},
@@ -61,9 +61,9 @@ signals:[
 {name:"PROTECT SERVICE",line:"Our first priority is uninterrupted delivery.",delta:{ops:-4,workforce:5},trust:0},
 {name:"PROMISE JOBS",line:"No one will lose their role as a result of this.",delta:{workforce:-8,legal:12},trust:4,delay:{due:4,cost:12000,label:"Unfunded workforce promise",delta:{legal:6}}}
 ]},
-{id:"client",number:"03",time:"11:24",title:"THE ULTIMATUM",kicker:"The renewal has conditions",scene:"client",base:14000,
+{id:"client",number:"03",time:"11:24",title:"THE CLIENT MEETING",kicker:"Trust is an opportunity you can earn.",scene:"client",base:14000,
 brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00 and a service guarantee that the board can sign.",
-headline:"THE CLIENT IS NOT BUYING CONFIDENCE.",question:"What can you promise before 14:00 — and prove?",pressure:"A £240k annual renewal is at stake. It is not cash in your account.",
+headline:"A RENEWAL IS WON WITH EVIDENCE.",question:"What can you show the client by 14:00 to earn confidence?",pressure:"The £240k annual renewal is at stake, but future contract revenue is not today's cash.",
 evidence:[
 {type:"PROCUREMENT NOTE",time:"11:03",title:"THE CONDITIONS",body:"The client requires an incident owner, an audit trail and a credible plan for uninterrupted service. A full unconditional guarantee is not required.",clue:"A bounded commitment may be more credible than an absolute promise."},
 {type:"FINANCE SHEET",time:"11:12",title:"THE EXPOSURE",body:"The renewal is worth £240,000 per year in revenue, not immediate cash. Emergency response spending draws on the separate £260,000 fund.",clue:"Do not treat future contract value as money available today."},
@@ -87,9 +87,9 @@ signals:[
 {name:"BOARD GUARANTEE",line:"The board guarantees full recovery within 48 hours.",delta:{customer:-6,legal:10,ops:4},trust:8,delay:{due:5,cost:14000,label:"Board guarantee remediation",delta:{legal:4}}},
 {name:"NO NEW PROMISES",line:"We will report when our assessment is complete.",delta:{legal:-5,customer:7},trust:-3}
 ]},
-{id:"press",number:"04",time:"13:12",title:"THE HEADLINE",kicker:"A journalist has the screenshot",scene:"press",base:12000,
+{id:"press",number:"04",time:"13:12",title:"THE PUBLIC CONVERSATION",kicker:"Your response can set a constructive example.",scene:"press",base:12000,
 brief:"A business reporter has obtained the memo and asks for comment within 30 minutes. An employee has posted a contradictory account online. The story is moving beyond the company.",
-headline:"YOU NO LONGER CONTROL THE ROOM.",question:"Correct the public record or stay silent?",pressure:"The reporter has the draft. The truth is narrower than the rumour.",
+headline:"YOUR RESPONSE CAN SHAPE THE STORY.",question:"How will you offer clarity without creating new risks?",pressure:"The journalist has the draft, but the facts are narrower than the rumour.",
 evidence:[
 {type:"PRESS ENQUIRY",time:"12:58",title:"THE JOURNALIST",body:"The reporter asks whether the company plans redundancies and whether client service will be cut. They have the first page of the draft but not its approval status.",clue:"There is a narrow opportunity to correct a material factual error."},
 {type:"SOCIAL POST",time:"13:05",title:"THE ANONYMOUS THREAD",body:"An employee account claims the restructuring was approved last week. The attached screenshot shows an unsigned version.",clue:"The approval claim is unsubstantiated; the underlying document is genuine."},
@@ -113,9 +113,9 @@ signals:[
 {name:"APOLOGISE BROADLY",line:"We apologise for every concern this has caused.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
 {name:"REFUSE COMMENT",line:"We will not comment on internal company matters.",delta:{legal:-2,workforce:7,customer:6},trust:-5}
 ]},
-{id:"warehouse",number:"05",time:"15:40",title:"THE BOTTLENECK",kicker:"The service promise meets reality",scene:"warehouse",base:17000,
+{id:"warehouse",number:"05",time:"15:40",title:"THE DELIVERY TEST",kicker:"Plans count only when the team can deliver.",scene:"warehouse",base:17000,
 brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
-headline:"THE PROMISE IS DUE. THE SHIFT ISN'T READY.",question:"Who carries the cost of saving tonight?",pressure:"Two specialists are exhausted and the backup route remains untested.",
+headline:"THE NEXT SHIFT IS OUR REAL TEST.",question:"How will you deliver while supporting the people doing the work?",pressure:"Two key specialists are fatigued and the backup route still needs validation.",
 evidence:[
 {type:"DELIVERY BOARD",time:"15:16",title:"THE MISSED HANDOVER",body:"One specialist team is short of capacity. The backup route has not been fully tested. There is still a narrow window to protect the critical shipment.",clue:"More money can buy capacity, but not instant experience."},
 {type:"VENDOR LETTER",time:"15:27",title:"THE CONTRACTOR",body:"The contractor requests continued supervised access or a paid transition. Its agreement permits a short emergency extension under supervision.",clue:"An agreed, supervised transition is available, but it requires security controls and money."},
@@ -139,9 +139,9 @@ signals:[
 {name:"EVERYTHING ON TRACK",line:"All delivery commitments remain on schedule.",delta:{customer:-4,legal:8,ops:6},trust:5,delay:{due:6,cost:10000,label:"Unverified delivery assurance",delta:{customer:9}}},
 {name:"INTERNAL ONLY",line:"No external update until the shipment is complete.",delta:{ops:-2,customer:9},trust:-4}
 ]},
-{id:"board",number:"06",time:"17:30",title:"THE BOARD VOTE",kicker:"The final decision will be remembered",scene:"board",base:9000,
+{id:"board",number:"06",time:"17:30",title:"THE NEXT MOVE",kicker:"Choose the company you want to build.",scene:"board",base:9000,
 brief:"The board has your incident log, the cash ledger and the client's final questions. You cannot undo the morning. You can choose what kind of recovery the company will fund.",
-headline:"THE ROOM HAS GONE QUIET.",question:"What will the board fund after today?",pressure:"Your earlier promises, unpaid obligations and remaining cash all count.",
+headline:"SIX DECISIONS LATER, WHAT COMES NEXT?",question:"What will your leadership team invest in next?",pressure:"Your choices have created cash costs, staff responsibilities and opportunities to rebuild trust.",
 evidence:[
 {type:"BOARD PACK",time:"17:02",title:"THE COST OF THE DAY",body:"Every response commitment is now on the ledger. Unresolved contingent liabilities may become payable after this session.",clue:"Remaining cash and pending liabilities are separate. Neither is the client contract value."},
 {type:"CLIENT POSITION",time:"17:18",title:"THE RENEWAL NOTE",body:"The client will judge evidence, continuity and the credibility of future commitments. It will not accept a cosmetic statement as remediation.",clue:"A contract can be conditionally retained even when trust is damaged."},
