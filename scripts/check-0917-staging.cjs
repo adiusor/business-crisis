@@ -26,6 +26,23 @@ for(const token of [
 "environment: business-crisis-staging"]){
  assert.ok(workflow.includes(token),"Missing staging deployment guard: "+token);
 }
+// A successful feature-branch push must NOT automatically overwrite a live
+// physical playtest. The release marker belongs to the latest commit message,
+// never a PR description or an old commit somewhere in the branch history.
+const releaseGuard=workflow.split("\n").find(line=>/^    if: \${\{\{/.test(line));
+assert.ok(releaseGuard,"Missing the deploy-isolated job-level release gate");
+for(const token of [
+"github.repository == 'adiusor/business-crisis'",
+"github.ref == 'refs/heads/feature/0917-corporate-challenge'",
+"vars.BC_STAGING_DEPLOY_ENABLED == 'YES'",
+"github.event_name == 'workflow_dispatch'",
+"github.event_name == 'push'",
+"contains(github.event.head_commit.message, '[release-0917-staging]')"
+]){
+ assert.ok(releaseGuard.includes(token),"Missing explicit staging release condition: "+token);
+}
+assert.ok(workflow.includes("needs: verify-release-policy"),"Deployment must wait for the release-policy verification job");
+assert.ok(workflow.includes("run: node scripts/check-0917-staging.cjs"),"Release policy must be checked on every staging-branch push");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.staging.jsonc"),"Legacy staging may not be redeployed");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.jsonc"),"Original preview may not be deployed");
 assert.ok(!workflow.includes("secrets.CLOUDFLARE_API_TOKEN"),"Never substitute unrelated credential");
