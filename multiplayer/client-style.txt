@@ -899,3 +899,154 @@ body:not(.projector-mode) .evidence-item summary:hover{background:#183340}
  .projector-mode.in-game .evidence-item summary:after{margin-top:4px;font-size:9px}
  .projector-mode.in-game footer{display:none}
 }
+
+
+/* V6: projectors use finite physical screens; host is a normal document. */
+#copy-projector-link{margin:9px 0 0 9px}
+.projection-label{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#copy-projector-view{font-size:11px;min-height:34px;padding:6px 11px}
+.evidence-folder{border:0;margin:0;padding:0;min-width:0}
+.evidence-folder-summary{display:none;position:relative;cursor:pointer;list-style:none;
+ border:1px solid #527487;background:#13303f;padding:12px 35px 12px 13px;color:#f2c298}
+.evidence-folder-summary::-webkit-details-marker{display:none}
+.evidence-folder-summary strong{display:block;font-size:12px;letter-spacing:.06em}
+.evidence-folder-summary span{display:block;font-size:13px;line-height:1.4;margin:3px 0 0;color:#d4e3e7}
+.evidence-folder-summary:after{content:"+";position:absolute;right:14px;top:11px;font-size:20px}
+.evidence-folder[open]>.evidence-folder-summary:after{content:"−"}
+.dismiss-brief,.dismiss-exhibit{display:none}
+@media(max-width:700px){
+ .player-view.in-game .episode-panel{padding:12px;margin:8px 0 13px}
+ .player-view.in-game .scene-hero{min-height:0;gap:0}
+ .player-view.in-game .scene-art{min-height:89px;max-height:96px}
+ .player-view.in-game .scene-art svg{max-height:98px}
+ .player-view.in-game .scene-copy h3{font-size:clamp(36px,10vw,54px)!important;margin:6px 0 9px}
+ .player-view.in-game .scene-kicker{margin:4px 0}
+ .player-view.in-game .scene-headline{font-size:16px;line-height:1.28}
+ .player-view.in-game .scene-facts{margin:9px 0 3px}
+ .player-view.in-game .scene-fact{min-height:51px;padding:6px 7px}
+ .player-view.in-game .episode-progress{margin:5px 0 8px}
+ .player-view.in-game .scene-directive{margin:10px 0 5px}
+ .player-view.in-game .scene-pressure{display:none}
+ .player-view.in-game .briefing-details{margin:7px 0}
+ .player-view.in-game .evidence-folder-summary{display:block}
+ .player-view.in-game .evidence-folder>.evidence-heading{margin:8px 0 5px}
+ .player-view.in-game .evidence-item summary{padding:10px;min-height:0}
+ .player-view.in-game .evidence-item{margin:0}
+ .player-view.in-game .evidence-summary strong{font-size:15px}
+ .player-view.in-game .evidence-finding{font-size:13px;line-height:1.33}
+ .player-view.in-game .evidence-list{gap:6px}
+ .player-view.in-game #player-actions>.section-label{margin-top:15px}
+ .player-view.in-game #timer-wrap{padding:6px 9px;margin:7px 0}
+ .player-view.in-game #timer-wrap strong{font-size:37px;line-height:1}
+ .player-view.in-game #timer-wrap p{display:none}
+}
+@media(min-width:960px){
+ body.projector-mode{min-height:0;height:100dvh;overflow:hidden}
+ .projector-mode>footer{display:none}
+ .projector-mode .masthead{height:54px;min-height:54px;padding:6px 2.4vw}
+ .projector-mode .brand-mark{padding:6px 9px;font-size:18px}
+ .projector-mode .brand{font-size:15px;gap:11px}
+ .projector-mode .brand small{font-size:9px;margin-top:2px}
+ .projector-mode .layout{height:calc(100dvh - 54px);padding:7px 2.3vw 8px;max-width:1600px;min-height:0;overflow:hidden}
+ .projector-mode .content-panel{height:100%;padding:9px 15px;display:flex;flex-direction:column;overflow:hidden}
+ .projector-mode #room-screen{display:flex;flex-direction:column;min-height:0;flex:1;gap:0}
+ .projector-mode .room-bar{flex:0 0 auto}
+ .projector-mode .privacy-note{display:none}
+ .projector-mode:not(.in-game):not(.game-complete) .room-bar{margin:0 0 5px}
+ .projector-mode:not(.in-game):not(.game-complete) .room-bar h2{font-size:53px;line-height:1.05;margin:1px 0 0}
+ .projector-mode:not(.in-game):not(.game-complete) #viewer-mode{margin:3px 0 8px;font-size:10px;min-height:33px}
+ .projector-mode:not(.in-game):not(.game-complete) .projector-invite{
+   margin:0 0 6px;padding:11px 16px;gap:14px;
+   grid-template-columns:minmax(0,1fr) 180px;min-height:190px;max-height:196px}
+ .projector-mode:not(.in-game):not(.game-complete) .projector-invite img{
+   width:172px;height:172px;border-width:5px}
+ .projector-mode:not(.in-game):not(.game-complete) .projector-invite-copy strong{
+   margin:4px 0;font-size:clamp(21px,2vw,27px);line-height:1.12}
+ .projector-mode:not(.in-game):not(.game-complete) .projector-invite-copy p{font-size:14px;margin:5px 0}
+ .projector-mode:not(.in-game):not(.game-complete) .projector-invite-copy a{font-size:12px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules{margin:4px 0 7px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules>summary{padding:6px 11px;min-height:37px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules>summary strong{font-size:18px}
+ .projector-mode:not(.in-game):not(.game-complete) #projector-intervention{
+   font-size:10px;margin:4px 0;padding:6px 10px;line-height:1.1}
+ .projector-mode:not(.in-game):not(.game-complete) #team-heading{margin:7px 0 5px;font-size:11px}
+ .projector-mode:not(.in-game):not(.game-complete) #team-list{
+   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .projector-mode:not(.in-game):not(.game-complete) .team{padding:7px 10px;min-height:48px}
+ .projector-mode:not(.in-game):not(.game-complete) .team strong{font-size:15px}
+ .projector-mode:not(.in-game):not(.game-complete) .team small{margin-top:1px;font-size:10px}
+ .projector-mode:not(.in-game):not(.game-complete) .team .meta{font-size:10px}
+ .projector-mode.in-game .room-bar{position:absolute;top:10px;right:2.3vw}
+ .projector-mode.in-game #round-recap,.projector-mode.in-game #team-list,
+ .projector-mode.in-game #team-heading{display:none!important}
+ .projector-mode.in-game #timer-wrap{flex:0 0 auto;margin:0 0 4px;padding:2px 10px}
+ .projector-mode.in-game .projector-ticker{flex:0 0 auto;margin:0 0 5px;gap:5px;
+   grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+ .projector-mode.in-game .ticker-team{padding:4px 9px;min-height:41px}
+ .projector-mode.in-game .ticker-team strong{font-size:14px;margin:0}
+ .projector-mode.in-game .ticker-clock,.projector-mode.in-game .ticker-status{font-size:10px}
+ .projector-mode.in-game #projector-intervention{flex:0 0 auto;margin:2px 0 4px;padding:4px 8px}
+ .projector-mode.in-game .episode-panel{
+   display:flex;flex-direction:column;flex:1 1 auto;min-height:0;
+   padding:8px 12px;margin:0;overflow:hidden}
+ .projector-mode.in-game .scene-hero{min-height:0;flex:0 0 auto}
+ .projector-mode.in-game .scene-art{min-height:145px;max-height:150px}
+ .projector-mode.in-game .scene-art svg{max-height:152px}
+ .projector-mode.in-game .scene-copy h3{margin:2px 0 5px}
+ .projector-mode.in-game .episode-progress{flex:0 0 auto;margin:4px 0 5px}
+ .projector-mode.in-game .briefing-details{flex:0 0 auto;margin:2px 0 4px}
+ .projector-mode.in-game .evidence-folder{min-height:0;flex:1 1 auto;display:flex;flex-direction:column}
+ .projector-mode.in-game .evidence-heading{flex:0 0 auto;margin:2px 0 4px}
+ .projector-mode.in-game .evidence-list{min-height:0;flex:1 1 auto;align-items:stretch;gap:8px}
+ .projector-mode.in-game .evidence-item{min-height:0;display:flex;flex-direction:column}
+ .projector-mode.in-game .evidence-item summary{min-height:0;height:100%;padding:8px 11px;gap:5px}
+ .projector-mode.in-game .evidence-finding{font-size:clamp(14px,1.28vw,17px);line-height:1.28}
+ .projector-mode.in-game .evidence-summary strong{font-size:clamp(15px,1.4vw,19px)}
+ .projector-mode.in-game .evidence-item summary:after{margin-top:auto}
+ .projector-mode.in-game .evidence-item[open]{
+   position:fixed;inset:9vh 8vw;z-index:80;min-height:0;
+   padding:18px 24px!important;border:2px solid #eabb89;
+   background:#0d2635;box-shadow:0 0 0 100vmax #02101ae8,0 10px 80px #000}
+ .projector-mode.in-game .evidence-item[open] summary{height:auto;min-height:0}
+ .projector-mode.in-game .evidence-item[open] .evidence-source{
+   padding:12px 12px 14px;overflow:auto;max-height:60dvh}
+ .projector-mode.in-game .evidence-item[open] .evidence-source p{
+   font-size:clamp(18px,2.1vw,25px);line-height:1.5;max-width:65ch}
+ .projector-mode.in-game .dismiss-exhibit{display:block;margin-top:14px;
+   font-size:12px;background:#edb47e;color:#112432}
+ .projector-mode.in-game .briefing-details[open]{
+   position:fixed;inset:10vh 8vw;z-index:80;display:block;
+   overflow-y:auto;background:#0c2533;border:2px solid #eabb89;
+   box-shadow:0 0 0 100vmax #02101ae8,0 10px 80px #000}
+ .projector-mode.in-game .briefing-details[open] summary{
+   font-size:19px;padding:20px 22px}
+ .projector-mode.in-game .briefing-details[open] .episode-intro{
+   font-size:clamp(18px,2vw,25px);padding:8px 24px 18px;line-height:1.55}
+ .projector-mode.in-game .dismiss-brief{display:block;margin:0 24px 20px;
+   background:#edb47e;color:#112432}
+ .projector-mode.game-complete .room-bar,.projector-mode.game-complete #viewer-mode,
+ .projector-mode.game-complete #team-list,.projector-mode.game-complete #team-heading,
+ .projector-mode.game-complete #round-recap{display:none!important}
+ .projector-mode.game-complete #results{display:flex;flex:1;min-height:0;
+   align-items:stretch;margin:0;padding:0;border:0}
+ .projector-mode.game-complete .projection-verdict{min-height:0;width:100%;display:flex;
+   flex-direction:column;gap:12px;padding:clamp(16px,3vh,28px);
+   border:1px solid #b08b68;background:linear-gradient(145deg,#1c3442,#0c202d)}
+ .projection-verdict-kicker{font:800 13px ui-monospace,monospace;letter-spacing:.1em;color:#eabc8e}
+ .projection-verdict h2{font-size:clamp(38px,5vw,67px);margin:0;line-height:1}
+ .projection-champion-label{font-size:13px;color:#f0b98b;font-weight:800;letter-spacing:.12em;margin:0}
+ .projection-champion{font-size:clamp(22px,3.5vw,42px);margin:0;color:#fff0da;line-height:1.15}
+ .projection-rankings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;flex:1;min-height:0}
+ .projection-rank{min-height:0;padding:12px 16px;display:grid;grid-template-columns:42px 1fr auto;
+   gap:8px;align-items:center;background:#143140;border:1px solid #537381}
+ .projection-rank-number{font:900 27px ui-monospace,monospace;color:#dfab7c}
+ .projection-rank-name strong{display:block;font-size:clamp(16px,1.8vw,23px);line-height:1.2}
+ .projection-rank-name small{display:block;font-size:11px;color:#c4d4d9}
+ .projection-rank-score{font:800 22px ui-monospace,monospace;color:#f4c391;white-space:nowrap}
+ .projection-rank-metrics{grid-column:2/4;font-size:13px;color:#d1e2e4}
+ .projection-verdict-foot{margin:0;color:#c9dade;font-size:13px}
+}
+@media(max-width:959px){.projector-mode .evidence-folder{display:block}}
+@media(prefers-reduced-motion:reduce){
+ .projector-mode.in-game .evidence-item,.projector-mode.in-game .briefing-details{transition:none}
+}
