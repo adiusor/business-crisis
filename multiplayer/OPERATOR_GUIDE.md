@@ -26,7 +26,7 @@
 ## Closing the session
 - The **Boardroom Verdict** ranks teams by economic score less time penalties (floored at zero). Equal final scores break on remaining cash; only exact score-and-cash ties share the title.
 - Winning the **championship** also requires renewed client-contract status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best crisis response without falsely saying every contract was lost.
-- The report shows cash, risk, trust and all six decisions. Use **DOWNLOAD RESULTS** for an immediate offline HTML file, or **PRINT / SAVE AS PDF** for a PDF through the browser. Neither requires contact details.
+- The report shows cash, risk, trust and all six decisions. Use **DOWNLOAD RESULTS · PDF** to save the complete vector PDF immediately. Neither requires contact details.
 - Suggested debrief: Which evidence changed your mind? Which public promise was most expensive? When did disagreement improve the team decision?
 - The sender's identity is intentionally **unconfirmed**. Contractor access evidence is not proof of who leaked the memo.
 
@@ -46,4 +46,4 @@ The 720p projector lobby keeps room code, QR and team readiness on a single scre
 - Once a player locks their vote, the ballot form vanishes. They see their two private advisers and waiting/locked status. After the last round, the Boardroom page opens with team rankings and collapsible financial detail; **COMPARE ALL TEAMS** provides expandable six-episode, side-by-side decision history.
 
 ## Local-only results and download clarity
-The primary Boardroom action is **DOWNLOAD RESULTS**: a self-contained local HTML file containing the public ranked team outcome, factual awards and six-episode comparison. A secondary **PRINT / SAVE AS PDF** uses the browser's print dialog. Results are never sent by email and no email feature is planned. The fictional forwarded email in the story is unrelated to results delivery.
+The Boardroom action is **DOWNLOAD RESULTS · PDF**: one click downloads a locally generated PDF containing public rankings, visual charts, and all six episode comparisons. Results are never sent by email and no email feature is planned. The fictional forwarded email in the story is unrelated to results delivery.
