@@ -893,6 +893,61 @@
     }
     target.append(details);
   }
+  function renderHostControlRoom(){
+    const target=$("host-control-room");
+    const showHost=state?.viewer.role==="host"&&state.phase!=="complete";
+    target.hidden=!showHost;
+    target.replaceChildren();
+    if(!showHost)return;
+    const live=state.phase==="advisers",total=state.teams.length;
+    const ready=state.teams.filter(t=>live?t.locked:t.ready).length;
+    const top=node("div",null,"host-command-heading");
+    const copy=node("div",null,"host-command-copy");
+    copy.append(node("small",live?"FACILITATOR / LIVE OPERATIONS":"FACILITATOR / BEFORE THE INCIDENT"));
+    copy.append(node("h2",live?"YOUR ROOM. YOUR CALL.":"PREPARE THE ROOM."));
+    copy.append(node("p",live?
+      "Watch participation and time, not private advice or anyone's ballot. Teams decide. You control when the next incident starts.":
+      "Invite your players, check team attendance and read the rules aloud. Start when every team has at least one person."));
+    top.append(copy);
+    const tally=node("div",null,"host-command-tally");
+    tally.append(node("strong",ready+" / "+total));
+    tally.append(node("small",live?"TEAMS FINISHED":"TEAMS REPRESENTED"));
+    top.append(tally);target.append(top);
+    const grid=node("div",null,"host-command-grid");
+    state.teams.forEach((team,i)=>{
+      const card=node("article",null,"host-command-team"+(team.locked?" is-ready":""));
+      const name=node("div",null,"host-command-team-name");
+      name.append(node("strong",team.name));
+      name.append(node("span",live?(team.timedOut?"TIME EXPIRED":team.locked?
+        "RESPONSE LOCKED":"DECIDING"):(team.ready?"REPRESENTED":"WAITING FOR PLAYER"),"host-command-team-status"));
+      card.append(name);
+      const count=team.eligibleVoters??team.joined;
+      const votes=Math.min(team.votesSubmitted||0,count);
+      const metrics=node("div",null,"host-command-team-metrics");
+      metrics.append(node("span",team.joined+" IN TEAM"));
+      if(live)metrics.append(node("span",votes+" / "+count+" VOTES FILED"));
+      card.append(metrics);
+      if(live){
+        const track=node("div",null,"host-command-track");
+        const fill=node("span",null,"host-command-fill");
+        fill.style.width=(count?Math.round(votes/count*100):0)+"%";
+        track.append(fill);card.append(track);
+        const clock=node("small",null,"team-clock host-command-clock");
+        clock.dataset.teamClock=String(i);card.append(clock);
+      }
+      grid.append(card);
+    });
+    target.append(grid);
+    const foot=node("div",null,"host-command-foot");
+    foot.append(node("span",live?
+      (ready===total?"ALL TEAMS FINISHED · THE NEXT SCENE IS YOUR CALL":
+        "SHARED CLOCK / EVERY TEAM HAS ITS OWN RESPONSE DEADLINE"):
+      "THE INCIDENT STARTS ONLY WHEN EVERY TEAM HAS JOINED"));
+    foot.append(button(live?"REVIEW ROUND CONTROLS":"REVIEW START CONTROLS",()=>{
+      $("host-actions").scrollIntoView({behavior:"smooth",block:"center"});
+    },"secondary"));
+    target.append(foot);
+  }
   function renderHostActions() {
     const target = $("host-actions");
     target.replaceChildren();
@@ -1217,7 +1272,7 @@
       $("host-play-link").href=link;
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
-    renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderFacilitatorLog(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
+    renderEpisode(); renderRecap(); renderTeams(); renderHostControlRoom(); renderReadyNotice(); renderFacilitatorLog(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
     renderDecisionDock();renderRosterNotifications();renderHostReadyDialog();tick();
     $("leave-room").hidden=state.viewer.role!=="player"||state.phase==="complete";
     if(prevCode===state.code &&
