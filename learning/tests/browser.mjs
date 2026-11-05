@@ -34,6 +34,14 @@ try{
      const heading=await page.locator("h1.title").textContent();
      assert.equal(heading.trim(),labels[round]);
      assert.ok(await page.locator('[aria-label="Team collaboration challenge"]').count());
+     assert.equal(await page.locator(".scene-illustration").count(),1,"Every scene needs an original illustration");
+     assert.ok(await page.locator("#case-file summary").isVisible(),"Evidence must be accessible without forcing reading");
+     if(round===0&&i===0&&viewportWidth<=390){
+       const y=await page.locator('.scene-jump a[href="#consult"]').evaluate(el=>el.getBoundingClientRect().top);
+       assert.ok(y<820,"The primary adviser action must be visible in the first mobile viewport: "+y);
+       const overflowScene=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+       assert.ok(overflowScene<=2,"The first scene must not scroll horizontally");
+     }
      if(round===0&&i===0)await page.screenshot({path:path.join(shots,`${browserName}-${viewportWidth}-first-scene.png`),fullPage:true});
      assert.equal(await page.locator('[data-action="adviser"]').count(),6);
      await tap('[data-action="adviser"][data-index="0"]');
