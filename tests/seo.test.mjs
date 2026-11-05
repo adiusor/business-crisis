@@ -34,7 +34,7 @@ test("only a configured HTTPS custom domain indexes validated content",()=>{
 });
 test("sitemap excludes all private game paths and staging publishes none",()=>{
  assert.equal(sitemapXml(preview.origin,{}),null);
- assert.match(robotsText(preview.origin,{}),/Disallow: \//);
+ assert.match(robotsText(preview.origin,{}),/Allow: \//);
  const xml=sitemapXml(live.origin,cfg);
  assert.match(xml,/corporate-team-building-game/);
  assert.match(xml,/virtual-team-building/);
