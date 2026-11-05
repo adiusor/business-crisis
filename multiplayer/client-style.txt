@@ -1050,3 +1050,22 @@ body:not(.projector-mode) .evidence-item summary:hover{background:#183340}
 @media(prefers-reduced-motion:reduce){
  .projector-mode.in-game .evidence-item,.projector-mode.in-game .briefing-details{transition:none}
 }
+
+
+/* Projector's optional 6-rule briefing is an overlay, not a pushdown panel. */
+@media(min-width:960px){
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open]{
+  position:fixed;inset:5vh 5vw;z-index:75;overflow:auto;
+  display:block;padding:12px 16px;background:#0b2535;border:2px solid #e4ae7a;
+  box-shadow:0 0 0 100vmax #031019e8,0 12px 70px #000}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open]>summary{
+  position:sticky;top:0;z-index:1;background:#153340;padding:12px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open] .briefing-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:10px 0}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open] .rule-card{
+  padding:16px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open] .rule-card strong{
+  font-size:14px}
+ .projector-mode:not(.in-game):not(.game-complete) .game-rules[open] .rule-card p{
+  font-size:15px}
+}
