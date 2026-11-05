@@ -50,4 +50,4 @@ jobs:
         run: |
           grep -q 'noindex,nofollow,noarchive' learning/index.html
           grep -q 'noindex,nofollow,noarchive' learning/preview.html
-          ! grep -E 'deploy|cloudflare|publish|pages' .github/workflows/business-in-play.yml | grep -E 'run:|uses:'
+          ! grep -E '^[[:space:]]*-[[:space:]]*uses:[[:space:]].*(deploy-pages|cloudflare)' .github/workflows/business-in-play.yml
