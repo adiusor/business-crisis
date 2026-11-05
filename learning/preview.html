@@ -1,0 +1,1537 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b1619"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="description" content="Opening Night: an original six-scene interactive business education and team-building case, experimental single-device preview."><title>Opening Night — Business in Play | Experimental team learning game</title><style>
+:root{--bg:#0b1619;--surface:#142328;--surface2:#1b3136;--edge:#355459;--ink:#f6f2e9;--muted:#b6c8c9;--gold:#f0ca87;--aqua:#9ed7cc;--rose:#ecab9a;--focus:#f0ca87}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--bg);font:16px/1.52 -apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif}button,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.42}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:3px}a{color:var(--gold)}.wrap{max-width:1250px;padding:0 5vw;margin:auto}.mast{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:19px 5vw;border-bottom:1px solid var(--edge)}.brand{font-weight:850;letter-spacing:.12em;font-size:12px}.brand strong{font:700 30px/1 Georgia,serif;color:var(--gold);border:1px solid var(--gold);padding:4px 8px;margin-right:10px}.eyebrow{text-transform:uppercase;color:var(--gold);font-size:12px;font-weight:800;letter-spacing:.15em}.subtle{color:var(--muted)}.title{font:400 clamp(44px,6.5vw,84px)/1.02 Georgia,'Times New Roman',serif;letter-spacing:-.045em;margin:15px 0}.title em{color:var(--gold);font-style:normal}.lead{font-size:clamp(18px,2vw,24px);color:#d7e5e0;max-width:770px}.hero{padding:62px 0 42px;border-bottom:1px solid var(--edge)}.hero-art{margin:30px 0;min-height:220px;background:#20383b;border:1px solid #4e7273;display:flex;align-items:center;justify-content:space-around;gap:12px;overflow:hidden;position:relative}.hero-art:after{content:'OPENING NIGHT';position:absolute;bottom:14px;left:20px;font-size:11px;letter-spacing:.3em;color:#c0d8d3}.disk{width:clamp(140px,23vw,275px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 30%,#e8d9a1,#bc815f);box-shadow:0 0 0 25px #ffffff08,0 0 0 50px #ffffff06;display:grid;place-items:center;transform:rotate(-14deg);color:#173138;font:700 clamp(26px,5vw,55px)/1 Georgia,serif;text-align:center}.shape{font:700 clamp(32px,6vw,80px)/1 Georgia,serif;color:#a2cec5}.primary,.secondary{border:1px solid var(--gold);padding:13px 20px;min-height:50px;border-radius:2px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:12px}.primary{background:var(--gold);color:#10252a}.primary:hover:not(:disabled){background:#fbe2b3}.secondary{background:transparent;color:var(--ink);border-color:#6a898c}.secondary:hover{background:#284147}.row{display:flex;align-items:center;flex-wrap:wrap;gap:12px}.gap{margin:24px 0}.section{padding:35px 0 55px}.small{font-size:13px}.chip{display:inline-flex;border:1px solid var(--edge);padding:7px 11px;font-size:12px;color:var(--muted)}.steps{display:flex;gap:6px;overflow:auto;padding:22px 0}.steps span{border-top:3px solid #415a5e;flex:1;min-width:120px;padding-top:10px;color:var(--muted);font-size:11px;letter-spacing:.07em}.steps span.on{border-color:var(--gold);color:var(--ink)}.panel{background:var(--surface);border:1px solid var(--edge);padding:24px;margin:18px 0}.two{display:grid;grid-template-columns:1.15fr .85fr;gap:20px}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.choice{display:block;text-align:left;width:100%;color:var(--ink);padding:18px;min-height:138px;background:var(--surface);border:1px solid #4b6d70;transition:background .2s,border-color .2s}.choice:hover:not(:disabled){background:#20383c}.choice[aria-pressed=true]{background:#25443f;border:2px solid var(--gold);padding:17px}.choice strong{font:400 25px Georgia,serif;display:block;margin:10px 0}.choice small{display:block;color:var(--muted);line-height:1.45}.choice .cost{color:var(--rose)}.metric{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--edge);padding:9px 0;font-size:14px}.metric strong{font-variant-numeric:tabular-nums}.hint{border-left:3px solid var(--gold);padding:12px 15px;background:#203336;color:var(--ink)}.status{margin:18px 0;padding:15px;background:var(--surface2);border:1px solid #45666a}.locked{color:var(--aqua)}.muted{color:var(--muted)}.episode-num{font-size:12px;letter-spacing:.2em;color:var(--gold)}.time{color:var(--aqua);font-variant-numeric:tabular-nums;font-size:16px}.brief{font-size:clamp(17px,2vw,22px)}.exhibits{display:grid;gap:12px}.exhibit{padding:16px;border:1px solid #496468;background:#182a30}.exhibit .label{color:var(--gold);text-transform:uppercase;letter-spacing:.08em;font-size:11px}.exhibit h3{margin:10px 0 4px;font:400 22px Georgia,serif}.exhibit p{margin:5px 0;font-size:14px;color:#d1e0df}.notes{margin:22px 0;padding:18px;background:#213939;border-left:4px solid var(--gold)}.notes p{margin:8px 0}.debrief{padding:21px;margin:20px 0;border:1px solid #537673;background:#20332e}.report{display:grid;grid-template-columns:1fr 1fr;gap:12px}.leader{background:#203c38;border:1px solid var(--gold);padding:22px}.winner{font:400 35px Georgia,serif}.footer{margin:40px 0;padding-top:15px;border-top:1px solid var(--edge);font-size:12px;color:#a9c1c0}.skip{position:absolute;left:-9999px}.skip:focus{left:12px;top:12px;background:#fff;color:#000;z-index:999;padding:10px}h2{font:400 clamp(30px,4vw,52px) Georgia,serif;letter-spacing:-.02em;margin:12px 0 18px}h3{font:400 26px Georgia,serif}p{margin:11px 0}ul{padding-left:24px}label{display:block;margin:12px 0 6px;font-weight:700}select{background:var(--surface);color:var(--ink);border:1px solid #729194;min-height:48px;padding:8px 12px;width:min(320px,100%)}[hidden]{display:none!important}@media(max-width:850px){.two,.report{grid-template-columns:1fr}.grid3{grid-template-columns:1fr}.hero{padding-top:35px}.hero-art{min-height:170px}.disk{height:150px;width:150px}}@media(max-width:560px){.grid2{grid-template-columns:1fr}.mast{padding:13px 5vw}.brand{font-size:10px}.hero-art{min-height:160px}.disk{width:110px;height:110px}.panel{padding:16px}.choice{min-height:100px}.title{font-size:clamp(41px,11vw,65px)}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+</style></head><body><a class="skip" href="#app">Skip to game</a><header class="mast"><div class="brand"><strong>B•</strong> BUSINESS IN PLAY</div><div class="eyebrow">EXPERIMENTAL / SHARED-DEVICE</div></header><main id="app" class="wrap" aria-live="off"></main><div class="wrap"><footer class="footer">ORIGINAL FICTION · NOT AFFILIATED WITH PEARSON OR HARVARD · NO PERSONAL DATA REQUIRED · NOT A LIVE MULTIPLAYER SERVER</footer></div>
+<script>
+(function(g){
+"use strict";
+const advisers=[
+{id:"legal",name:"MARA VALE",role:"GENERAL COUNSEL",color:"#b9a6a0",line:"What you say now becomes evidence."},
+{id:"ops",name:"DANIEL ROOK",role:"OPERATIONS DIRECTOR",color:"#a9bbc4",line:"The business still has to open tomorrow."},
+{id:"client",name:"INES PARK",role:"CLIENT PARTNER",color:"#b4a6b5",line:"Trust is built in the uncomfortable call."},
+{id:"finance",name:"ELI MERCER",role:"FINANCE CONTROLLER",color:"#9fbaa9",line:"Cash doesn't care about your intentions."},
+{id:"security",name:"NOOR SHAH",role:"SECURITY LEAD",color:"#a9b3c6",line:"A timestamp is a clue, not a verdict."},
+{id:"people",name:"RUTH BELL",role:"PEOPLE DIRECTOR",color:"#c4ae94",line:"Rumours spread faster than corrections."}
+];
+const episodes=[
+{id:"send",number:"01",time:"09:17",title:"THE SEND",kicker:"A confidential file has escaped",scene:"mail",base:8000,
+brief:"A restructuring memo has reached 600 employees and three major clients. The £240,000-a-year renewal is suddenly in question. The sender is unknown. Your board wants an answer before lunch.",
+headline:"600 EMPLOYEES. THREE CLIENTS. ONE EMAIL.",question:"Do you contain the leak or keep service moving?",pressure:"The sender is unknown. Your response will be judged before the facts are complete.",
+evidence:[
+{type:"LEAKED EMAIL",time:"09:17",title:"THE FORWARDED MEMO",body:"Subject: RESTRUCTURING — STRICTLY CONFIDENTIAL. The email distribution list includes all staff and three external client contacts. The attachment contains internal cost reductions and a proposed change to service coverage.",clue:"The message was sent, not merely drafted. Deleting it cannot recall copies."},
+{type:"ACCESS LOG",time:"09:12",title:"THE OPEN SESSION",body:"A temporary contractor account accessed the shared documents folder five minutes before the send. The session was due to expire the previous evening.",clue:"An active session is evidence of access, not proof of who sent the email."},
+{type:"CLIENT MESSAGE",time:"09:26",title:"THE FIRST CALL",body:"Your largest client asks whether the restructuring plan will affect the service they pay for. Procurement is copied into the message.",clue:"They are asking about delivery confidence, not just confidentiality."}
+],
+advice:[
+"Preserve the original message and access logs. Do not name a culprit or assert containment until you can prove it.",
+"Any blanket shutdown may stop the overnight delivery handover. Plan a continuity route before revoking access.",
+"Call the renewal client with confirmed facts. Silence will be interpreted as avoidance.",
+"£260k is your 90-day response fund. The £240k renewal is annual contract value, not spendable cash.",
+"An open contractor session is a lead, not an attribution. Separate access evidence from transmission evidence.",
+"Staff will see the restructuring language as a threat. Acknowledgement must precede reassurance."
+],
+plans:[
+{name:"CONTAIN THE LEAK",verb:"Secure the perimeter",desc:"Suspend external sharing, preserve evidence and open a focused investigation.",benefits:["Limits further exposure","Protects forensic evidence"],cost:"Investigation costs money; delivery slows.",spend:18000,delta:{legal:-11,ops:6,workforce:2,customer:-8},trust:8,fallout:"The client receives a careful factual update. Investigators begin work, but operations report a slower handover.",tag:"CONTROL"},
+{name:"PULL THE PLUG",verb:"Freeze everything",desc:"Shut down contractor access and outbound file sharing immediately.",benefits:["Rapidly closes access","Demonstrates visible action"],cost:"Service interruption and contractor claims become likely.",spend:32000,delta:{legal:-14,ops:16,workforce:7,customer:-4},trust:3,delay:{due:2,cost:9000,label:"Emergency restoration after blanket shutdown",delta:{ops:5}},fallout:"Access is cut. So is part of tomorrow's delivery pipeline. Your client now wants an operational recovery plan.",tag:"SHUTDOWN"},
+{name:"CALL THE CLIENT",verb:"Protect the relationship",desc:"Keep services running and brief the client immediately while investigation starts.",benefits:["Preserves delivery","Builds client confidence"],cost:"Exposure remains open longer; early assurances carry legal risk.",spend:9000,delta:{legal:12,ops:-3,workforce:-2,customer:-14},trust:12,delay:{due:2,cost:13000,label:"Late forensic remediation",delta:{legal:5}},fallout:"The client appreciates the direct call. Security warns that the source of the leak is still unresolved.",tag:"RELATIONSHIP"}
+],
+signals:[
+{name:"FACTS ONLY",line:"We have confirmed an unauthorised distribution and are investigating.",delta:{legal:-3,customer:-2},trust:2},
+{name:"OPEN LETTER",line:"We will publish a verified timeline and corrective actions.",delta:{legal:4,workforce:-5,customer:-4},trust:5},
+{name:"NO IMPACT",line:"There will be no impact on service.",delta:{legal:10,ops:5,customer:-5},trust:7,delay:{due:3,cost:8000,label:"Unfunded service assurance",delta:{customer:7}}}
+]},
+{id:"floor",number:"02",time:"10:06",title:"THE FLOOR",kicker:"Your employees have seen the plan",scene:"floor",base:11000,
+brief:"The leaked memo mentions 40 roles, two depots and a hiring freeze. Staff are comparing screenshots. A team leader says the afternoon shift may refuse overtime.",
+headline:"THE RUMOUR IS NOW THE STORY.",question:"Do you protect the shift or confront the rumour?",pressure:"The proposal is unsigned. The next rota is already fragile.",
+evidence:[
+{type:"STAFF CHAT",time:"09:44",title:"THE SCREENSHOT",body:"A message with the heading 'THEY ALREADY DECIDED' has been reposted hundreds of times. It quotes a preliminary cost model as a final decision.",clue:"The document is real. The interpretation is not yet verified."},
+{type:"SHIFT ROSTER",time:"10:01",title:"THE COVERAGE GAP",body:"Two supervisors have requested leave and four experienced team members are refusing additional hours pending an explanation.",clue:"The next 24 hours are more fragile than the monthly staffing forecast."},
+{type:"DRAFT MEMO",time:"08:30",title:"THE UNSIGNED PLAN",body:"The restructuring proposal carries no board approval. A margin note says 'subject to consultation and client commitments'.",clue:"Management can truthfully say no final decision has been taken."}
+],
+advice:[
+"Consultation language matters. Do not treat a draft as an approved redundancy decision.",
+"Your immediate constraint is shift coverage. The company cannot communicate its way around an empty depot.",
+"A visible staff dispute will be noticed by clients faster than any official update.",
+"An open-ended overtime guarantee is a liability. Put a cap on it.",
+"Lock down copies of the memo without deleting the audit trail or silencing legitimate staff discussion.",
+"Speak directly to employees. Managers-only messages will be read as concealment."
+],
+plans:[
+{name:"OPEN THE ROOM",verb:"Face the workforce",desc:"Hold a live all-staff briefing, explain what is draft, and establish consultation.",benefits:["Cuts speculation","Creates a credible channel"],cost:"Management time and consultation costs; some operations pause.",spend:16000,delta:{workforce:-17,legal:-5,ops:5,customer:-2},trust:4,fallout:"Staff challenge the plan in public, but the most damaging rumour loses momentum.",tag:"DIALOGUE"},
+{name:"KEEP THE LINE MOVING",verb:"Brief managers only",desc:"Give team leaders talking points and prioritise today's service coverage.",benefits:["Protects the shift","Low immediate cash cost"],cost:"Staff may see a closed-door response as evasive.",spend:8000,delta:{ops:-9,workforce:14,legal:3,customer:3},trust:-2,fallout:"The shift starts on time. By lunch, an anonymous staff account is publishing screenshots of your talking points.",tag:"CONTINUITY"},
+{name:"BUY BREATHING ROOM",verb:"Offer temporary protection",desc:"Fund limited retention bonuses and a temporary overtime guarantee.",benefits:["Stabilises coverage","Signals tangible support"],cost:"Expensive precedent and deferred wage obligations.",spend:29000,delta:{workforce:-21,ops:-6,legal:4,customer:-3},trust:3,delay:{due:4,cost:10000,label:"Temporary overtime guarantee",delta:{liquidity:4}},fallout:"The rota fills. Finance asks how many more weeks you can afford this promise.",tag:"CASH"}
+],
+signals:[
+{name:"INVITE QUESTIONS",line:"No final decisions have been approved. Ask us directly.",delta:{workforce:-6,legal:-2},trust:2},
+{name:"PROTECT SERVICE",line:"Our first priority is uninterrupted delivery.",delta:{ops:-4,workforce:5},trust:0},
+{name:"PROMISE JOBS",line:"No one will lose their role as a result of this.",delta:{workforce:-8,legal:12},trust:4,delay:{due:4,cost:12000,label:"Unfunded workforce promise",delta:{legal:6}}}
+]},
+{id:"client",number:"03",time:"11:24",title:"THE ULTIMATUM",kicker:"The renewal has conditions",scene:"client",base:14000,
+brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00 and a service guarantee that the board can sign.",
+headline:"THE CLIENT IS NOT BUYING CONFIDENCE.",question:"What can you promise before 14:00 — and prove?",pressure:"A £240k annual renewal is at stake. It is not cash in your account.",
+evidence:[
+{type:"PROCUREMENT NOTE",time:"11:03",title:"THE CONDITIONS",body:"The client requires an incident owner, an audit trail and a credible plan for uninterrupted service. A full unconditional guarantee is not required.",clue:"A bounded commitment may be more credible than an absolute promise."},
+{type:"FINANCE SHEET",time:"11:12",title:"THE EXPOSURE",body:"The renewal is worth £240,000 per year in revenue, not immediate cash. Emergency response spending draws on the separate £260,000 fund.",clue:"Do not treat future contract value as money available today."},
+{type:"OPERATIONS NOTE",time:"11:18",title:"THE BOTTLENECK",body:"The client delivery team can meet the current deadline only if at least two specialist staff remain on the account.",clue:"A recovery plan that removes the delivery team is not operationally credible."}
+],
+advice:[
+"Make any guarantee bounded and evidence-backed. Avoid signing an impossible absolute warranty.",
+"Two specialists are the critical path. A recovery plan must fund their time.",
+"The client is asking for accountability. A named incident owner may matter more than polished slides.",
+"An independent review is affordable only if you preserve enough liquidity for operations.",
+"An audit must validate controls, not just produce a glossy certificate.",
+"Overloading the same two specialists creates a retention and burnout problem."
+],
+plans:[
+{name:"INDEPENDENT REVIEW",verb:"Let outsiders test it",desc:"Commission an external review and give the client a time-bound remediation schedule.",benefits:["Credible evidence","Reduces legal ambiguity"],cost:"Audit expense and specialist time pressure.",spend:26000,delta:{legal:-10,customer:-17,ops:5,workforce:3},trust:15,fallout:"Procurement accepts the review timetable. Delivery managers scramble to free up specialists.",tag:"ASSURANCE"},
+{name:"SIGN THE GUARANTEE",verb:"Offer certainty",desc:"Commit to full service and remediation deadlines before the technical work is complete.",benefits:["Fast reassurance","Protects short-term renewal talks"],cost:"Contractual liability if the guarantee is missed.",spend:12000,delta:{customer:-16,legal:10,ops:9,workforce:4},trust:13,delay:{due:5,cost:22000,label:"Contractual service guarantee exposure",delta:{customer:10,legal:6}},fallout:"The client likes the signature. Legal notes that the company has just priced an unknown risk at zero.",tag:"PROMISE"},
+{name:"SERVICE FIRST",verb:"Deliver before declaring",desc:"Protect the specialist team and show the client operational proof before making promises.",benefits:["Improves delivery odds","Preserves practical credibility"],cost:"Burnout risk and slower independent assurance.",spend:18000,delta:{ops:-16,customer:-7,workforce:12,legal:4},trust:7,fallout:"The delivery dashboard improves. Staff warn that the same people are carrying the entire recovery.",tag:"EXECUTION"}
+],
+signals:[
+{name:"SIGNED MILESTONES",line:"Here are the controls we can verify, with owners and dates.",delta:{customer:-5,legal:-3},trust:4},
+{name:"BOARD GUARANTEE",line:"The board guarantees full recovery within 48 hours.",delta:{customer:-6,legal:10,ops:4},trust:8,delay:{due:5,cost:14000,label:"Board guarantee remediation",delta:{legal:4}}},
+{name:"NO NEW PROMISES",line:"We will report when our assessment is complete.",delta:{legal:-5,customer:7},trust:-3}
+]},
+{id:"press",number:"04",time:"13:12",title:"THE HEADLINE",kicker:"A journalist has the screenshot",scene:"press",base:12000,
+brief:"A business reporter has obtained the memo and asks for comment within 30 minutes. An employee has posted a contradictory account online. The story is moving beyond the company.",
+headline:"YOU NO LONGER CONTROL THE ROOM.",question:"Correct the public record or stay silent?",pressure:"The reporter has the draft. The truth is narrower than the rumour.",
+evidence:[
+{type:"PRESS ENQUIRY",time:"12:58",title:"THE JOURNALIST",body:"The reporter asks whether the company plans redundancies and whether client service will be cut. They have the first page of the draft but not its approval status.",clue:"There is a narrow opportunity to correct a material factual error."},
+{type:"SOCIAL POST",time:"13:05",title:"THE ANONYMOUS THREAD",body:"An employee account claims the restructuring was approved last week. The attached screenshot shows an unsigned version.",clue:"The approval claim is unsubstantiated; the underlying document is genuine."},
+{type:"BOARD MESSAGE",time:"13:09",title:"THE DIRECTIVE",body:"The chair wants the company to avoid speculation and protect the renewal. Legal warns against issuing a misleading blanket denial.",clue:"The board is divided between silence and controlled disclosure."}
+],
+advice:[
+"Correct false factual claims, but do not deny the existence of the genuine draft.",
+"Make sure public statements do not contradict what shift managers are telling staff.",
+"Clients will read the press statement. Coordinate it with the account update.",
+"Litigation threats consume money without guaranteeing a retraction.",
+"Publish only facts verified by the investigation. Preserve screenshots and timestamps.",
+"An anonymous employee is not an enemy to be publicly identified."
+],
+plans:[
+{name:"CONTROLLED TIMELINE",verb:"Own the facts",desc:"Publish verified facts, correct the approval rumour and name the response lead.",benefits:["Reduces misinformation","Aligns internal and external messages"],cost:"Creates public scrutiny and legal review work.",spend:15000,delta:{legal:2,customer:-12,workforce:-9,ops:2},trust:10,fallout:"The headline still runs, but it now includes the company's verified timeline rather than speculation alone.",tag:"TRANSPARENCY"},
+{name:"HOLD THE LINE",verb:"Issue a short holding note",desc:"Acknowledge the enquiry and decline to speculate until the investigation concludes.",benefits:["Avoids premature claims","Lower immediate spend"],cost:"Leaves the rumour cycle unanswered.",spend:9000,delta:{legal:-5,customer:8,workforce:6,ops:0},trust:-3,fallout:"The company avoids a false statement. The story fills the silence with anonymous commentary.",tag:"RESTRAINT"},
+{name:"THREATEN ACTION",verb:"Go on the offensive",desc:"Demand the story be withdrawn and threaten legal proceedings over the leak.",benefits:["Signals resolve","May deter some re-publication"],cost:"Escalates attention and alienates staff and clients.",spend:24000,delta:{legal:10,customer:14,workforce:12,ops:2},trust:-12,fallout:"The legal letter becomes part of the story. The journalist publishes the company's threats alongside the memo.",tag:"CONFRONTATION"}
+],
+signals:[
+{name:"CORRECT THE RECORD",line:"The document is a draft. No final restructuring decision has been approved.",delta:{legal:-4,workforce:-5,customer:-3},trust:4},
+{name:"APOLOGISE BROADLY",line:"We apologise for every concern this has caused.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
+{name:"REFUSE COMMENT",line:"We will not comment on internal company matters.",delta:{legal:-2,workforce:7,customer:6},trust:-5}
+]},
+{id:"warehouse",number:"05",time:"15:40",title:"THE BOTTLENECK",kicker:"The service promise meets reality",scene:"warehouse",base:17000,
+brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
+headline:"THE PROMISE IS DUE. THE SHIFT ISN'T READY.",question:"Who carries the cost of saving tonight?",pressure:"Two specialists are exhausted and the backup route remains untested.",
+evidence:[
+{type:"DELIVERY BOARD",time:"15:16",title:"THE MISSED HANDOVER",body:"One specialist team is short of capacity. The backup route has not been fully tested. There is still a narrow window to protect the critical shipment.",clue:"More money can buy capacity, but not instant experience."},
+{type:"VENDOR LETTER",time:"15:27",title:"THE CONTRACTOR",body:"The contractor requests continued supervised access or a paid transition. Its agreement permits a short emergency extension under supervision.",clue:"An agreed, supervised transition is available, but it requires security controls and money."},
+{type:"PEOPLE UPDATE",time:"15:34",title:"THE EXHAUSTION WARNING",body:"Two key staff have worked through their breaks. Both say another emergency shift would be unsafe.",clue:"A heroic overtime plan has a real operational and human limit."}
+],
+advice:[
+"Document any vendor transition and ensure temporary access is restricted and auditable.",
+"Protect the critical delivery path. The backup route is not yet proven.",
+"Tell the client which milestone is genuinely at risk rather than hiding a miss.",
+"Overtime is a deferred cost as well as a cash cost. Budget for recovery time.",
+"Supervised vendor access can be safer than informal workarounds.",
+"Exhausted staff are not a renewable resource. Repeated overtime raises future failure risk."
+],
+plans:[
+{name:"BUY THE BACKUP",verb:"Switch delivery route",desc:"Fund a new specialist vendor and controlled transition to restore capacity.",benefits:["Diversifies delivery risk","Protects key staff"],cost:"Large cash commitment and transition uncertainty.",spend:38000,delta:{ops:-15,workforce:-5,customer:-5,legal:2},trust:5,delay:{due:7,cost:9000,label:"Vendor transition close-out",delta:{liquidity:4}},fallout:"The backup vendor takes the load. Finance records a transition commitment that will outlive the crisis.",tag:"RESILIENCE"},
+{name:"ONE MORE SHIFT",verb:"Push the existing team",desc:"Pay overtime and accelerate the critical delivery using experienced staff.",benefits:["Fastest immediate recovery","Avoids an untested vendor"],cost:"Burnout and later service deterioration.",spend:24000,delta:{ops:-14,workforce:18,legal:4,customer:-4},trust:3,delay:{due:6,cost:12000,label:"Fatigue-related recovery and staffing",delta:{ops:10,workforce:7}},fallout:"The shipment moves. The people who saved it are asking who will cover tomorrow.",tag:"OVERTIME"},
+{name:"RENEGOTIATE SCOPE",verb:"Tell the client the limit",desc:"Ask the client to defer lower-priority work and protect the critical shipment.",benefits:["Protects workforce capacity","Preserves cash"],cost:"Client may view the reduction as a breach of confidence.",spend:11000,delta:{ops:5,workforce:-11,customer:12,legal:-3},trust:-6,fallout:"The critical shipment remains viable, but the client wants a commercial concession for reduced scope.",tag:"TRADE-OFF"}
+],
+signals:[
+{name:"MILESTONE ALERT",line:"This is the at-risk milestone and our revised recovery path.",delta:{customer:-5,legal:-2},trust:5},
+{name:"EVERYTHING ON TRACK",line:"All delivery commitments remain on schedule.",delta:{customer:-4,legal:8,ops:6},trust:5,delay:{due:6,cost:10000,label:"Unverified delivery assurance",delta:{customer:9}}},
+{name:"INTERNAL ONLY",line:"No external update until the shipment is complete.",delta:{ops:-2,customer:9},trust:-4}
+]},
+{id:"board",number:"06",time:"17:30",title:"THE BOARD VOTE",kicker:"The final decision will be remembered",scene:"board",base:9000,
+brief:"The board has your incident log, the cash ledger and the client's final questions. You cannot undo the morning. You can choose what kind of recovery the company will fund.",
+headline:"THE ROOM HAS GONE QUIET.",question:"What will the board fund after today?",pressure:"Your earlier promises, unpaid obligations and remaining cash all count.",
+evidence:[
+{type:"BOARD PACK",time:"17:02",title:"THE COST OF THE DAY",body:"Every response commitment is now on the ledger. Unresolved contingent liabilities may become payable after this session.",clue:"Remaining cash and pending liabilities are separate. Neither is the client contract value."},
+{type:"CLIENT POSITION",time:"17:18",title:"THE RENEWAL NOTE",body:"The client will judge evidence, continuity and the credibility of future commitments. It will not accept a cosmetic statement as remediation.",clue:"A contract can be conditionally retained even when trust is damaged."},
+{type:"CHAIR'S QUESTION",time:"17:29",title:"THE LAST PAGE",body:"The chair asks: what are we prepared to stop doing to make this plan real? Every answer has a cost.",clue:"A smaller funded plan may be better than an impossible promise."}
+],
+advice:[
+"Fund independent oversight and clear owners. Avoid signing unbounded warranties.",
+"Make sure the recovery programme leaves sufficient operating capacity.",
+"Clients reward evidence-backed follow-through, not theatrical certainty.",
+"Protect liquidity. Pending commitments are not free because they fall after today.",
+"Security controls require ongoing ownership after the immediate incident closes.",
+"Staff need a recovery plan that does not depend on permanent emergency overtime."
+],
+plans:[
+{name:"FUND OVERSIGHT",verb:"Build a lasting control",desc:"Approve independent monitoring, named owners and a measured recovery schedule.",benefits:["Stronger long-term assurance","Reduces legal and client exposure"],cost:"Significant final cash commitment.",spend:28000,delta:{legal:-13,customer:-10,workforce:-6,ops:3},trust:13,fallout:"The board funds the work rather than just approving the language. The client receives a verifiable plan.",tag:"GOVERNANCE"},
+{name:"MAKE THE PLEDGE",verb:"Promise the full recovery",desc:"Announce an accelerated recovery timetable with additional client guarantees.",benefits:["Signals confidence","May rescue fragile renewal talks"],cost:"Creates expensive future obligations and staff pressure.",spend:18000,delta:{customer:-14,ops:-5,workforce:10,legal:5},trust:12,delay:{due:7,cost:18000,label:"Accelerated recovery commitment",delta:{liquidity:6}},fallout:"The board approves the pledge. The client is encouraged, but the cost of delivery has been pushed into next month.",tag:"AMBITION"},
+{name:"CUT THE EXPOSURE",verb:"Protect the balance sheet",desc:"Reduce non-critical commitments and focus on a smaller sustainable service promise.",benefits:["Preserves cash","Reduces operational complexity"],cost:"Damages confidence and leaves workforce uncertainty.",spend:7000,delta:{ops:-5,workforce:12,customer:15,legal:-3},trust:-14,fallout:"The company protects cash. The client asks whether the smaller service promise is still worth renewing.",tag:"DISCIPLINE"}
+],
+signals:[
+{name:"OWN THE TRADE-OFFS",line:"Here is what we will fund, what we will stop, and how progress will be verified.",delta:{legal:-5,customer:-6,workforce:-3},trust:6},
+{name:"PROMISE EVERYTHING",line:"We will restore every commitment without exception.",delta:{customer:-7,legal:12,workforce:9},trust:9,delay:{due:7,cost:16000,label:"Unfunded board-wide guarantee",delta:{liquidity:5}}},
+{name:"CLOSE THE FILE",line:"The incident is resolved and normal business has resumed.",delta:{legal:9,customer:8,workforce:5},trust:-6}
+]}
+];
+g.BCContent={advisers:advisers,episodes:episodes,initialCash:260000,annualContractValue:240000,baseline:{legal:47,ops:38,workforce:44,customer:51,liquidity:25},variants:[
+{title:"Temporary access remained active",effect:{legal:4,ops:2},note:"The contractor session was still live after its scheduled expiry."},
+{title:"A forwarding rule widened exposure",effect:{legal:6,customer:3},note:"An internal forwarding rule amplified the distribution beyond the original list."},
+{title:"The address book included old contacts",effect:{customer:5,workforce:2},note:"An outdated contact group added recipients who should not have been included."}
+]};
+})(globalThis);
+
+;
+(function(g){
+"use strict";
+// Shared deterministic engine factory: the original incident remains the default.
+function createRules(DATA){
+if(!DATA || !Array.isArray(DATA.episodes) || DATA.episodes.length!==6)throw new Error("Invalid six-episode scenario data");
+const RISK_KEYS=["legal","ops","workforce","customer","liquidity"];
+const ALLOCATIONS=[
+{id:"audit",name:"AUDIT & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
+{id:"capacity",name:"DELIVERY CAPACITY",delta:{ops:-8,workforce:-2},trust:1},
+{id:"people",name:"STAFF RECOVERY",delta:{workforce:-9,ops:-2},trust:1}
+];
+const ESCALATION=[
+{},
+{workforce:7,customer:2},
+{customer:10,ops:2},
+{legal:7,workforce:4,customer:3},
+{ops:12,workforce:3},
+{liquidity:5,customer:4}
+];
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+function deepCopy(obj){return JSON.parse(JSON.stringify(obj));}
+function assert(ok,msg){if(!ok)throw new Error(msg);}
+function seedVariant(seed){let x=0;String(seed).split("").forEach(c=>{x=(x*31+c.charCodeAt(0))>>>0;});return x%DATA.variants.length;}
+function createTeam(id,name){
+assert(typeof name==="string"&&name.trim().length>=1&&name.trim().length<=32,"Team name must be 1–32 characters");
+return {id:id,name:name.trim(),cash:DATA.initialCash,trust:45,risks:deepCopy(DATA.baseline),nextRound:0,ledger:[],pending:[],history:[],insolvent:false};
+}
+function addRisk(team,deltas){if(!deltas)return;for(const k of RISK_KEYS){if(Object.prototype.hasOwnProperty.call(deltas,k))team.risks[k]=clamp(team.risks[k]+deltas[k],10,95);}}
+function expense(team,round,amount,label,kind){
+assert(Number.isInteger(amount)&&amount>=0,"Expense must be a nonnegative integer");
+if(amount===0)return;
+team.cash-=amount;
+team.ledger.push({round:round+1,amount:amount,label:label,kind:kind});
+}
+function recalcLiquidity(team){
+const pending=team.pending.reduce((sum,p)=>sum+p.cost,0);
+const coverage=team.cash-pending;
+team.risks.liquidity=clamp(Math.round(22+Math.max(0,DATA.initialCash-coverage)/DATA.initialCash*65+(team.cash<0?10:0)),18,95);
+team.insolvent=team.cash<0;
+}
+function startEpisode(team,round,variant){
+const episode=DATA.episodes[round],due=[];
+if(round===0)addRisk(team,DATA.variants[variant].effect);
+addRisk(team,ESCALATION[round]);
+const remain=[];
+for(const item of team.pending){
+if(item.due<=round+1){expense(team,round,item.cost,item.label,"deferred");addRisk(team,item.delta);due.push(item);}
+else remain.push(item);
+}
+team.pending=remain;
+expense(team,round,episode.base,"Mandatory operating response / "+episode.title,"baseline");
+return due;
+}
+function applyTurn(input,round,planIndex,signalIndex,advisers,variant,allocation){
+assert(input&&typeof input==="object","Missing team state");
+assert(Number.isInteger(round)&&round>=0&&round<DATA.episodes.length,"Invalid episode");
+assert(input.nextRound===round,"Episode already committed or out of order");
+const episode=DATA.episodes[round];
+assert(Number.isInteger(planIndex)&&planIndex>=0&&planIndex<episode.plans.length,"Invalid strategic choice");
+assert(Number.isInteger(signalIndex)&&signalIndex>=0&&signalIndex<episode.signals.length,"Invalid public statement");
+assert(Array.isArray(advisers)&&advisers.length===2&&new Set(advisers).size===2&&advisers.every(n=>Number.isInteger(n)&&n>=0&&n<DATA.advisers.length),"Exactly two different advisers required");
+assert(Number.isInteger(variant)&&variant>=0&&variant<DATA.variants.length,"Invalid common scenario variant");
+const alloc=allocation||{amount:0,route:null};
+assert(alloc&&Number.isInteger(alloc.amount)&&[0,10000,20000].includes(alloc.amount),"Allocation must be £0, £10k or £20k");
+assert(alloc.amount===0||([2,4].includes(round)&&ALLOCATIONS.some(x=>x.id===alloc.route)),"Invalid allocation route or episode");
+const team=deepCopy(input),plan=episode.plans[planIndex],signal=episode.signals[signalIndex];
+const due=startEpisode(team,round,variant);
+expense(team,round,plan.spend,plan.name,"strategy");
+if(alloc.amount>0){
+const route=ALLOCATIONS.find(x=>x.id===alloc.route),factor=alloc.amount/10000;
+expense(team,round,alloc.amount,"Discretionary response / "+route.name,"allocation");
+const delta={};for(const k of Object.keys(route.delta))delta[k]=route.delta[k]*factor;
+addRisk(team,delta);
+team.trust=clamp(team.trust+route.trust*factor,0,100);
+}
+addRisk(team,plan.delta);addRisk(team,signal.delta);
+team.trust=clamp(team.trust+plan.trust+signal.trust,0,100);
+if(plan.delay)team.pending.push({id:"plan-"+(round+1),due:plan.delay.due,cost:plan.delay.cost,label:plan.delay.label,delta:deepCopy(plan.delay.delta||{})});
+if(signal.delay)team.pending.push({id:"signal-"+(round+1),due:signal.delay.due,cost:signal.delay.cost,label:signal.delay.label,delta:deepCopy(signal.delay.delta||{})});
+recalcLiquidity(team);
+const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.amount,0);
+team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,fallout:plan.fallout,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
+team.nextRound++;
+return team;
+}
+// A missed deadline is NOT converted into a fictional strategic decision.
+function applyTimeout(input,round,variant){
+assert(input&&typeof input==="object","Missing team state");
+assert(Number.isInteger(round)&&round>=0&&round<DATA.episodes.length,"Invalid episode");
+assert(input.nextRound===round,"Episode already committed or out of order");
+assert(Number.isInteger(variant)&&variant>=0&&variant<DATA.variants.length,"Invalid common scenario variant");
+const team=deepCopy(input),episode=DATA.episodes[round],due=startEpisode(team,round,variant);
+addRisk(team,{legal:4,ops:8,workforce:5,customer:10});
+team.trust=clamp(team.trust-10,0,100);
+recalcLiquidity(team);
+const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.amount,0);
+team.history.push({round:round+1,episode:episode.title,time:episode.time,
+plan:"NO RESPONSE",planIndex:null,signal:"NO PUBLIC STATEMENT",signalIndex:null,
+advisers:[],allocation:null,timedOut:true,
+fallout:"No strategic response was authorised before the deadline. Mandatory costs continued and unresolved exposures deteriorated.",
+roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,
+risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
+team.nextRound++;
+return team;
+}
+function evaluate(team){
+const risk=team.risks,unpaid=team.pending.reduce((s,x)=>s+x.cost,0);
+const avg=risk.legal*.24+risk.ops*.27+risk.workforce*.18+risk.customer*.31;
+let score=100-avg*.62+(team.trust-50)*.25-Math.max(0,risk.liquidity-40)*.16;
+score-=Math.min(18,unpaid/4000);
+if(team.cash<0)score-=27;
+if(risk.customer>75)score-=13;
+if(risk.ops>75)score-=11;
+if(team.cash<25000&&team.cash>=0)score-=7;
+score=clamp(Math.round(score),0,100);
+let status="AT RISK";
+if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
+else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
+else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
+const reasons=[];
+if(team.cash<0)reasons.push("Response spending exceeded the £260,000 fund.");
+else if(team.cash<25000)reasons.push("The remaining response reserve is thin.");
+if(unpaid>0)reasons.push("£"+unpaid.toLocaleString("en-GB")+" of contingent commitments remain.");
+if(risk.customer>65)reasons.push("Customer exposure remains elevated.");
+if(risk.ops>65)reasons.push("Operational delivery remains fragile.");
+if(risk.workforce>65)reasons.push("Workforce capacity is under strain.");
+if(risk.legal>65)reasons.push("Legal and compliance issues remain unresolved.");
+if(team.trust>=70)reasons.push("Direct, credible communication helped preserve client confidence.");
+if(!reasons.length)reasons.push("The company retains sufficient cash and has contained the most serious exposures.");
+return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
+}
+function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
+// Scores compare performance. The title requires the flagship renewal to be signed.
+function championshipResult(teams){
+const ranked=rankTeams(teams);
+const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
+const champion=eligible[0]||null;
+const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score&&x.team.cash===champion.team.cash):[];
+return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
+}
+function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
+return {createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+}
+g.BCCreateRules=createRules;
+g.BCRules=createRules(g.BCContent);
+if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
+})(globalThis);
+
+;
+(function(g){
+'use strict';
+// Original fictional educational scenario; deliberately independent from the existing 09:17 story.
+const scene={
+  "id": "opening-night",
+  "title": "Opening Night",
+  "subtitle": "Six scenes. One launch. A thousand unexpected possibilities.",
+  "studio": "FIELDWORK HOUSE",
+  "sponsor": "£120,000 annual potential (not cash)",
+  "advisers": [
+    {
+      "name": "MAYA CHEN",
+      "role": "PEOPLE & CULTURE",
+      "color": "#adcbbd",
+      "line": "When everyone agrees too fast, ask who hasn't spoken."
+    },
+    {
+      "name": "ELI TURNER",
+      "role": "OPERATIONS LEAD",
+      "color": "#bbc5ba",
+      "line": "A full room still needs a safe plan."
+    },
+    {
+      "name": "ZARA KHAN",
+      "role": "MARKETING LEAD",
+      "color": "#e5b899",
+      "line": "A viral promise is still a promise."
+    },
+    {
+      "name": "LEO PARK",
+      "role": "FINANCE LEAD",
+      "color": "#cfc7b5",
+      "line": "Tomorrow's income cannot pay today's bill."
+    },
+    {
+      "name": "NINA FLORES",
+      "role": "PARTNERSHIPS LEAD",
+      "color": "#b6b9d9",
+      "line": "Know your alternative before you say yes."
+    },
+    {
+      "name": "ARUN SHAH",
+      "role": "CUSTOMER EXPERIENCE",
+      "color": "#e2c8ae",
+      "line": "A guest can forgive a mistake they understand."
+    }
+  ],
+  "episodes": [
+    {
+      "id": "invitation",
+      "number": "01",
+      "time": "09:00",
+      "title": "THE INVITATION",
+      "kicker": "A promising launch; one ambiguous invitation",
+      "scene": "invitation",
+      "base": 7000,
+      "brief": "FIELDWORK HOUSE opens tonight: a creative venue with workshops, a café and pop-up events. The sign-up page promised 'open to everyone' without specifying that the evening has only 320 safe places. A short social clip attracts 1,100 registrations. The team has £210,000 of event response cash, including required operating cover.",
+      "headline": "THE INTERNET INVITED ITSELF.",
+      "question": "What should your team do with 1,100 registrations and 320 places?",
+      "pressure": "An honest invitation can still disappoint people.",
+      "evidence": [
+        {
+          "type": "EVENT REGISTRATION",
+          "time": "08:55",
+          "title": "1,100 NAMES",
+          "body": "The registration page allowed 1,100 people to register without automatically confirming their entry. Its footer says 'confirmation subject to capacity'.",
+          "clue": "Registrations are not confirmed admissions."
+        },
+        {
+          "type": "SAFETY NOTE",
+          "time": "08:58",
+          "title": "320 VERIFIED PLACES",
+          "body": "Operations certifies 320 safe attendee places including staff and contractors. A second timed session would require a separate fire and staffing review.",
+          "clue": "The current hard capacity is 320, not a negotiation tactic."
+        },
+        {
+          "type": "DESIGN DRAFT",
+          "time": "08:43",
+          "title": "THE MISSING LINE",
+          "body": "An earlier draft read 'open to everyone online; limited places in person'. The final post lost the second half during design revision.",
+          "clue": "The error is a missing qualifier, not evidence of malicious intent."
+        }
+      ],
+      "advice": [
+        "Confirm what the team knows, and invite the quieter perspective before choosing.",
+        "Verify the live capacity; an event's size cannot increase because a spreadsheet says so.",
+        "Correct what the invitation actually promises instead of blaming customers for reading it.",
+        "£210k is available event response cash. The £120k annual sponsorship is future commercial value, not immediate cash.",
+        "Sponsor commitments depend on verified capacity and accessible conditions.",
+        "Acknowledge the invite confusion without insulting the people who signed up."
+      ],
+      "plans": [
+        {
+          "name": "CAP THE GUEST LIST",
+          "verb": "Publish a fair allocation",
+          "desc": "Pause confirmations, clarify the cap, and offer livestream access to everyone else.",
+          "benefits": [
+            "Credible admissions",
+            "More accessible audience"
+          ],
+          "cost": "Some disappointed registrants; production costs.",
+          "spend": 12000,
+          "delta": {
+            "legal": -8,
+            "ops": 2,
+            "workforce": 0,
+            "customer": -10
+          },
+          "trust": 10,
+          "fallout": "A plain explanation lands. Most people accept the cap, but a vocal few demand a bigger venue."
+        },
+        {
+          "name": "ADD A SECOND SESSION",
+          "verb": "Grow carefully",
+          "desc": "Plan a second attendance slot with conditional verification and separate staff coverage.",
+          "benefits": [
+            "More invitations honoured",
+            "New revenue opportunity"
+          ],
+          "cost": "Capacity must be reassessed; staff costs rise.",
+          "spend": 26000,
+          "delta": {
+            "legal": 3,
+            "ops": 9,
+            "workforce": 8,
+            "customer": -11
+          },
+          "trust": 12,
+          "fallout": "The extra slot gets applause online. Operations warns that the second event remains contingent on clearance."
+        },
+        {
+          "name": "KEEP THE HYPE",
+          "verb": "Trust the queue",
+          "desc": "Leave the open-invite copy running and turn registration volume into publicity.",
+          "benefits": [
+            "Demand remains strong",
+            "Low upfront costs"
+          ],
+          "cost": "Risk of misleading visitors and unsafe crowding.",
+          "spend": 7000,
+          "delta": {
+            "legal": 18,
+            "ops": 21,
+            "workforce": 5,
+            "customer": 19
+          },
+          "trust": -8,
+          "fallout": "Registrations keep rising. Security asks for a real attendance decision before opening."
+        }
+      ],
+      "signals": [
+        {
+          "name": "CLARIFY NOW",
+          "line": "'Registration isn't admission; capacity is 320, and online access is free.'",
+          "delta": {
+            "legal": -5,
+            "ops": -2,
+            "workforce": -1,
+            "customer": -6
+          },
+          "trust": 7
+        },
+        {
+          "name": "HUMAN NOTE",
+          "line": "'We underestimated your enthusiasm. Here's how the allocation works.'",
+          "delta": {
+            "legal": -2,
+            "ops": 0,
+            "workforce": -3,
+            "customer": -4
+          },
+          "trust": 5
+        },
+        {
+          "name": "STAY VAGUE",
+          "line": "'It's going to be huge. Watch this space.'",
+          "delta": {
+            "legal": 6,
+            "ops": 3,
+            "workforce": 0,
+            "customer": 9
+          },
+          "trust": -4
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO3",
+        "topic": "Distinguish team consensus, evidence and customer-facing clarity.",
+        "facilitatorPrompt": "Did your team check the original evidence or argue from assumptions?"
+      }
+    },
+    {
+      "id": "people",
+      "number": "02",
+      "time": "10:20",
+      "title": "THE PEOPLE",
+      "kicker": "A team divided by invisible work",
+      "scene": "people",
+      "base": 11000,
+      "brief": "Two hours after the sign-up correction, the staff group chat erupts: the production crew wants extra support, volunteers want actual breaks, and the brand team insists the show must go on. A junior employee, Sam, has proposed a rotating assignment board—but nobody has asked them to explain it.",
+      "headline": "WHO GETS HEARD?",
+      "question": "How do you motivate a team without making the quiet people carry the work?",
+      "pressure": "The shift must still be staffed tonight.",
+      "evidence": [
+        {
+          "type": "ROTA",
+          "time": "10:07",
+          "title": "SEVEN DOUBLE SHIFTS",
+          "body": "Seven experienced staff have been assigned overlapping set-up and guest-facing duties. The original rota has no reliable breaks.",
+          "clue": "Workload is not equally distributed."
+        },
+        {
+          "type": "TEAM CHAT",
+          "time": "10:13",
+          "title": "SAM'S UNREAD IDEA",
+          "body": "Sam offers a self-selected roles board and a ten-minute briefing. The message is buried beneath manager announcements.",
+          "clue": "A useful perspective has not been evaluated."
+        },
+        {
+          "type": "PEOPLE NOTE",
+          "time": "10:18",
+          "title": "WHAT THE TEAM REQUESTED",
+          "body": "Staff cite autonomy, predictable breaks and clarity—not simply a bonus—as priorities.",
+          "clue": "Different motives require different responses."
+        }
+      ],
+      "advice": [
+        "Don't mistake silence for agreement. Let staff identify practical constraints.",
+        "A rotation and cross-training plan must leave the opening team staffed.",
+        "Publicly recognising teams can help, but do not substitute praise for workload relief.",
+        "A guaranteed extra shift creates cash costs now and potentially later.",
+        "Plan how contractor and volunteer roles will interact.",
+        "People want to be consulted about a schedule affecting their evening."
+      ],
+      "plans": [
+        {
+          "name": "CO-DESIGN THE ROTA",
+          "verb": "Give teams a voice",
+          "desc": "Invite Sam to demonstrate a rotation board; teams agree bounded roles and protected breaks.",
+          "benefits": [
+            "Autonomy and voice",
+            "Better rota clarity"
+          ],
+          "cost": "Brief setup pause and supervisory time.",
+          "spend": 15000,
+          "delta": {
+            "legal": -4,
+            "ops": 4,
+            "workforce": -16,
+            "customer": -4
+          },
+          "trust": 9,
+          "fallout": "Sam's idea turns a tense meeting into a collaborative rota. Teams own assignments, but the new handovers take practice."
+        },
+        {
+          "name": "PAY THE EXTRA HOURS",
+          "verb": "Buy coverage",
+          "desc": "Offer capped overtime and short-term recognition bonuses for the busiest groups.",
+          "benefits": [
+            "Quick coverage",
+            "Visible reward"
+          ],
+          "cost": "Costly, and not everyone values the same incentive.",
+          "spend": 27000,
+          "delta": {
+            "legal": 1,
+            "ops": -6,
+            "workforce": -8,
+            "customer": -1
+          },
+          "trust": 3,
+          "fallout": "Coverage improves. A few teammates appreciate the money; others ask why the plan still expects them to skip breaks.",
+          "delay": {
+            "due": 4,
+            "cost": 9000,
+            "label": "Additional paid recovery shifts",
+            "delta": {
+              "workforce": 5
+            }
+          }
+        },
+        {
+          "name": "DIRECT THE FLOOR",
+          "verb": "Choose speed",
+          "desc": "Let managers assign roles and avoid another meeting before doors open.",
+          "benefits": [
+            "Fast coordination",
+            "Lower immediate cost"
+          ],
+          "cost": "Quiet concerns stay unheard and fatigue grows.",
+          "spend": 8000,
+          "delta": {
+            "legal": 0,
+            "ops": -6,
+            "workforce": 14,
+            "customer": 2
+          },
+          "trust": -4,
+          "fallout": "The schedule prints on time. By midday, the people holding the event together are quietly considering leaving early."
+        }
+      ],
+      "signals": [
+        {
+          "name": "ASK BEFORE ASSIGNING",
+          "line": "'Tell us the constraint we have missed; then we'll publish the rota.'",
+          "delta": {
+            "legal": -2,
+            "ops": 1,
+            "workforce": -6,
+            "customer": -2
+          },
+          "trust": 5
+        },
+        {
+          "name": "PROMISE BONUSES",
+          "line": "'Everyone who stays late will get an extra payment.'",
+          "delta": {
+            "legal": 0,
+            "ops": -1,
+            "workforce": -5,
+            "customer": 1
+          },
+          "trust": 3,
+          "delay": {
+            "due": 5,
+            "cost": 11000,
+            "label": "Unbudgeted overtime promise",
+            "delta": {
+              "liquidity": 5
+            }
+          }
+        },
+        {
+          "name": "SHUT DOWN THE THREAD",
+          "line": "'Please stop arguing publicly. Managers have this covered.'",
+          "delta": {
+            "legal": 2,
+            "ops": 0,
+            "workforce": 10,
+            "customer": 5
+          },
+          "trust": -7
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO1 / LO2 / LO3",
+        "topic": "Apply a content and a process motivation theory to different employees.",
+        "facilitatorPrompt": "Which decision offered autonomy or fairness? Which simply offered more money?"
+      }
+    },
+    {
+      "id": "supplier",
+      "number": "03",
+      "time": "12:05",
+      "title": "THE SUPPLIER",
+      "kicker": "A fair deal is not always the cheapest",
+      "scene": "supplier",
+      "base": 13000,
+      "brief": "A key refreshment supplier confirms it can deliver only 180 of the 320 planned guest packs. It offers priority delivery if you accept an expensive rush fee. A local collective can supply the difference, but only if you simplify the menu. A sponsor representative is watching.",
+      "headline": "SOMEONE HAS TO NEGOTIATE.",
+      "question": "What is your best alternative if the supplier refuses to improve its offer?",
+      "pressure": "A supplier promise is not stock in the storeroom.",
+      "evidence": [
+        {
+          "type": "SUPPLIER OFFER",
+          "time": "11:48",
+          "title": "180 PACKS",
+          "body": "The incumbent can guarantee 180 packs at the original price, or 320 at a high rush fee contingent on another delivery slot.",
+          "clue": "The full offer is conditional, not firm."
+        },
+        {
+          "type": "LOCAL COLLECTIVE",
+          "time": "11:56",
+          "title": "140 SIMPLE PACKS",
+          "body": "A neighbourhood food collective has verified supplies for 140 alternative packs at £18 each. It cannot match all customisation.",
+          "clue": "The fallback is real, but requires honest communication."
+        },
+        {
+          "type": "CONTRACT TERM",
+          "time": "12:02",
+          "title": "NO EXCLUSIVITY",
+          "body": "The existing contract has no clause preventing a second supplier. An approved swap needs allergen and service checks.",
+          "clue": "You can negotiate without accepting a monopoly."
+        }
+      ],
+      "advice": [
+        "Create options with the vendor; a negotiation is not simply a price cut.",
+        "Temporary delivery slots and pickup windows matter more than the headline discount.",
+        "Don't promise unlimited samples when the order is capped.",
+        "The emergency alternative is more expensive but sets a walk-away point.",
+        "The supplier has another booking; investigate both parties' alternatives.",
+        "Keep customer information consistent with what will actually be delivered."
+      ],
+      "plans": [
+        {
+          "name": "NEGOTIATE TWO SOURCES",
+          "verb": "Use your BATNA",
+          "desc": "Keep 180 guaranteed packs and contract 140 simpler local packs with clear ingredient controls.",
+          "benefits": [
+            "Reliable alternative",
+            "Local collaboration"
+          ],
+          "cost": "Two-supplier coordination and revised guest information.",
+          "spend": 22000,
+          "delta": {
+            "legal": -3,
+            "ops": -10,
+            "workforce": -3,
+            "customer": -7
+          },
+          "trust": 8,
+          "fallout": "The simpler menu becomes a talking point, and most guests like the community angle. Two supplier teams need careful coordination."
+        },
+        {
+          "name": "PAY FOR PRIORITY",
+          "verb": "Buy speed",
+          "desc": "Accept the rush offer for 320 packs, including a firm delivery checkpoint and penalty.",
+          "benefits": [
+            "Single operating channel",
+            "Consistent experience"
+          ],
+          "cost": "Higher immediate spend and one-vendor dependency.",
+          "spend": 36000,
+          "delta": {
+            "legal": 3,
+            "ops": -9,
+            "workforce": 2,
+            "customer": -4
+          },
+          "trust": 5,
+          "fallout": "The supplier rearranges deliveries. Your plan works if the promised truck arrives, but it is the expensive road."
+        },
+        {
+          "name": "HOLD THE ORIGINAL ORDER",
+          "verb": "Wait for more",
+          "desc": "Use the 180 packs and offer a later redeemable benefit to the rest.",
+          "benefits": [
+            "Preserves cash",
+            "Avoids uncertain logistics"
+          ],
+          "cost": "Guest dissatisfaction and service recovery obligations.",
+          "spend": 9000,
+          "delta": {
+            "legal": 2,
+            "ops": 10,
+            "workforce": 0,
+            "customer": 18
+          },
+          "trust": -9,
+          "fallout": "Half the room gets the original pack. The other half remembers the apology rather than the experience.",
+          "delay": {
+            "due": 5,
+            "cost": 12000,
+            "label": "Guest recovery vouchers",
+            "delta": {
+              "customer": 5
+            }
+          }
+        }
+      ],
+      "signals": [
+        {
+          "name": "STATE THE ALTERNATIVE",
+          "line": "'We have a verified second source if we cannot agree workable terms.'",
+          "delta": {
+            "legal": -2,
+            "ops": -2,
+            "workforce": 0,
+            "customer": -3
+          },
+          "trust": 4
+        },
+        {
+          "name": "GUARANTEE EVERYTHING",
+          "line": "'Every guest will get the exact original pack.'",
+          "delta": {
+            "legal": 8,
+            "ops": 7,
+            "workforce": 0,
+            "customer": -3
+          },
+          "trust": 6,
+          "delay": {
+            "due": 6,
+            "cost": 13000,
+            "label": "Unverified pack guarantee",
+            "delta": {
+              "legal": 7
+            }
+          }
+        },
+        {
+          "name": "SAY NOTHING",
+          "line": "'We'll sort food on site.'",
+          "delta": {
+            "legal": 2,
+            "ops": 1,
+            "workforce": 0,
+            "customer": 8
+          },
+          "trust": -5
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO3 / linked Unit 36 and Unit 37",
+        "topic": "Explain BATNA, trade-offs and a fallback before negotiation.",
+        "facilitatorPrompt": "What was the actual walk-away alternative, and what did it cost?"
+      }
+    },
+    {
+      "id": "culture",
+      "number": "04",
+      "time": "14:10",
+      "title": "THE CULTURE",
+      "kicker": "Power, politics and a missing voice",
+      "scene": "culture",
+      "base": 9000,
+      "brief": "A sponsor asks to approve every public message. Meanwhile a staff meme makes the rounds: 'Our official policy is to check with six people before opening a door.' Sam's earlier idea has helped the rota, but the leadership team still treats junior comments as 'noise'.",
+      "headline": "WHO GETS TO DECIDE?",
+      "question": "How much control should one sponsor have over your organisation's voice?",
+      "pressure": "The culture you practise today will be visible to guests tonight.",
+      "evidence": [
+        {
+          "type": "SPONSOR NOTE",
+          "time": "13:40",
+          "title": "THE APPROVAL REQUEST",
+          "body": "The sponsor asks to sign off all public messaging but the current agreement permits approval only when its name or logo is used.",
+          "clue": "Their influence is real, but limited by written terms."
+        },
+        {
+          "type": "STAFF PULSE",
+          "time": "13:58",
+          "title": "SILENT MEETINGS",
+          "body": "Nine of 20 surveyed staff say they would not challenge a manager in front of colleagues.",
+          "clue": "Absence of dissent does not prove trust."
+        },
+        {
+          "type": "SOCIAL MEME",
+          "time": "14:02",
+          "title": "THE SIX SIGNATURES",
+          "body": "Staff parody the slow approval chain. The clip is funny and mostly internal; it highlights a genuine delay.",
+          "clue": "The joke contains operational information."
+        }
+      ],
+      "advice": [
+        "Be alert to who gets to define the story: senior staff aren't the only credible source.",
+        "Maintain a clear decision owner, without blocking genuine feedback.",
+        "A calm transparent response can improve trust more than a clever defensive slogan.",
+        "A media push with uncertain facts may create liabilities.",
+        "The sponsor asks for evidence; decide who has authority to give it.",
+        "Ask staff to share concerns safely; don't treat criticism as disloyalty."
+      ],
+      "plans": [
+        {
+          "name": "SET CLEAR BOUNDARIES",
+          "verb": "Separate rights from control",
+          "desc": "Publish an approval matrix: sponsor brand approval, team leads own operations, staff can raise safety issues freely.",
+          "benefits": [
+            "Faster decisions",
+            "Role clarity"
+          ],
+          "cost": "Requires a direct but respectful sponsor discussion.",
+          "spend": 14000,
+          "delta": {
+            "legal": -9,
+            "ops": -7,
+            "workforce": -12,
+            "customer": -6
+          },
+          "trust": 9,
+          "fallout": "The sponsor accepts a limited approval role, and staff finally know which decisions they can own."
+        },
+        {
+          "name": "PUT THE SPONSOR FIRST",
+          "verb": "Centralise the story",
+          "desc": "Give the sponsor temporary sign-off over all guest communication.",
+          "benefits": [
+            "One channel",
+            "Avoids immediate confrontation"
+          ],
+          "cost": "Slow decisions and employee voice suppressed.",
+          "spend": 10000,
+          "delta": {
+            "legal": 3,
+            "ops": 8,
+            "workforce": 15,
+            "customer": 2
+          },
+          "trust": -3,
+          "fallout": "Every message reaches a queue. The sponsor is pleased, but the staff meme becomes a very accurate process diagram."
+        },
+        {
+          "name": "TURN THE MEME INTO A CAMPAIGN",
+          "verb": "Laugh and listen",
+          "desc": "Run a humorous public campaign about transparent decision-making, but leave authority rules unresolved.",
+          "benefits": [
+            "Energy and brand attention",
+            "Engages staff creativity"
+          ],
+          "cost": "Risk of confusing guests and dodging structural problems.",
+          "spend": 12000,
+          "delta": {
+            "legal": 6,
+            "ops": 3,
+            "workforce": -3,
+            "customer": 4
+          },
+          "trust": 1,
+          "fallout": "The public loves the joke. At the next decision, nobody is sure who is allowed to approve the caption."
+        }
+      ],
+      "signals": [
+        {
+          "name": "SPEAK PLAINLY",
+          "line": "'Here's who owns decisions, and how anyone can flag a concern.'",
+          "delta": {
+            "legal": -4,
+            "ops": -2,
+            "workforce": -5,
+            "customer": -3
+          },
+          "trust": 6
+        },
+        {
+          "name": "BLAME THE TEAM",
+          "line": "'Our staff made this more complicated than it needed to be.'",
+          "delta": {
+            "legal": 4,
+            "ops": 0,
+            "workforce": 12,
+            "customer": 10
+          },
+          "trust": -9
+        },
+        {
+          "name": "RELEASE A SLOGAN",
+          "line": "'The future is seamless.'",
+          "delta": {
+            "legal": 1,
+            "ops": 1,
+            "workforce": 2,
+            "customer": 5
+          },
+          "trust": -2
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO4",
+        "topic": "Identify formal authority, informal influence and psychological safety.",
+        "facilitatorPrompt": "What did the sponsor have a legitimate right to approve? Who was excluded?"
+      }
+    },
+    {
+      "id": "partner",
+      "number": "05",
+      "time": "16:05",
+      "title": "THE PARTNER",
+      "kicker": "The offer everyone wants to sign",
+      "scene": "partner",
+      "base": 15000,
+      "brief": "A high-profile partner offers £120,000 in future annual sponsorship value—but wants the entire next year's programme exclusively branded and 80 VIP places tonight. Your fallback is a smaller, non-exclusive local package worth £45,000 annually. Neither agreement pays cash today.",
+      "headline": "A GOOD DEAL FOR WHOM?",
+      "question": "Would you trade independence for a headline sponsorship?",
+      "pressure": "Future value isn't spendable tonight.",
+      "evidence": [
+        {
+          "type": "PARTNER LETTER",
+          "time": "15:49",
+          "title": "£120K ANNUALLY",
+          "body": "The major partner's headline value is contingent on annual exclusivity and 80 reserved event places.",
+          "clue": "A future contract is neither cash now nor a guarantee."
+        },
+        {
+          "type": "LOCAL FALLBACK",
+          "time": "15:57",
+          "title": "£45K NON-EXCLUSIVE",
+          "body": "A coalition of local businesses offers a lower-value package with no exclusivity; acceptance expires tomorrow.",
+          "clue": "You have a credible BATNA."
+        },
+        {
+          "type": "GUEST ALLOCATION",
+          "time": "16:02",
+          "title": "THE 80 VIP PLACES",
+          "body": "Your verified total capacity remains 320. VIP access would replace some community seats, not create extra space.",
+          "clue": "A partner can buy access, not raise the safety limit."
+        }
+      ],
+      "advice": [
+        "Set a clear decision process before partners bargain over visibility.",
+        "Assess whether the partner's logistics can be supported safely.",
+        "The exclusivity clause may harm your brand's independent appeal.",
+        "Compare the contract's expected net value with your already available alternative.",
+        "Your fallback is a modest local sponsor, not zero. Define your BATNA.",
+        "Exclusive VIP space can create resentment among early registrants."
+      ],
+      "plans": [
+        {
+          "name": "BUILD A BOUNDED PARTNERSHIP",
+          "verb": "Negotiate terms",
+          "desc": "Offer six-month sponsor priority with a measurable review and a maximum of 20 VIP seats.",
+          "benefits": [
+            "Protects audience fairness",
+            "Tests the relationship"
+          ],
+          "cost": "May lose the highest headline deal.",
+          "spend": 19000,
+          "delta": {
+            "legal": -9,
+            "ops": -3,
+            "workforce": -6,
+            "customer": -9
+          },
+          "trust": 9,
+          "fallout": "The sponsor pushes back, then agrees to discuss a narrower package. The community seats remain the centre of the opening."
+        },
+        {
+          "name": "SIGN EXCLUSIVITY",
+          "verb": "Take the headline",
+          "desc": "Accept the £120k annual exclusive package and reserve the full 80 VIP seats.",
+          "benefits": [
+            "Clear long-term prospect",
+            "Stronger sponsor attention"
+          ],
+          "cost": "Damages community access; creates future obligations.",
+          "spend": 9000,
+          "delta": {
+            "legal": 9,
+            "ops": 7,
+            "workforce": 8,
+            "customer": 18
+          },
+          "trust": 2,
+          "fallout": {
+            "due": 7,
+            "cost": 24000,
+            "label": "Exclusivity programme and VIP delivery commitments",
+            "delta": {
+              "customer": 10
+            }
+          }
+        },
+        {
+          "name": "BACK THE LOCAL COALITION",
+          "verb": "Choose independence",
+          "desc": "Accept the £45k annual fallback and retain open supplier and community relationships.",
+          "benefits": [
+            "Community continuity",
+            "Lower future dependency"
+          ],
+          "cost": "Less sponsorship upside and new admin work.",
+          "spend": 15000,
+          "delta": {
+            "legal": -4,
+            "ops": -3,
+            "workforce": -7,
+            "customer": -6
+          },
+          "trust": 7,
+          "fallout": "The local partners cheer. Your board now has to explain why the smaller contract might be more resilient."
+        }
+      ],
+      "signals": [
+        {
+          "name": "OWN THE TRADE-OFF",
+          "line": "'Any partnership must honour confirmed guest access and our programme.'",
+          "delta": {
+            "legal": -3,
+            "ops": 0,
+            "workforce": -1,
+            "customer": -5
+          },
+          "trust": 5
+        },
+        {
+          "name": "ANNOUNCE THE FULL DEAL",
+          "line": "'A major partner is fully committed for next year.'",
+          "delta": {
+            "legal": 9,
+            "ops": 0,
+            "workforce": 0,
+            "customer": -6
+          },
+          "trust": 6,
+          "delay": {
+            "due": 7,
+            "cost": 10000,
+            "label": "Premature sponsorship announcement remediation",
+            "delta": {
+              "legal": 6
+            }
+          }
+        },
+        {
+          "name": "AVOID THE QUESTION",
+          "line": "'We have no partnership comment today.'",
+          "delta": {
+            "legal": -1,
+            "ops": 0,
+            "workforce": 0,
+            "customer": 4
+          },
+          "trust": -3
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO3 / linked Unit 37",
+        "topic": "Compare negotiated value, control rights and BATNA; protect trust.",
+        "facilitatorPrompt": "What would you walk away from? Does the largest number mean the best agreement?"
+      }
+    },
+    {
+      "id": "opening",
+      "number": "06",
+      "time": "18:00",
+      "title": "OPENING NIGHT",
+      "kicker": "The lights come on",
+      "scene": "opening",
+      "base": 10000,
+      "brief": "The doors open. After a day of ambitious plans, trade-offs and team conversations, the most important detail is simple: the capacity sign says 320, and someone has finally made a usable plan. The team discovers that the original 'open to everyone' line was a scheduled draft published without the final qualifier. No villain—just a system and a missed handover.",
+      "headline": "MAKE IT AN EVENING WORTH REMEMBERING.",
+      "question": "What will your leadership team protect after the applause?",
+      "pressure": "Celebrate the people who made the event real—not just the headline number.",
+      "evidence": [
+        {
+          "type": "SCHEDULER RECORD",
+          "time": "17:28",
+          "title": "THE CAUSE",
+          "body": "The scheduling system published a draft caption from the wrong approval queue. The removed qualifier is visible in its revision history.",
+          "clue": "The origin is established. Blaming an individual would miss the process failure."
+        },
+        {
+          "type": "TEAM BOARD",
+          "time": "17:36",
+          "title": "THE PEOPLE WHO DELIVERED",
+          "body": "Sam's rotation idea, the venue crew and the supplier handover have shaped the final opening programme.",
+          "clue": "Leadership is visible in who contributes and how decisions travel."
+        },
+        {
+          "type": "BOARD NOTE",
+          "time": "17:51",
+          "title": "WHAT HAPPENS NEXT",
+          "body": "The founders want a credible next-event plan including staffing, guest fairness, sponsor terms and the remaining cash balance.",
+          "clue": "A memorable night means little if the next one cannot operate."
+        }
+      ],
+      "advice": [
+        "Praise meaningful contributions without ranking employees' personalities.",
+        "A realistic closing schedule is as important as opening the doors.",
+        "The finale is a chance for earned public recognition rather than a false success claim.",
+        "Leave cash for the next event. Don't book the annual sponsorship as paid cash.",
+        "Secure future partner commitments only with achievable dates.",
+        "Close the loop with guests, employees and community supporters."
+      ],
+      "plans": [
+        {
+          "name": "MAKE THE TEAM THE HEADLINE",
+          "verb": "Fund the next chapter",
+          "desc": "Use the opening to recognise cross-team contributions and fund a measured follow-up series.",
+          "benefits": [
+            "Learning and trust",
+            "Sustainable operating plan"
+          ],
+          "cost": "Less cash available for aggressive expansion.",
+          "spend": 23000,
+          "delta": {
+            "legal": -8,
+            "ops": -4,
+            "workforce": -15,
+            "customer": -12
+          },
+          "trust": 13,
+          "fallout": "Guests applaud the people who built the night. The venue earns its first repeat community booking."
+        },
+        {
+          "name": "GO BIG NEXT MONTH",
+          "verb": "Scale fast",
+          "desc": "Commit to an even bigger series and expand before documenting lessons from tonight.",
+          "benefits": [
+            "Ambition and momentum",
+            "Possible growth upside"
+          ],
+          "cost": "Higher deferred costs and staff fatigue.",
+          "spend": 16000,
+          "delta": {
+            "legal": 7,
+            "ops": 11,
+            "workforce": 12,
+            "customer": -7
+          },
+          "trust": 7,
+          "fallout": {
+            "due": 7,
+            "cost": 19000,
+            "label": "Unfunded next-series expansion obligations",
+            "delta": {
+              "liquidity": 6
+            }
+          }
+        },
+        {
+          "name": "PROTECT THE RESERVE",
+          "verb": "End on a measured note",
+          "desc": "Close the evening within budget, document what worked and delay all expansion promises.",
+          "benefits": [
+            "Preserves cash",
+            "Honest reflection"
+          ],
+          "cost": "May frustrate partners hoping for a big announcement.",
+          "spend": 7000,
+          "delta": {
+            "legal": -4,
+            "ops": -7,
+            "workforce": -3,
+            "customer": 7
+          },
+          "trust": 2,
+          "fallout": "The event ends without a dramatic expansion promise. The team leaves with usable evidence and a clearer plan for next time."
+        }
+      ],
+      "signals": [
+        {
+          "name": "SHARE THE RECEIPTS",
+          "line": "'Here's what changed today, who made it possible, and what we will improve.'",
+          "delta": {
+            "legal": -5,
+            "ops": -3,
+            "workforce": -6,
+            "customer": -6
+          },
+          "trust": 7
+        },
+        {
+          "name": "DECLARE PERFECTION",
+          "line": "'Every promise was delivered without compromise.'",
+          "delta": {
+            "legal": 11,
+            "ops": 3,
+            "workforce": 2,
+            "customer": 8
+          },
+          "trust": -4
+        },
+        {
+          "name": "CREDIT THE CEO",
+          "line": "'A great night, led entirely by senior management.'",
+          "delta": {
+            "legal": 1,
+            "ops": 0,
+            "workforce": 11,
+            "customer": 4
+          },
+          "trust": -7
+        }
+      ],
+      "learning": {
+        "pearsonLO": "LO1 / LO2 / LO3 / LO4",
+        "topic": "Synthesize people, motivation, culture and commercial trade-offs.",
+        "facilitatorPrompt": "Who changed your team's thinking? What did you learn that a scoreboard cannot capture?"
+      }
+    }
+  ],
+  "initialCash": 210000,
+  "annualContractValue": 120000,
+  "baseline": {
+    "legal": 37,
+    "ops": 35,
+    "workforce": 42,
+    "customer": 47,
+    "liquidity": 20
+  },
+  "variants": [
+    {
+      "title": "Early registrations came through the creator network",
+      "effect": {
+        "customer": 3,
+        "ops": 2
+      },
+      "note": "A local creator's preview increased expectations beyond the official list."
+    },
+    {
+      "title": "The team had not rehearsed the opening announcement",
+      "effect": {
+        "workforce": 5,
+        "customer": 2
+      },
+      "note": "Nobody had practised explaining the capacity policy to guests."
+    },
+    {
+      "title": "A supplier booking had an overlooked delivery clause",
+      "effect": {
+        "ops": 5,
+        "legal": 1
+      },
+      "note": "The delivery deadline requires a same-day confirmation."
+    }
+  ]
+};
+g.BCLearningContent=scene;
+})(globalThis);
+
+;
+(function(g){
+"use strict";
+// The preview deliberately uses the exact same deterministic BCCreateRules engine
+// that powers the original incident. It is NOT a real-time multi-device room.
+const C=g.BCLearningContent;
+const R=g.BCCreateRules(C);
+const KEY="bip-opening-night-preview-v1";
+const TEAMS=["THE SPARKS","TEAM HORIZON","THE MAKERS","THE WILD CARDS"];
+const MODES={
+ social:{label:"Team Building",focus:"A playful shared challenge. Learning prompts are optional.",debrief:"What made your team laugh, listen or change direction?"},
+ classroom:{label:"Classroom",focus:"An experiential case linked to Pearson HND Business Unit 20. Not an official assessment.",debrief:"Which theory supports your choice? What evidence would challenge your interpretation?"},
+ learning:{label:"Leadership",focus:"Team decisions, motivation, communication and negotiation with a facilitated debrief.",debrief:"How did authority, employee voice and evidence shape your result?"}
+};
+const $=id=>document.getElementById(id);
+const esc=x=>String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>"£"+Number(n).toLocaleString("en-GB");
+let session=null;
+let screen="intro";
+let active=-1;
+let notice="";
+let draft={advisers:[],revealed:false,plan:-1,signal:-1};
+function freshDraft(){draft={advisers:[],revealed:false,plan:-1,signal:-1};}
+function save(){try{sessionStorage.setItem(KEY,JSON.stringify({session,screen,active,draft}));}catch(_){}}
+function clearSaved(){try{sessionStorage.removeItem(KEY)}catch(_){}}
+function restore(){
+ try{const v=JSON.parse(sessionStorage.getItem(KEY)||"null");
+  if(!v?.session||!Array.isArray(v.session.teams)||v.session.teams.length<2||v.session.teams.length>4)return;
+  if(!MODES[v.session.mode]||!Number.isInteger(v.session.round)||v.session.round<0||v.session.round>5)return;
+  if(!v.session.teams.every((t,i)=>t?.economic?.history?.length<=6&&t?.name===TEAMS[i]))return;
+  session=v.session;screen=["team","play","recap","final"].includes(v.screen)?v.screen:"team";
+  active=Number.isInteger(v.active)?v.active:-1;
+  if(v.draft&&Array.isArray(v.draft.advisers))draft=v.draft; 
+ }catch(_){}
+}
+function setScreen(s){screen=s;save();render();}
+function h2(s){return '<h2 id="current-heading" tabindex="-1">'+s+'</h2>';}
+function top(){
+ if(!session)return "";
+ return '<div class="steps" aria-label="Six episodes">'+C.episodes.map((e,i)=>
+  '<span class="'+(i===session.round?"on":"")+'">'+String(i+1).padStart(2,"0")+' / '+esc(e.title)+'</span>').join("")+'</div>';
+}
+function begin(){
+ const n=Math.max(2,Math.min(4,Number($("team-count")?.value)||2));
+ const mode=Object.prototype.hasOwnProperty.call(MODES,$("mode")?.value)?$("mode").value:"classroom";
+ session={mode,round:0,teams:TEAMS.slice(0,n).map((name,i)=>({name,economic:R.createTeam(i,name),locked:false,advisers:[]}))};
+ freshDraft();active=-1;notice="Your room is ready. Choose the first team.";setScreen("team");
+}
+function intro(){
+ return '<section class="hero"><p class="eyebrow">BUSINESS IN PLAY / ORIGINAL EDUCATIONAL CASE / EXPERIMENTAL</p>'+
+ '<h1 class="title">Business is better<br><em>when it is played.</em></h1>'+
+ '<p class="lead">One opening night. Six connected decisions. Different teams, different outcomes. Experience leadership, motivation, marketing and negotiation through an original fictional story.</p>'+
+ '<div class="hero-art" role="img" aria-label="Stylised poster for the Fieldwork House opening night"><span class="shape">FIELD</span><div class="disk">OPEN<br>NIGHT</div><span class="shape">WORK</span></div>'+
+ '<div class="row gap"><span class="chip">No login</span><span class="chip">2–4 teams</span><span class="chip">One shared screen</span><span class="chip">Six original scenes</span></div>'+
+ '<div class="panel"><p class="eyebrow">START A LOCAL DEMO IN SECONDS</p>'+
+ '<label for="mode">Session purpose</label><select id="mode"><option value="social">Team-building / entertainment</option><option value="classroom" selected>Business class / seminar</option><option value="learning">Leadership development</option></select>'+
+ '<label for="team-count">Number of teams</label><select id="team-count"><option value="2">2 teams</option><option value="3">3 teams</option><option value="4">4 teams</option></select>'+
+ '<p class="small subtle">Every team takes a turn on this device. This is not the Cloudflare multiplayer room. No room code or secret is necessary.</p>'+
+ '<div class="row gap"><button type="button" class="primary" data-action="start">START THE EXPERIENCE</button></div></div>'+
+ '<p class="small subtle">This original prototype shares the deterministic cash/risk/consequence engine with the 09:17 Incident. Its economics are illustrative; its learning design has not been academically validated.</p></section>';
+}
+function teamPicker(){
+ const ep=C.episodes[session.round];
+ let cards=session.teams.map((t,i)=>{
+  const h=t.economic.history;
+  return '<button type="button" class="choice" data-action="team" data-index="'+i+'" '+(t.locked?"disabled":"")+'><span class="eyebrow">TEAM '+(i+1)+' · '+(t.locked?"RESPONSE LOCKED":"READY TO PLAY")+'</span><strong>'+esc(t.name)+'</strong>'+
+    '<small>'+ (t.locked?"Waiting for the others":h.length?"Cash "+money(t.economic.cash)+" · "+h.length+" scene(s) completed":"Tap to choose this team and begin")+'</small></button>';
+ }).join("");
+ const how=session.mode==="classroom"?"After each scene, use the teacher's reflection question.":session.mode==="learning"?"The facilitator can pause to discuss why teams disagreed.":"Play the episode, discuss with friends and own the outcome.";
+ return top()+'<section class="section"><span class="eyebrow">SCENE '+(session.round+1)+' / SIX · '+esc(ep.time)+'</span>'+h2("Who is making the next move?")+
+ '<p class="lead">'+esc(ep.headline)+'</p><p class="subtle">'+esc(how)+'</p><div class="grid2">'+cards+'</div>'+
+ (notice?'<p class="status" role="status">'+esc(notice)+'</p>':"")+
+ '<p class="small subtle">Choose a team above. Only that team sees its two selected advisers. No account creation, no team password and no invitation link.</p>'+
+ '<div class="row gap"><button class="secondary" data-action="restart">RESTART SESSION</button></div></section>';
+}
+function itemExhibits(ep){
+ return '<div class="exhibits">'+ep.evidence.map((x,i)=>'<details class="exhibit"><summary><span class="label">SOURCE '+(i+1)+' · '+esc(x.type)+' · '+esc(x.time)+'</span><br><strong>'+esc(x.title)+'</strong></summary><p>'+esc(x.body)+'</p><p><b>What it tells you:</b> '+esc(x.clue)+'</p></details>').join("")+'</div>';
+}
+function play(){
+ if(active<0||active>=session.teams.length){screen="team";return teamPicker();}
+ const t=session.teams[active],ep=C.episodes[session.round];
+ const cards=C.advisers.map((a,i)=>'<button class="choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
+ const selections=draft.advisers.length;
+ const dossier=draft.revealed?'<div class="notes" aria-label="Confidential adviser notes"><p class="eyebrow">TWO PRIVATE TEAM PERSPECTIVES</p>'+draft.advisers.map(i=>'<p><b>'+esc(C.advisers[i].name)+':</b> '+esc(ep.advice[i])+'</p>').join("")+'</div>':"";
+ const decisions=draft.revealed?'<h3>Choose one strategy</h3><div class="grid3">'+ep.plans.map((x,i)=>
+  '<button type="button" class="choice" data-action="plan" data-index="'+i+'" aria-pressed="'+(i===draft.plan)+'"><span class="eyebrow">ROUTE 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.desc)+'</small><small>'+x.benefits.map(esc).join(" · ")+'</small><small class="cost">'+money(x.spend)+' · '+esc(x.cost)+'</small></button>').join("")+'</div>'+
+ '<h3>Choose your public response</h3><div class="grid3">'+ep.signals.map((x,i)=>
+  '<button type="button" class="choice" data-action="signal" data-index="'+i+'" aria-pressed="'+(i===draft.signal)+'"><span class="eyebrow">STATEMENT 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.line)+'</small></button>').join("")+'</div>'+
+ '<div class="row gap"><button type="button" class="primary" data-action="lock" '+(draft.plan<0||draft.signal<0?"disabled":"")+'>LOCK '+esc(t.name)+' RESPONSE</button><button type="button" class="secondary" data-action="change-advisers">CHANGE ADVISERS</button></div>':"";
+ return top()+'<section class="section"><div class="row"><span class="eyebrow">TEAM '+(active+1)+': '+esc(t.name)+'</span><span class="time">'+esc(ep.time)+'</span><span class="chip">'+money(t.economic.cash)+' REMAINING</span></div>'+
+ '<h1 class="title">'+esc(ep.title)+'</h1><p class="lead">'+esc(ep.brief)+'</p>'+
+ '<div class="two"><div><p class="eyebrow">THE EVIDENCE / OPEN ANY SOURCE</p>'+itemExhibits(ep)+'</div>'+
+ '<div class="panel"><p class="eyebrow">YOUR DECISION</p><h3>'+esc(ep.question)+'</h3><p>'+esc(ep.pressure)+'</p>'+
+ '<div class="metric"><span>Available event fund</span><strong>'+money(t.economic.cash)+'</strong></div>'+
+ '<div class="metric"><span>Annual sponsorship</span><strong>NOT CASH</strong></div>'+
+ (session.mode!=="social"?'<p class="hint"><b>Learning focus:</b> '+esc(ep.learning.topic)+'. '+esc(ep.learning.pearsonLO)+'</p>':"")+
+ '</div></div><h3>Consult exactly two perspectives</h3><p class="subtle">Select the advice you believe will change your decision. You cannot open every briefing.</p>'+
+ '<div class="grid3">'+cards+'</div><p class="status">'+selections+' of 2 selected. '+(draft.revealed?"Briefings revealed.":"Change your selection before revealing.")+'</p>'+
+ (!draft.revealed?'<div class="row gap"><button class="primary" data-action="reveal" '+(selections!==2?"disabled":"")+'>REVEAL TWO BRIEFINGS</button><button class="secondary" data-action="back-teams">BACK TO TEAMS</button></div>':"")+
+ dossier+decisions+'</section>';
+}
+function recap(){
+ const ep=C.episodes[session.round];
+ const result=session.teams.map(t=>{
+  const last=t.economic.history[session.round],prior=t.economic.history[session.round-1];
+  const delta=t.economic.cash-(prior?prior.cash:C.initialCash);
+  return '<article class="panel"><p class="eyebrow">'+esc(t.name)+'</p><h3>'+esc(last.plan)+'</h3><p>'+esc(last.fallout)+'</p>'+
+  '<div class="metric"><span>Event cash</span><strong>'+money(t.economic.cash)+'</strong></div>'+
+  '<div class="metric"><span>Cost this scene</span><strong>'+money(-delta)+'</strong></div>'+
+  '<div class="metric"><span>Trust index</span><strong>'+t.economic.trust+'/100</strong></div>'+
+  '<p class="small subtle">Public statement: '+esc(last.signal)+'</p></article>';
+ }).join("");
+ const previousCondition=session.round===1&&session.teams.some(t=>t.economic.history[0]?.plan==="KEEP THE HYPE")?
+  '<p class="hint">Delayed story consequence: teams that kept the ambiguous invitation alive entered the staff discussion with an avoidable trust problem. Their earlier response remains in the ledger.</p>':
+  session.round===4&&session.teams.some(t=>t.economic.history[3]?.plan==="PUT THE SPONSOR FIRST")?
+   '<p class="hint">Earlier sponsor-control decisions shaped the negotiation context. The final finance and risk states still come from the shared engine.</p>':"";
+ return top()+'<section class="section"><p class="eyebrow">THE AFTERMATH / SCENE '+(session.round+1)+'</p>'+
+ h2("Different decisions. Different consequences.")+'<p class="lead">'+esc(ep.headline)+'</p><div class="grid2">'+result+'</div>'+
+ previousCondition+
+ '<div class="debrief"><p class="eyebrow">REFLECTION / '+esc(session.mode.toUpperCase())+'</p>'+
+ '<h3>One question worth discussing</h3><p>'+esc(session.mode==="social"?MODES.social.debrief:ep.learning.facilitatorPrompt)+'</p>'+
+ '<p class="small subtle">A fictional team score does not measure individual leadership competence.</p></div>'+
+ '<div class="row gap"><button class="primary" data-action="next">'+(session.round===5?"VIEW THE FINAL VERDICT":"START NEXT SCENE")+'</button></div></section>';
+}
+function final(){
+ const ranked=R.rankTeams(session.teams.map(t=>t.economic)),leader=ranked[0];
+ const every=ranked.map((x,i)=>'<article class="panel"><span class="eyebrow">RANK '+(i+1)+' · '+esc(x.team.name)+'</span>'+
+ '<h3>'+x.outcome.score+' / 100</h3>'+
+ '<div class="metric"><span>Available cash</span><b>'+money(x.team.cash)+'</b></div>'+
+ '<div class="metric"><span>Trust index</span><b>'+x.team.trust+'/100</b></div>'+
+ '<div class="metric"><span>Outstanding commitments</span><b>'+money(x.outcome.unpaid)+'</b></div>'+
+ '<p>'+esc(x.outcome.reasons.join(" "))+'</p></article>').join("");
+ return '<section class="section"><p class="eyebrow">FIELDWORK HOUSE / THE FINAL CHAPTER</p>'+
+ '<h1 class="title">What your team <em>made possible.</em></h1>'+
+ '<p class="lead">The doors opened. The mystery behind the unclear invitation has a mundane but useful explanation: the wrong draft was published from the scheduler. It was a missed handover, not a villain. The real story is what happened when people had to work together.</p>'+
+ '<div class="leader"><p class="eyebrow">HIGHEST SIMULATED PERFORMANCE</p><div class="winner">'+esc(leader.team.name)+'</div>'+
+ '<p>'+leader.outcome.score+' / 100 · An illustrative comparison, not a diagnosis of real leadership skill.</p></div>'+
+ '<div class="report">'+every+'</div>'+
+ '<div class="debrief"><p class="eyebrow">DEBRIEF / '+esc(MODES[session.mode].label)+'</p>'+
+ '<h3>Move from play to insight</h3><p>'+esc(MODES[session.mode].debrief)+'</p>'+
+ '<p>Which evidence changed your mind? Which trade-off did you underestimate? How would you act differently next time?</p>'+
+ '<p class="small subtle">Mapping: Pearson HND Business Unit 20 learning outcomes, plus conceptual links to negotiation, marketing and operations. Not Pearson or Harvard endorsed; not a formal academic assessment.</p></div>'+
+ '<div class="row gap"><button class="primary" data-action="download">DOWNLOAD SESSION SUMMARY</button><button class="secondary" data-action="restart">PLAY AGAIN</button></div></section>';
+}
+function render(){
+ const html=screen==="intro"?intro():screen==="team"?teamPicker():screen==="play"?play():screen==="recap"?recap():final();
+ $("app").innerHTML=html;save();
+ const h=$("app").querySelector("#current-heading,h1,h2");
+ if(h){h.setAttribute("tabindex","-1");h.focus({preventScroll:true});}
+}
+function reset(){
+ // No named user records or cookies: only a local fictional team-state snapshot.
+ clearSaved();session=null;screen="intro";active=-1;freshDraft();notice="";render();
+}
+function lock(){
+ const t=session.teams[active];
+ if(draft.advisers.length!==2||!draft.revealed||draft.plan<0||draft.signal<0)return;
+ if(t.locked)return;
+ try{t.economic=R.applyTurn(t.economic,session.round,draft.plan,draft.signal,draft.advisers,R.seedVariant("OPENING-NIGHT"),{amount:0,route:null});
+  t.locked=true;t.advisers=draft.advisers.slice();active=-1;freshDraft();notice=t.name+" has locked its decision.";
+  if(session.teams.every(x=>x.locked)){setScreen("recap");}
+  else setScreen("team");
+ }catch(error){notice="Could not commit the decision: "+error.message;render();}
+}
+function next(){
+ if(!session.teams.every(t=>t.locked))return;
+ if(session.round===5){setScreen("final");return;}
+ session.round++;
+ session.teams.forEach(t=>{t.locked=false;t.advisers=[]});
+ active=-1;freshDraft();notice="A new episode is ready.";setScreen("team");
+}
+function download(){
+ const ranked=R.rankTeams(session.teams.map(t=>t.economic));
+ const lines=["BUSINESS IN PLAY — OPENING NIGHT","Experimental teaching-case session; fictional business simulation","Mode: "+MODES[session.mode].label,"",...ranked.flatMap((x,i)=>
+  ["#"+(i+1)+" "+x.team.name+" — Score "+x.outcome.score+"/100",
+   "Cash "+money(x.team.cash)+"; Trust "+x.team.trust+"; Pending "+money(x.outcome.unpaid),
+   ...x.team.history.map(h=>"Scene "+h.round+": "+h.plan+" | "+h.signal+" | "+h.fallout),""]) ,
+  "Discussion only. Not a Pearson assessment, Harvard case, psychometric score, or proof of learning gains."];
+ const blob=new Blob([lines.join("\n")],{type:"text/plain;charset=utf-8"});
+ const url=URL.createObjectURL(blob);const link=document.createElement("a");
+ link.href=url;link.download="business-in-play-opening-night-summary.txt";
+ document.body.appendChild(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+document.addEventListener("click",event=>{
+ const target=event.target.closest("[data-action]");if(!target||target.disabled)return;
+ const a=target.dataset.action,i=Number(target.dataset.index);
+ if(a==="start"){begin();return;}
+ if(a==="restart"){if(!session||g.confirm("Restart the whole fictional session?"))reset();return;}
+ if(!session)return;
+ if(a==="team"){if(i<0||i>=session.teams.length||session.teams[i].locked)return;active=i;freshDraft();setScreen("play");return;}
+ if(a==="back-teams"){active=-1;freshDraft();setScreen("team");return;}
+ if(a==="adviser" && !draft.revealed){if(draft.advisers.includes(i))draft.advisers=draft.advisers.filter(x=>x!==i);
+  else if(draft.advisers.length<2&&i>=0&&i<C.advisers.length)draft.advisers.push(i);
+  render();return;}
+ if(a==="reveal"){if(draft.advisers.length===2){draft.revealed=true;render();}return;}
+ if(a==="change-advisers"){draft.revealed=false;draft.plan=-1;draft.signal=-1;render();return;}
+ if(a==="plan"){if(i>=0&&i<3)draft.plan=i;render();return;}
+ if(a==="signal"){if(i>=0&&i<3)draft.signal=i;render();return;}
+ if(a==="lock"){lock();return;}
+ if(a==="next"){next();return;}
+ if(a==="download"){download();return;}
+});
+restore();render();
+})(globalThis);
+</script></body></html>
