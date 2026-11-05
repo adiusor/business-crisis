@@ -48,7 +48,7 @@ function page(){
 }
 function frame(p,kicker,title,index){
  p.rect(0,0,W,134,night);p.rect(0,0,9,H,gold);
- p.txt(M,22,"BUSINESS CRISIS  /  THE 09:17 INCIDENT",9,gold,"F2");
+ p.txt(M,22,"THE 09:17 CHALLENGE  /  TEAM DECISIONS",9,gold,"F2");
  p.txt(M,49,kicker,10,"#bfd1d2","F2");
  p.txt(M,69,title,25,paper,"F3");
  p.rect(0,H-44,W,44,night);
@@ -59,7 +59,7 @@ function cover(v){
  const p=page();frame(p,"OFFICIAL SIMULATION RESULT","THE BOARDROOM VERDICT",1);
  const winner=v.hasChampion?v.champions.join(" / "):"NO CONFIRMED RENEWAL";
  p.rect(M,153,W-2*M,88,"#1b3b49");
- p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"THE BOARD DID NOT RENEW",11,gold,"F2");
+ p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"HIGHEST TEAM SCORE",11,gold,"F2");
  p.lines(M+16,188,winner,W-2*M-32,18,paper,"F3",23);
  p.txt(M,263,"FINAL TEAM RANKINGS",12,ink,"F2");
  let top=287;
@@ -76,7 +76,7 @@ function cover(v){
  const completed=decisions.filter(d=>!d.timedOut).length;
  const total=decisions.length,trust=v.ranked[0].trust;
  p.rect(M,556,W-2*M,199,night);
- p.txt(M+15,570,"CRISIS SNAPSHOT / FACTS FROM THIS SESSION",11,gold,"F2");
+ p.txt(M+15,570,"CHALLENGE SNAPSHOT / SESSION FACTS",11,gold,"F2");
  p.ring(M+104,658,44,total?completed/total:0,mint);
  p.ring(M+351,658,44,trust/100,gold);
  p.txt(M+79,645,total?Math.round(completed/total*100)+"%":"0%",18,paper,"F2");
@@ -88,7 +88,7 @@ function cover(v){
  pages.push(p);
 }
 function chapterFrame(v,index,continued){
- const p=page(),episode=v.ranked[0]?.decisions?.[index]?.episode||"THE INCIDENT";
+ const p=page(),episode=v.ranked[0]?.decisions?.[index]?.episode||"THE STORY";
  frame(p,"EPISODE "+String(index+1).padStart(2,"0")+
     (continued?" / CONTINUED":" / TEAM-BY-TEAM COMPARISON"),episode,pages.length+1);
  p.txt(M,149,"WHAT EACH TEAM CHOSE / WHAT FOLLOWED",11,ink,"F2");
