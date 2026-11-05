@@ -838,6 +838,14 @@ body:not(.projector-mode) .evidence-item summary:hover{background:#183340}
  .evidence-item summary,.strategy-choice{transition:none}
 }
 
+
+/* Film-first composition: keep the hand-drawn clue as a quiet secondary layer
+   while the authored location remains the main visual. */
+.scene-film{opacity:.66;filter:saturate(.98) contrast(1.08)}
+.projector-mode .scene-art .scene-film{opacity:.7}
+.scene-art > svg:not(.scene-film-svg){opacity:.34;filter:drop-shadow(0 0 12px #0b1f2933)}
+.scene-art:after{opacity:.09}
+
 /* A 720p projector is a single cinematic stage, not an endlessly scrolling
    webpage. Keep the incident, collective clocks and three source exhibits
    within a standard 1280×720 room display without removing information. */

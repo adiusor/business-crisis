@@ -500,6 +500,15 @@ try {
     // Cinematic scene remains scannable: one hero, six chapter markers, and
     // evidence whose full source paragraphs are progressively disclosed.
     assert.equal(await phoneA.locator(".scene-art > svg").count(),1);
+    const environments=await phoneA.evaluate(()=>
+      ["mail","floor","client","press","warehouse","board"].map(name=>{
+        const doc=new DOMParser().parseFromString(window.BCPreviewArt.scene(name),"image/svg+xml");
+        if(doc.querySelector("parsererror"))return null;
+        return doc.querySelector("[data-art-environment]")?.getAttribute("data-art-environment");
+      }));
+    assert.deepEqual(environments,
+      ["office","depot","client-suite","newsroom","warehouse","boardroom"],
+      "Six cinematic chapters need six coherent, parseable locations");
     assert.equal(await phoneA.locator(".scene-film svg").count(),1,
       "Each cinematic incident contains its original illustration layer");
     assert.equal(await phoneA.locator(".episode-progress li").count(),6);

@@ -40,6 +40,84 @@ if(id==="warehouse")return '<path d="M0 280H1440V630H0Z" fill="#29353a" opacity=
 return '<g transform="translate(360 270)">'+person(0,410,1.05,"#b98b70","#1c313c")+person(340,410,1.15,"#c8a18a","#29313b")+person(690,410,1.05,"#a87663","#273e48")+'</g>'+desk()+
 '<g transform="translate(545 200)"><rect x="0" y="0" width="350" height="180" rx="9" fill="#0a1823" stroke="#657e8e" stroke-width="12"/><path d="M50 50H300M50 80H230M50 110H270" stroke="#c5a478" stroke-width="12" opacity=".7"/></g>';
 }
+
+/* Six original authored environments. Each incident has a geographical
+   identity; the office skyline is not reused as a warehouse or newsroom.
+   No remote imagery, tracking, font download or commercial art dependency. */
+function backdrop(id){
+ if(id==="floor")return \`<g data-art-environment="depot">
+ <rect width="1440" height="800" fill="#13232d"/>
+ <path d="M0 0H1440V475H0Z" fill="#243e48"/>
+ <path d="M0 475H1440V800H0Z" fill="url(#floor)"/>
+ <path d="M0 435H1440M0 465H1440" stroke="#8ca4a1" opacity=".3" stroke-width="8"/>
+ <path d="M0 790L460 463H980L1440 790" fill="#293a3c" opacity=".6"/>
+ <path d="M710 800V480M290 800L555 480M1150 800L870 480" stroke="#dbbb75" stroke-width="4" opacity=".3"/>
+ <g fill="#10212b" stroke="#52616a" stroke-width="10">
+ <rect x="30" y="225" width="295" height="218"/><rect x="1110" y="215" width="292" height="228"/>
+ </g>
+ <g fill="#3e5b66"><rect x="62" y="290" width="225" height="115"/><rect x="1151" y="280" width="210" height="124"/></g>
+ <path d="M0 62H1440M0 153H1440" stroke="#101c26" stroke-width="20"/>
+ <g fill="#d7c59c" opacity=".5"><rect x="185" y="125" width="220" height="13"/><rect x="614" y="125" width="220" height="13"/><rect x="1040" y="125" width="220" height="13"/></g>
+ <path d="M380 460H1060M380 505H1060" stroke="#9baeb0" stroke-width="9" opacity=".15"/>
+ </g>\`;
+ if(id==="client")return \`<g data-art-environment="client-suite">
+ <rect width="1440" height="800" fill="#10212c"/>
+ <path d="M0 0H1440V540H0Z" fill="url(#glass)"/>
+ <g opacity=".48">\${skyline()}</g>
+ <rect y="0" width="1440" height="78" fill="#101b27"/>
+ <path d="M250 0V565M1130 0V565" stroke="#15232d" stroke-width="21"/>
+ <path d="M0 560H1440V800H0Z" fill="url(#floor)"/>
+ <path d="M0 800L480 560H990L1440 800" fill="#1a2a32" opacity=".85"/>
+ <g opacity=".45" stroke="#b9ab88" stroke-width="4">
+ <path d="M430 620H1040"/><path d="M450 666H1010"/>
+ </g><path d="M0 567H1440" stroke="#cab19c" stroke-width="5" opacity=".25"/>
+ </g>\`;
+ if(id==="press")return \`<g data-art-environment="newsroom">
+ <rect width="1440" height="800" fill="#12202b"/>
+ <rect x="0" y="40" width="1440" height="460" fill="#273745"/>
+ <path d="M0 505H1440V800H0Z" fill="url(#floor)"/>
+ <g fill="#0c1923" stroke="#55717b" stroke-width="11">
+ <rect x="35" y="130" width="540" height="310"/>
+ <rect x="620" y="115" width="310" height="310"/>
+ <rect x="950" y="160" width="420" height="274"/></g>
+ <g stroke="#adbdc1" stroke-width="6" opacity=".23">
+ <path d="M72 225H526M72 260H470M72 293H505"/>
+ <path d="M667 205H877M667 242H845"/>
+ <path d="M1000 238H1300M1000 276H1250"/></g>
+ <path d="M0 70H1440" stroke="#101922" stroke-width="25"/>
+ <g fill="#eacfb5" opacity=".3"><circle cx="420" cy="75" r="32"/><circle cx="935" cy="75" r="32"/></g>
+ <path d="M0 680H1440" stroke="#9a5e53" stroke-width="15" opacity=".4"/>
+ </g>\`;
+ if(id==="warehouse")return \`<g data-art-environment="warehouse">
+ <rect width="1440" height="800" fill="#202a2e"/>
+ <path d="M0 0H1440V160H0Z" fill="#0e1b22"/>
+ <path d="M0 145H1440M0 300H1440" stroke="#697573" stroke-width="12" opacity=".5"/>
+ <path d="M0 545H1440V800H0Z" fill="#283239"/>
+ <path d="M0 800L390 540H1050L1440 800" fill="#3c4846" opacity=".6"/>
+ <g fill="#172731" stroke="#657470" stroke-width="14">
+ <rect x="55" y="175" width="425" height="358"/>
+ <rect x="605" y="175" width="290" height="358"/>
+ <rect x="1000" y="175" width="360" height="358"/></g>
+ <g fill="#55706b" opacity=".7">
+ <rect x="80" y="250" width="365" height="29"/><rect x="80" y="380" width="365" height="29"/>
+ <rect x="630" y="270" width="236" height="29"/><rect x="1026" y="260" width="304" height="29"/></g>
+ <path d="M45 625H1395" stroke="#d8ad6c" stroke-width="7" stroke-dasharray="44 28" opacity=".46"/>
+ <g fill="#dbc99c" opacity=".38"><rect x="225" y="118" width="310" height="15"/><rect x="920" y="118" width="310" height="15"/></g>
+ </g>\`;
+ if(id==="board")return \`<g data-art-environment="boardroom">
+ <rect width="1440" height="800" fill="#0b1a26"/>
+ <path d="M0 0H1440V570H0Z" fill="url(#glass)"/>
+ <g opacity=".42">\${skyline()}</g>
+ <path d="M0 0H1440V56H0Z" fill="#101823"/>
+ <path d="M0 0H135V600H0ZM1305 0H1440V600H1305Z" fill="#111a24"/>
+ <path d="M485 0V570M965 0V570" stroke="#142631" stroke-width="22"/>
+ <path d="M0 570H1440V800H0Z" fill="url(#floor)"/>
+ <path d="M0 800L420 565H1000L1440 800" fill="#1f3039" opacity=".7"/>
+ <g fill="#d3c19e" opacity=".28"><circle cx="375" cy="190" r="16"/><circle cx="1060" cy="190" r="16"/></g>
+ </g>\`;
+ return '<g data-art-environment="office">'+room()+'</g>';
+}
+
 function scene(id){
 const theme=id==="press"?"#a84c43":id==="warehouse"?"#c5965c":id==="floor"?"#79a3b1":"#e6b16d";
 return '<svg class="scene-art" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Original illustrated corporate crisis environment">'+
@@ -49,7 +127,7 @@ return '<svg class="scene-art" viewBox="0 0 1440 800" preserveAspectRatio="xMidY
 '<linearGradient id="desk" x2="0" y2="1"><stop stop-color="#534438"/><stop offset="1" stop-color="#171e24"/></linearGradient>'+
 '<radialGradient id="halo"><stop stop-color="'+theme+'" stop-opacity=".28"/><stop offset="1" stop-color="'+theme+'" stop-opacity="0"/></radialGradient>'+
 '<pattern id="grain" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".6" fill="#fff" opacity=".13"/><circle cx="6" cy="7" r=".5" fill="#000" opacity=".2"/></pattern></defs>'+
-room()+'<ellipse cx="880" cy="350" rx="610" ry="460" fill="url(#halo)"/>'+props(id)+
+backdrop(id)+'<ellipse cx="880" cy="350" rx="610" ry="460" fill="url(#halo)"/>'+props(id)+
 '<rect x="0" y="0" width="1440" height="800" fill="url(#grain)" opacity=".5"/>'+
 '<path d="M0 0H1440V800H0Z" fill="none" stroke="#08141c" stroke-width="30"/></svg>';
 }
@@ -70,6 +148,8 @@ return '<svg viewBox="0 0 200 250" preserveAspectRatio="xMidYMid slice" role="im
 '<path d="M76 166L100 203L126 165L116 250H84Z" fill="'+f.shirt+'"/>'+
 '<path d="M82 145V180Q100 195 118 180V145Z" fill="'+f.skin+'"/>'+
 '<ellipse cx="100" cy="102" rx="60" ry="74" fill="'+f.skin+'"/>'+
+ '<path d="M128 44Q164 70 161 114Q157 151 120 177Q145 149 144 110Q142 72 128 44Z" fill="#2a1b19" opacity=".13"/>'+
+ '<path d="M61 90Q60 65 86 47" stroke="#fff1dc" stroke-width="7" opacity=".12" fill="none"/>'+
 '<path d="'+f.shape+'" fill="'+f.hair+'"/>'+
 '<path d="M62 101Q75 96 87 102M112 102Q126 96 139 101" stroke="'+f.hair+'" stroke-width="4" fill="none"/>'+
 '<ellipse cx="76" cy="111" rx="4" ry="3" fill="#27252b"/><ellipse cx="125" cy="111" rx="4" ry="3" fill="#27252b"/>'+
