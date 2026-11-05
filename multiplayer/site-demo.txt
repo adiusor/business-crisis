@@ -18,7 +18,7 @@
     if(commit)commit.hidden=true;
     for(const choice of form.querySelectorAll('input[name="demo-plan"]'))choice.disabled=true;
     outcome.focus({preventScroll:true});
-    outcome.scrollIntoView({block:"nearest",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+    outcome.scrollIntoView({block:"nearest",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
   });
   replay.addEventListener("click",function(){
     form.reset();
