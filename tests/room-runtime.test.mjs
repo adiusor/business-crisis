@@ -345,13 +345,17 @@ try {
     await hostUI.locator("#create-teams").selectOption("2");
     await hostUI.locator("#create-form button.primary").click();
     await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
+    const uiCode=(await hostUI.locator("#room-code").textContent()).trim();
+    const hostUiToken=await hostUI.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode);
+    assert.match(hostUiToken,/^[a-f0-9]{64}$/);
     // Safari/macOS sometimes duplicates a tab and inherits its session
     // storage. A joining link must still show player registration, not host.
     const clonedHost=await browser.newPage({viewport:{width:1280,height:800}});
     clonedHost.on("pageerror",err=>browserErrors.push(err.message));
     await clonedHost.addInitScript(({code,token})=>{
       sessionStorage.setItem("bc-preview-session-"+code,token);
-    },{code:uiCode,token:hostToken});
+    },{code:uiCode,token:hostUiToken});
     await clonedHost.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
     await clonedHost.locator("#join-form").waitFor({state:"visible",timeout:12000});
     assert.equal(await clonedHost.locator("#host-actions").isVisible(),false,
@@ -370,7 +374,6 @@ try {
     assert.equal(await hostUI.locator("#game-rules .rule-card").count(),6);
     assert.equal(await hostUI.locator("#rules-host-note").isVisible(),true,
       "Only host sees the read-aloud instruction");
-    const uiCode = (await hostUI.locator("#room-code").textContent()).trim();
     assert.match(uiCode, /^[2-9A-HJ-NP-Z]{4}$/);
     await hostUI.locator("#join-qr").evaluate(async image => {
       if (image.complete && image.naturalWidth > 0) return;
