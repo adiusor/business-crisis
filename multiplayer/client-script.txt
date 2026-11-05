@@ -1540,7 +1540,7 @@
       const data = await request("/api/rooms", {method: "POST", headers: {authorization: "Bearer " + key},
         body: JSON.stringify({teamCount: Number($("create-teams").value)})});
       roomCode = data.roomCode;
-      history.replaceState(null, "", "/?room=" + roomCode);
+      history.replaceState(null, "", "/play?room=" + roomCode);
       saveSession(data.hostToken);
       await authenticateSession();
     } catch (e) { error(e.message); }

@@ -6,6 +6,8 @@ import CLIENT_STYLE from "./client-style.txt";
 import CLIENT_SCRIPT from "./client-script.txt";
 import CLIENT_ART from "./client-art.txt";
 import CLIENT_PDF from "./client-pdf.txt";
+import SITE_STYLE from "./site-style.txt";
+import {publicPath,renderPublicPage,robotsText,sitemapXml,sharingSvg,faviconSvg} from "./site.mjs";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
   clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
 
@@ -15,8 +17,8 @@ const WS_AUTH_TIMEOUT_MS = 12000;
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' ws: wss:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
-const htmlResponse = (body, type) => new Response(body, {headers: {...HEADERS, "content-type": type,
-  "content-security-policy": CSP}});
+const htmlResponse = (body, type, extra={}) => new Response(body, {headers: {...HEADERS, "content-type": type,
+  "content-security-policy": CSP, ...extra}});
 const json = (value, status = 200) => new Response(JSON.stringify(value), {status, headers: HEADERS});
 const problem = e => json({error: e && Number.isInteger(e.status) ? e.message : "Internal room error"},
   e && Number.isInteger(e.status) ? e.status : 500);
@@ -51,8 +53,26 @@ export default {
     try {
       const url = new URL(request.url);
       if (request.method === "GET") {
-        if (url.pathname === "/" || url.pathname === "/join" || url.pathname === "/projector")
-          return htmlResponse(CLIENT_HTML, "text/html; charset=utf-8");
+        // A private host link from the old format continues to work.
+        if (url.pathname === "/play" || url.pathname === "/join" ||
+            url.pathname === "/projector" || (url.pathname === "/" && url.searchParams.has("room")))
+          return htmlResponse(CLIENT_HTML, "text/html; charset=utf-8",
+            {"x-robots-tag":"noindex, nofollow, noarchive"});
+        if (publicPath(url.pathname)) {
+          const page=renderPublicPage(url.pathname,url,env);
+          return htmlResponse(page.html, "text/html; charset=utf-8", {"x-robots-tag":page.robots});
+        }
+        if (url.pathname === "/site-style.css")
+          return htmlResponse(SITE_STYLE,"text/css; charset=utf-8");
+        if (url.pathname === "/robots.txt")
+          return new Response(robotsText(url.origin,env),{headers:{...HEADERS,"content-type":"text/plain; charset=utf-8","x-robots-tag":"noindex"}});
+        if (url.pathname === "/sitemap.xml") {
+          const xml=sitemapXml(url.origin,env);
+          return xml===null?json({error:"No sitemap on private staging"},404):
+            new Response(xml,{headers:{...HEADERS,"content-type":"application/xml; charset=utf-8"}});
+        }
+        if (url.pathname === "/share-preview.svg" || url.pathname === "/favicon.svg")
+          return htmlResponse(url.pathname==="/share-preview.svg"?sharingSvg():faviconSvg(),"image/svg+xml; charset=utf-8");
         if (url.pathname === "/room-style.css")
           return htmlResponse(CLIENT_STYLE, "text/css; charset=utf-8");
         if (url.pathname === "/room-script.js")

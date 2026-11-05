@@ -71,7 +71,25 @@ try {
     await delay(250);
   }
   assert.ok(live, "Wrangler preview never started: " + logs);
-  assert.equal((await req("/")).response.status, 200);
+  // The new marketing site must stay unindexed on staging.
+  const landing=await req("/");
+  assert.equal(landing.response.status,200);
+  assert.match(landing.payload,/<h1>/);
+  assert.match(landing.response.headers.get("x-robots-tag"),/noindex/);
+  for(const route of ["/corporate-team-building-game","/virtual-team-building","/leadership-team-building","/for-facilitators","/ro"]){
+    const page=await req(route);
+    assert.equal(page.response.status,200,route);
+    assert.match(page.response.headers.get("x-robots-tag"),/noindex/);
+    assert.match(page.payload,/meta name="description"/);
+  }
+  assert.match((await req("/robots.txt")).payload,/Disallow: \/$/m);
+  assert.equal((await req("/sitemap.xml")).response.status,404);
+  for(const route of ["/play","/join","/projector","/?room=ABCD"]){
+    const page=await req(route);
+    assert.equal(page.response.status,200);
+    assert.match(page.response.headers.get("x-robots-tag"),/noindex/);
+  }
+  assert.equal((await req("/site-style.css")).response.status,200);
   const css = await req("/room-style.css"); assert.equal(css.response.status, 200);
   const script = await req("/room-script.js"); assert.equal(script.response.status, 200);
   assert.match(script.payload, /new WebSocket/);
@@ -342,7 +360,7 @@ try {
     const browserErrors = [];
     for (const page of [hostUI, phoneA, phoneB])
       page.on("pageerror", err => browserErrors.push(err.message));
-    await hostUI.goto(base, {waitUntil: "load"});
+    await hostUI.goto(base+"/play", {waitUntil: "load"});
     await hostUI.locator("#create-key").fill(creationKey);
     await hostUI.locator("#create-teams").selectOption("2");
     await hostUI.locator("#create-form button.primary").click();
