@@ -1410,3 +1410,16 @@ body.projector-mode.in-game .prebrief-summary{padding:12px 16px}
 /* Projector lobby must fit its join QR, rules and team cards at 1280 × 720.
    The public first-episode preview stays available on host/player screens. */
 body.projector-mode:not(.in-game) #round-recap{display:none!important}
+
+/* Untimed adviser preparation: distinguish reading from the decisive timer. */
+.prep-adviser-panel{border:1px solid #5c8c8b;background:#102b35;padding:16px;margin:12px 0}
+.prep-adviser-panel>.section-label{color:#a9e2cc;letter-spacing:.13em}
+.prep-message{font-size:16px!important;line-height:1.55!important;color:#e3f3ed!important}
+.prep-status{border-left:3px solid #9cddbd;padding:11px 13px;background:#183c40;color:#daf5e8;font-size:13px;line-height:1.5}
+.prep-adviser-panel .choice-grid{margin:12px 0}
+.prep-adviser-panel .choice{min-height:130px}
+.prep-adviser-panel button:focus-visible{outline:3px solid #ffe1af;outline-offset:2px}
+@media(max-width:540px){
+  .prep-adviser-panel{padding:12px}
+  .prep-adviser-panel .choice{min-height:118px}
+}

@@ -572,6 +572,27 @@ try {
     await hostUI.waitForFunction(name => document.querySelector("#team-list")?.textContent?.includes(name), newName);
     assert.match(await hostUI.locator("#episode-panel").innerText().catch(() => ""), /|^$/); // Lobby has no episode yet.
     await hostUI.locator("#host-actions button.primary").click();
+    await phoneA.locator(".prep-adviser-panel").waitFor({state:"visible",timeout:8000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "The first preparation phase has no decision clock");
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "Host cannot start a timer before every captain has selected advice");
+    assert.equal(await phoneA.locator("[data-prep-adviser]").count(),6);
+    await phoneA.locator('[data-prep-adviser="0"]').click();
+    await phoneA.locator('[data-prep-adviser="1"]').click();
+    await phoneA.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await phoneA.locator(".chosen-adviser").first().waitFor({state:"visible"});
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "One ready team is insufficient to begin the decision timer");
+    await phoneB.locator('[data-prep-adviser="2"]').click();
+    await phoneB.locator('[data-prep-adviser="3"]').click();
+    await phoneB.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#host-actions button.primary")?.disabled===false,
+      null,{timeout:12000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "No clock runs even when all teams finish adviser preparation");
+    await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
     assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),false,
       "Rules collapse when the host starts");
@@ -659,7 +680,7 @@ try {
       null,{timeout:5000});
     assert.equal(await phoneA.locator("#decision-dock").isVisible(),true,
       "Players have a persistent route to their action despite long evidence");
-    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/CHOOSE TWO ADVISERS/);
+    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/MAKE YOUR TEAM DECISION/);
     await phoneA.locator("#decision-dock").click();
     const rulesPlacement=await phoneA.evaluate(()=>{
       const action=document.querySelector("#player-actions");
@@ -745,21 +766,20 @@ try {
     await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
-    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
-      "Six original illustrated adviser portraits appear in multiplayer");
+    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),0,
+      "The six-adviser picker is absent during timed decisions after its untimed selection");
+    assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
+      "Private advice stays visible during the decision window");
     assert.equal(await phoneA.locator(".jump-decision").count(),1);
     assert.equal(await phoneA.locator("#room-screen").evaluate(el=>getComputedStyle(el).display),"flex",
       "Player decisions are prioritised over long rosters");
-    await phoneA.locator('[data-choice="0"]').click();
-    await phoneA.locator('[data-choice="1"]').click();
-    await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "The two chosen adviser briefings appear immediately under a short heading");
     assert.equal(await phoneA.locator(".adviser-portrait").count(),0,
       "The six-card adviser picker collapses after selection to reduce phone scrolling");
-    assert.equal(await phoneA.locator(".adviser-edit").count(),1,
-      "A captain may still change the pair before any teammate has voted");
+    assert.equal(await phoneA.locator(".adviser-edit").count(),0,
+      "Adviser changes close when the timed decision phase starts");
     const adviserOrder=await phoneA.evaluate(()=>{
       const grid=document.querySelector("#player-actions .strategy-grid"),
         advice=document.querySelector(".chosen-advisers");
@@ -787,11 +807,11 @@ try {
       await phoneA.locator("#room-screen").getAttribute("data-revision"));
     assert.equal(await phoneA.locator('[data-plan="0"]').evaluate(el=>el===document.activeElement),
       true,"Selected choice is keyboard-focused");
-    // An opponent's adviser choice broadcasts another room revision. It must not
-    // reset Alice's keyboard focus, opened strategy detail or draft selection.
-    await phoneB.locator('[data-choice="2"]').click();
-    await phoneB.locator('[data-choice="3"]').click();
-    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    // A rival's submitted vote broadcasts a server revision. It must not
+    // reset Alice's keyboard focus, opened strategy detail or local draft.
+    await phoneB.locator('[data-plan="1"]').click();
+    await phoneB.locator("#player-actions select").last().selectOption("1");
+    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await phoneA.waitForFunction(rev=>
       Number(document.querySelector("#room-screen")?.dataset.revision)>rev,
       revisionBeforeOpposingDecision,{timeout:12000});
@@ -801,7 +821,7 @@ try {
       "Team updates do not collapse chosen strategy's tradeoffs");
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
-    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
+    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===2,
       null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
     await phoneA.locator(".aftershock-report").waitFor({state:"visible",timeout:12000});
@@ -815,8 +835,10 @@ try {
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/VERIFY & SECURE/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
-    assert.equal(await phoneB.locator(".aftershock-report").count(),0,
-      "Rival team does not receive Alice's private consequence");
+    assert.equal(await phoneB.locator(".aftershock-report").count(),1,
+      "The rival receives its own consequence after voting");
+    assert.doesNotMatch(await phoneB.locator(".aftershock-report").innerText(),/VERIFY & SECURE/,
+      "The rival must not receive Alice's decision narrative");
     assert.equal(await hostUI.locator(".aftershock-report").count(),0);
     assert.equal(await projected.locator(".aftershock-report").count(),0);
     const frozen=await phoneA.locator("#timer").textContent();
@@ -845,9 +867,6 @@ try {
       null,{timeout:12000});
     const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
     await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
-    await phoneB.locator('[data-plan="1"]').click();
-    await phoneB.locator("#player-actions select").last().selectOption("1");
-    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await hostUI.waitForFunction(()=>document.querySelector("#ready-notice")?.textContent?.includes("ALL TEAMS READY"));
     assert.equal(await hostUI.locator("#host-share").isVisible(),true,"Host can invite late entrants");
     assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
