@@ -82,14 +82,14 @@ test("the cash and commitment ledger react materially to competing strategy and 
 
 test("unverified assurances and operational fatigue entail risk rather than free guaranteed rewards",()=>{
  const first=C.episodes[0];
- const falseCertainty=first.signals.find(x=>x.name==="NO IMPACT");
+ const falseCertainty=first.signals.find(x=>x.name==="SERVICE ASSURANCE");
  assert.ok(falseCertainty.delta.legal>0&&falseCertainty.delay.cost>0);
  const floor=C.episodes[1];
- assert.ok(floor.signals.find(x=>x.name==="PROMISE JOBS").delta.legal>0);
+ assert.ok(floor.signals.find(x=>x.name==="PAUSE ROLE CHANGES").delta.legal>0);
  const client=C.episodes[2];
- assert.ok(client.plans.find(x=>x.name==="SIGN THE GUARANTEE").delay.cost>0);
+ assert.ok(client.plans.find(x=>x.name==="COMMIT TO RECOVERY").delay.cost>0);
  const operation=C.episodes[4];
- assert.ok(operation.plans.find(x=>x.name==="ONE MORE SHIFT").delta.workforce>0);
+ assert.ok(operation.plans.find(x=>x.name==="SUPPORT THE FRONT LINE").delta.workforce>0);
  const close=C.episodes[5];
- assert.ok(close.signals.find(x=>x.name==="PROMISE EVERYTHING").delay.cost>0);
+ assert.ok(close.signals.find(x=>x.name==="BUILD MOMENTUM").delay.cost>0);
 });
