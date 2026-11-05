@@ -20,7 +20,7 @@ jobs:
     if: ${{ github.repository == 'adiusor/business-crisis' && github.ref == 'refs/heads/feature/0917-corporate-challenge' && vars.BC_STAGING_DEPLOY_ENABLED == 'YES' }}
     runs-on: ubuntu-latest
     environment: business-crisis-staging
-    timeout-minutes: 22
+    timeout-minutes: 28
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,6 +72,10 @@ jobs:
         env:
           STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
         run: bash scripts/smoke-0917-staging.sh "$CHALLENGE_STAGE_URL"
+      - name: Live Worker 25-participant and 150-vote trial (synthetic clients, not phones)
+        env:
+          STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: node tests/room-load-25.test.mjs
       - name: Record tested link and safety
         run: |
           echo "## The 09:17 Challenge — isolated multiplayer staging" >> "$GITHUB_STEP_SUMMARY"
