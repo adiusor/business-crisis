@@ -1,6 +1,8 @@
 (function(g){
 "use strict";
-const DATA=g.BCContent;
+// Shared deterministic engine factory: the original incident remains the default.
+function createRules(DATA){
+if(!DATA || !Array.isArray(DATA.episodes) || DATA.episodes.length!==6)throw new Error("Invalid six-episode scenario data");
 const RISK_KEYS=["legal","ops","workforce","customer","liquidity"];
 const ALLOCATIONS=[
 {id:"audit",name:"AUDIT & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
@@ -137,6 +139,9 @@ const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
 }
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+return {createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+}
+g.BCCreateRules=createRules;
+g.BCRules=createRules(g.BCContent);
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);
