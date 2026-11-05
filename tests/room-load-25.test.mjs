@@ -7,10 +7,15 @@ import {setTimeout as delay} from "node:timers/promises";
 import path from "node:path";
 
 const root=path.resolve(import.meta.dirname,"..");
-const port=18718,base="http://127.0.0.1:"+port;
-const creationKey="synthetic-load-only-private-staging-access";
+const port=18718;
+const liveOrigin=process.env.CHALLENGE_STAGE_URL||"";
+if(liveOrigin&&!/^https:\/\/the-0917-challenge-staging\.[a-zA-Z0-9-]+\.workers\.dev\/?$/.test(liveOrigin))
+ throw Error("Refusing to load test any origin outside the isolated 09:17 staging Worker");
+const base=liveOrigin?liveOrigin.replace(/\/$/,""):"http://127.0.0.1:"+port;
+const creationKey=liveOrigin?process.env.STAGING_CREATION_KEY:"synthetic-load-only-private-staging-access";
+if(!creationKey||creationKey.length<32)throw Error("Missing isolated staging credential");
 const bin=path.join(root,"node_modules",".bin","wrangler");
-const worker=spawn(bin,["dev","--config","multiplayer/wrangler.0917.staging.jsonc",
+const worker=liveOrigin?null:spawn(bin,["dev","--config","multiplayer/wrangler.0917.staging.jsonc",
  "--ip","127.0.0.1","--port",String(port),"--local",
  "--var","ROOM_CREATION_KEY:"+creationKey],{
  cwd:root,stdio:["ignore","pipe","pipe"],
@@ -18,7 +23,7 @@ const worker=spawn(bin,["dev","--config","multiplayer/wrangler.0917.staging.json
 });
 let output="",sockets=[];
 const log=x=>output=(output+String(x)).slice(-3500);
-worker.stdout.on("data",log);worker.stderr.on("data",log);
+if(worker){worker.stdout.on("data",log);worker.stderr.on("data",log)}
 async function req(route,method="GET",body,bearer){
  const response=await fetch(base+route,{
   method,
@@ -33,7 +38,7 @@ async function req(route,method="GET",body,bearer){
  return {status:response.status,payload};
 }
 async function snapshot(token,code){
- const ws=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+code+"/socket");
+ const ws=new WebSocket(base.replace(/^http/,"ws")+"/api/rooms/"+code+"/socket");
  sockets.push(ws);
  return await new Promise((resolve,reject)=>{
   let settled=false;
@@ -54,14 +59,16 @@ async function snapshot(token,code){
 }
 async function cleanup(){
  for(const ws of sockets){try{ws.close()}catch{}}
- worker.kill("SIGTERM");
- await Promise.race([new Promise(resolve=>worker.once("exit",resolve)),delay(3000)]);
- if(worker.exitCode===null)worker.kill("SIGKILL");
+ if(worker){
+  worker.kill("SIGTERM");
+  await Promise.race([new Promise(resolve=>worker.once("exit",resolve)),delay(3000)]);
+  if(worker.exitCode===null)worker.kill("SIGKILL");
+ }
 }
 try{
  let ok=false;
  for(let n=0;n<120;n++){
-  if(worker.exitCode!==null)throw Error("Worker exited: "+output);
+  if(worker&&worker.exitCode!==null)throw Error("Worker exited: "+output);
   try{const r=await req("/healthz");if(r.status===200&&r.payload.ok){ok=true;break}}
   catch{}
   await delay(250);
@@ -164,5 +171,5 @@ try{
   assert.equal(state.payload.state.phase,"complete");
  }
  assert.equal((await req(route+"/"+roomCode+"/state","GET")).status,401);
- console.log("PASS: 25 virtual authenticated WebSockets, 25 active players, 4 balanced teams, 150 individual votes, six full chapters, protected room and reconciled results.");
+ console.log("PASS: "+(liveOrigin?"LIVE ISOLATED WORKERS.DEV":"LOCAL CLOUDFLARE WORKER")+" — 25 virtual authenticated WebSockets, 25 active players, 4 balanced teams, 150 individual votes, six full chapters, protected room and reconciled results.");
 }finally{await cleanup()}
