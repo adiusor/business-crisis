@@ -1,20 +1,20 @@
 # BUSINESS CRISIS — Facilitator quick-start
-**The 09:17 Incident · Isolated staging playtest · Host copy only**
+**The 09:17 Challenge · Project Spark · Isolated staging playtest · Host copy only**
 
 ## Before players arrive
 - Open the staging **/play** page (the root / is now the commercial homepage) and select **2–4 teams**. The founder-managed room creation key is private; never project it, email it to participants or paste it into a team chat.
 - Keep the **host tab** open on your Mac throughout the session. It contains the host credential. Losing browser session storage can lose host access; a separate recovery account is not yet supported.
 - If using a shared screen, generate the separate **read-only projector link**. Project that page, **not** the host page. The projector shows the lobby room code and scannable join QR, but never the host key or private team advice.
 - Ask players to scan the QR, choose a unique nickname and join a team. There must be at least one person per team to start. Participants may switch teams before START. The current ceiling is **30 total**, not 30 per team; that is not a verified real-device capacity.
-- Read the six **Rules of Engagement** aloud (around one minute) while people join. The briefing is visible on projector and phones, then collapses after START.
+- Read the six **Rules of Engagement** aloud (around one minute) while people join. The briefing is visible on projector and phones, then collapses after START. Host and players can also open an **untimed public preview** of episode 1 (brief, question and three evidence exhibits) in the lobby; the projector instead retains its QR/teams-first 720p layout. No adviser intelligence is released.
 
 ## During each episode
 - You are the facilitator, not a voting participant. Each team captain chooses **two confidential advisers** for that episode.
 - Teams read the public evidence and privately discuss three strategies and three Public Statements. Where offered, they also choose an optional discretionary investment.
-- **Every member locks one complete proposed response.** The most-voted complete package determines the team's economic outcome; the package is applied **only once**, regardless of team size.
-- If the leading proposals tie, the team has a private runoff between two closest leading packages. If the second round also ties, that team's **current captain casts the deciding ballot**. Avoid changing captains to influence a runoff; any captain change is publicly logged.
+- **Every member locks one complete proposed response.** The highest tally of identical complete packages determines the team's outcome, **even if it is below 50% of all ballots**. This is a plurality, not necessarily a majority. The package is applied **only once**, regardless of team size.
+- If the leading proposals tie, the team has a private runoff between the **two most similar tied packages** (strategy, statement, then investment; exact-distance ties favour original join order). The team sees how many packages tied but no personal ballots. If the second round also ties, the **current captain's runoff ballot** decides. Avoid changing captains to influence a runoff; any captain change is publicly logged.
 - The first **3:00** are penalty-free. The extra minute costs **−5 final score points**. With no resolved response after **4:00**, the team incurs **−12 points** and adverse operating costs/risks; the server does not invent a strategy on their behalf.
-- Each team's clock **freezes independently** when its final response is resolved. Rival teams continue until they finish or time out. You will see when all teams are ready; only then press **START NEXT EPISODE** (or reveal the final verdict after episode 6).
+- Each team's clock **freezes independently** when its final response is resolved. Rival teams continue until they finish or time out. Once **all** teams finish an episode, a read-only **untimed preview of the next episode** becomes available to host, players and projector before pressing **START NEXT EPISODE**. Give participants time to read and talk before starting the next shared clock; adviser selection and votes remain timed. After episode 6 reveal the verdict.
 
 ## If someone leaves or the wrong person becomes captain
 - In the host page, expand **Facilitator · Manage Participants**. You may transfer captainship in the lobby or a live episode, or remove a mistaken lobby participant.
@@ -25,10 +25,10 @@
 
 ## Closing the session
 - The **Boardroom Verdict** ranks teams by economic score less time penalties (floored at zero). Equal final scores break on remaining cash; only exact score-and-cash ties share the title.
-- Winning the **championship** also requires renewed client-contract status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best crisis response without falsely saying every contract was lost.
+- Winning the **championship** also requires board-ready fictional pilot status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best documented project plan without falsely saying every contract was lost.
 - The report shows cash, risk, trust and all six decisions. Use **DOWNLOAD RESULTS · PDF** to save the complete vector PDF immediately. Neither requires contact details.
 - Suggested debrief: Which evidence changed your mind? Which public promise was most expensive? When did disagreement improve the team decision?
-- The sender's identity is intentionally **unconfirmed**. Contractor access evidence is not proof of who leaked the memo.
+- The Project Spark pilot is **not awarded or contracted** by the story. Board-readiness in the game is an internal simulated threshold, not a signed agreement.
 
 ## Boundaries of this playtest
 Room data expires after 24 hours. This staging prototype is **not commercially ready**: real 30-device load, 40–80 participant support, robust entry rate limits, host account recovery, privacy processes, payments, accessibility and physical projector/mobile testing remain outstanding. Never put real customer, staff or commercially sensitive information into test nicknames or notes.
@@ -47,3 +47,11 @@ The 720p projector lobby keeps room code, QR and team readiness on a single scre
 
 ## Local-only results and download clarity
 The Boardroom action is **DOWNLOAD RESULTS · PDF**: one click downloads a locally generated PDF containing public rankings, visual charts, and all six episode comparisons. Results are never sent by email and no email feature is planned. The fictional forwarded email in the story is unrelated to results delivery.
+
+## Untimed preparation before timed decisions (Issue #11 follow-up)
+
+In a new room, Host first presses **OPEN UNTIMED TEAM PREPARATION**. Each team then reads the actual episode evidence and its captain selects **two confidential advisers**, without any active decision timer. The host/projector sees only an **advisers ready** indicator, not adviser names or confidential briefings. Teammates can discuss the private advice together. Once all teams have their advisers, Host presses **START 3-MINUTE TEAM DECISION**, creating the same server-owned 180-second window and 60-second reserve as before. Ballots are rejected before that start, and adviser changes are rejected after it. Hosts can transfer captainship or remove mistaken joins during preparation. New participants joining during preparation are eligible to vote when timed play starts.
+
+When all teams finish an episode, Host can still show the public next-episode preview before advancing. **START NEXT EPISODE** now opens another untimed adviser preparation stage rather than immediately starting the next timer. This happens across all six episodes. The legacy `start` action directly from a lobby remains supported only for compatibility with old room clients and existing automated tests. No new game variant, scoring formula or financial outcome is introduced. The Host, Join, and Projector roles are unchanged.
+
+**QA requirement:** Browser-check projector layouts at 1280×720 and phones at 320/390px; verify no token or adviser leakage, no vote before timer, host cannot start until all advisers ready, 2–4-team six-episode playthrough, and delayed joins. Do not deploy to staging from this branch.

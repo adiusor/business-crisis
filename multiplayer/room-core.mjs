@@ -46,10 +46,10 @@ export function createRoom({code,hostHash,teamNames,teamCount=2,nameSeed=0,creat
  requireState(Array.isArray(teamNames)&&teamNames.length>=2&&teamNames.length<=4,400,"Use 2–4 teams");
  const names=teamNames.map(x=>typeof x==="string"?x.trim():"");
  requireState(names.every(x=>x.length>=1&&x.length<=32)&&new Set(names.map(fold)).size===names.length,400,"Teams require unique names (1–32 characters)");
- return {version:3,code,hostHash,phase:"lobby",round:0,revision:0,createdAtMs,
+ return {version:3,code,hostHash,phase:"lobby",usePrepPhase:false,round:0,revision:0,createdAtMs,
   expiresAtMs:createdAtMs+ROOM_TTL_MS,startedAtMs:null,variant:R.seedVariant(code),lastRecap:null,projectorHash:null,interventions:[],rosterEvents:[],
   teams:names.map((name,i)=>({name,captainId:null,advisers:[],locked:false,timedOut:false,
-   roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},participatedIds:[],runoff:null,roundResults:[],economic:R.createTeam(i,name)})),
+   roundPenalty:0,penaltyPoints:0,lockedAtMs:null,votes:{},participatedIds:[],runoff:null,voteResolution:null,roundResults:[],economic:R.createTeam(i,name)})),
   players:[]};
 }
 export function authorize(room,hash){
@@ -84,7 +84,7 @@ const liveMembers=(room,i)=>room.players.filter(p=>!p.departed&&p.teamIndex===i)
 // can vote immediately only before their team casts any ballot, with at least
 // a minute left in the penalty-free window. Existing votes/deadlines never reset.
 function canJoinCurrentEpisode(room,i,nowMs=Date.now()){
- if(room.phase==="lobby")return true;
+ if(room.phase==="lobby"||room.phase==="prep")return true;
  if(room.phase!=="advisers")return false;
  const t=room.teams[i],clock=clockFor(room,nowMs);
  return !!clock&&!t.locked&&!t.runoff&&clock.stage==="normal"&&
@@ -95,7 +95,7 @@ function canJoinCurrentEpisode(room,i,nowMs=Date.now()){
 const currentVoters=(room,i)=>room.players.filter(p=>p.teamIndex===i &&
  (p.joinedRound??0)<=room.round&&(!p.departed||!!room.teams[i].votes?.[p.id]?.locked));
 export function joinRoom(room,{nickname,teamIndex,credentialHash,playerId},nowMs=Date.now()){
- requireState(room.phase==="lobby"||room.phase==="advisers",409,"This room has finished");
+ requireState(["lobby","prep","advisers"].includes(room.phase),409,"This room has finished");
  requireState(room.players.filter(p=>!p.departed).length<MAX_PLAYERS&&room.players.length<120,409,"Room join limit reached");
  if(teamIndex===undefined||teamIndex===null)teamIndex=balancedTeamIndex(room);
  requireState(Number.isInteger(teamIndex)&&teamIndex>=0&&teamIndex<room.teams.length,400,"Invalid team");
@@ -149,13 +149,13 @@ function ballotFor(room,cmd){
   "Invalid allocation route or episode");
  return {planIndex:p,signalIndex:statement,allocation:{amount:alloc.amount,route:alloc.route}};
 }
-function decideTeam(room,teamIndex,ballot,atMs){
+function decideTeam(room,teamIndex,ballot,atMs,voteResolution=null){
  const t=room.teams[teamIndex];
  requireState(!t.locked,409,"This team's decision is locked");
  try{t.economic=R.applyTurn(t.economic,room.round,ballot.planIndex,ballot.signalIndex,
   t.advisers,room.variant,ballot.allocation);}
  catch(e){throw bad(400,e.message);}
- t.locked=true;t.lockedAtMs=atMs;
+ t.locked=true;t.lockedAtMs=atMs;t.voteResolution=voteResolution;
  const clock=clockFor(room,atMs);
  if(clock.stage==="grace"){t.roundPenalty=GRACE_PENALTY;t.penaltyPoints+=GRACE_PENALTY;}
 }
@@ -174,13 +174,20 @@ function resolveVotes(room,teamIndex,nowMs){
  }
  const ordered=[...tally.values()].sort((a,b)=>b.count-a.count||a.first-b.first);
  const leaders=ordered.filter(x=>x.count===ordered[0].count);
- if(leaders.length===1){decideTeam(room,teamIndex,leaders[0].ballot,nowMs);return;}
+ if(leaders.length===1){
+  const votes=leaders[0].count,total=members.length;
+  const method=t.runoff?"runoff":votes===total?"unanimous":votes>total/2?"majority":"plurality";
+  decideTeam(room,teamIndex,leaders[0].ballot,nowMs,{method,votes,total});
+  t.runoff=null;
+  return;
+ }
  // A second tie cannot loop forever. Once everybody has had a focused private
  // debate and revoted, the captain's ballot is the agreed casting-vote rule.
  if(t.runoff){
   const casting=t.votes[t.captainId]?.ballot;
   requireState(!!casting,409,"Captain must participate in the final runoff");
-  decideTeam(room,teamIndex,casting,nowMs);
+  const votes=members.filter(p=>ballotKey(t.votes[p.id].ballot)===ballotKey(casting)).length;
+  decideTeam(room,teamIndex,casting,nowMs,{method:"captain_cast",votes,total:members.length});
   t.runoff=null;
   return;
  }
@@ -198,7 +205,9 @@ function resolveVotes(room,teamIndex,nowMs){
    if(d<best){best=d;pair=[leaders[i],leaders[j]];}
  }
  const choices=pair.map(x=>x.ballot);
- t.runoff={choices,ordinal:(t.runoff?.ordinal||0)+1};
+ t.runoff={choices,ordinal:(t.runoff?.ordinal||0)+1,
+  tiedProposals:leaders.length,tiedSupport:leaders[0].count,
+  selectionRule:"Two closest tied packages by strategy, statement and investment; original entry order breaks an exact distance tie."};
  t.votes={};
 }
 export function privateVoteStatus(room,player){
@@ -208,7 +217,7 @@ export function privateVoteStatus(room,player){
  const votes=t.votes||{};
  return {lockedVotes:members.filter(p=>votes[p.id]?.locked).length,
   totalMembers:members.length,
-  canVote:!player.departed&&(player.joinedRound??0)<=room.round,
+  canVote:room.phase==="advisers"&&!player.departed&&(player.joinedRound??0)<=room.round,
   myVote:votes[player.id]?.locked?clone(votes[player.id].ballot):null,
   runoff:t.runoff?clone(t.runoff):null};
 }
@@ -220,6 +229,7 @@ export function expireRoom(room,nowMs=Date.now()){
   if(t.locked)continue;
   t.economic=R.applyTimeout(t.economic,next.round,next.variant);
   t.locked=true;t.timedOut=true;t.lockedAtMs=clock.closesAt;t.advisers=[];t.roundPenalty=NO_ANSWER_PENALTY;
+  t.voteResolution={method:"timeout",votes:Object.values(t.votes||{}).filter(v=>v.locked).length,total:currentVoters(next,next.teams.indexOf(t)).length};
   t.penaltyPoints+=NO_ANSWER_PENALTY;
  }
  next.revision++;
@@ -229,7 +239,7 @@ export function finalVerdict(room){
  requireState(room.phase==="complete"&&room.teams.every(t=>t.economic.nextRound===6),409,"The final verdict is not ready");
  const ranked=room.teams.map((t,i)=>{
   const outcome=R.evaluate(t.economic),score=R.clamp(outcome.score-t.penaltyPoints,0,100);
-  const eligible=outcome.status==="RENEWED"&&t.economic.cash>=0&&t.economic.risks.ops<=56;
+  const eligible=outcome.status==="BOARD_READY"&&t.economic.cash>=0&&t.economic.risks.ops<=56;
   return {id:i,name:t.name,rawScore:outcome.score,timingPenalty:t.penaltyPoints,score,
    status:outcome.status,eligible,cash:t.economic.cash,trust:t.economic.trust,
    unpaid:outcome.unpaid,avgRisk:outcome.avgRisk,reasons:outcome.reasons.slice(),
@@ -243,7 +253,7 @@ export function finalVerdict(room){
  const joint=champion?eligible.filter(x=>x.score===champion.score&&x.cash===champion.cash):[];
  return {ranked,leader:ranked[0].name,champions:joint.map(x=>x.name),
   championScore:champion?champion.score:null,hasChampion:!!champion,
-  scoringNote:"Final score = max(0, economic score − time penalties). Late answers cost 5 and missed deadlines cost 12 points each. Score ties break on remaining cash; exact score-and-cash ties share the title. Contract renewal, solvent funds and viable operations remain championship requirements."};
+  scoringNote:"Final score = max(0, economic score − time penalties). Late answers cost 5 and missed deadlines cost 12 points each. Score ties break on remaining cash; exact score-and-cash ties share the title. The fictional pilot must be board-ready, fundable and operationally viable; no contract award is implied."};
 }
 // Mid-game recaps disclose commitments and spend, not competitors' remaining
 // cash or trust. Full economic outcomes become public after the final verdict.
@@ -255,7 +265,7 @@ export function publicRecap(recap){
  }))};
 }
 export function publicEpisode(room){
- if(room.phase!=="advisers")return null;
+ if(!["prep","advisers"].includes(room.phase))return null;
  const e=C.episodes[room.round];
  return {number:e.number,time:e.time,title:e.title,kicker:e.kicker,brief:e.brief,headline:e.headline,question:e.question,pressure:e.pressure,
   evidence:e.evidence.map(x=>({type:x.type,time:x.time,title:x.title,body:x.body,clue:x.clue})),
@@ -292,7 +302,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
  const type=command.type;
  if(type==="set_captain"){
   requireState(isHost,403,"Only the host can transfer captainship");
-  requireState(next.phase==="lobby"||next.phase==="advisers",409,"Captainship changes are closed");
+  requireState(["lobby","prep","advisers"].includes(next.phase),409,"Captainship changes are closed");
   const target=next.players.find(p=>!p.departed&&p.id===command.playerId);
   requireState(!!target,404,"Participant not found");
   const team=next.teams[target.teamIndex];
@@ -301,7 +311,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   logIntervention(next,"captain",team.name,nowMs);
  }else if(type==="remove_player"){
   requireState(isHost,403,"Only the host can remove a participant");
-  requireState(next.phase==="lobby"||next.phase==="advisers",409,"Participant removal is closed");
+  requireState(["lobby","prep","advisers"].includes(next.phase),409,"Participant removal is closed");
   const target=next.players.find(p=>!p.departed&&p.id===command.playerId);
   requireState(!!target,404,"Participant not found");
   const team=next.teams[target.teamIndex];
@@ -327,7 +337,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   logIntervention(next,"removed",team.name,nowMs);
  }else if(type==="leave_room"){
    requireState(!!player,403,"Only a joined player can leave");
-   requireState(next.phase==="lobby"||next.phase==="advisers",409,"Game finished");
+   requireState(["lobby","prep","advisers"].includes(next.phase),409,"Game finished");
    const team=next.teams[player.teamIndex],name=team.name;
    player.departed=true;
    if(team.captainId===player.id)team.captainId=liveMembers(next,player.teamIndex)[0]?.id||null;
@@ -353,20 +363,30 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   requireState(typeof command.name==="string"&&TEAM_NAME_POOL.includes(command.name),400,"Choose a name from the list");
   requireState(!next.teams.some((x,i)=>i!==player.teamIndex&&fold(x.name)===fold(command.name)),409,"Team name already taken");
   t.name=command.name;t.economic.name=command.name;
- }else if(type==="start"){
-  requireState(isHost,403,"Only the host can start");
+ }else if(type==="start_prep"){
+  requireState(isHost,403,"Only the host can start the briefing");
   requireState(next.phase==="lobby",409,"Room already started");
   requireState(next.teams.every(t=>t.captainId),409,"Each team needs a participant");
+  next.usePrepPhase=true;next.phase="prep";next.startedAtMs=null;
+ }else if(type==="start"){
+  requireState(isHost,403,"Only the host can start");
+  requireState(next.phase==="lobby"||next.phase==="prep",409,"Room already started");
+  requireState(next.teams.every(t=>t.captainId),409,"Each team needs a participant");
+  if(next.phase==="prep")
+   requireState(next.teams.every(t=>t.advisers.length===2),409,
+    "All team captains must select two advisers before the decision clock starts");
   next.phase="advisers";next.startedAtMs=nowMs;
  }else if(type==="select_advisers"||type==="lock_advisers"||type==="submit_decision"||type==="lock_vote"){
   requireState(!!player,403,"Only a participant can submit a decision");
-  requireState(next.phase==="advisers",409,"Adviser selection is closed");
-   requireState((player.joinedRound??0)<=next.round,409,"Joined mid-episode; your first vote is in the next episode");
+  requireState(["prep","advisers"].includes(next.phase),409,"Episode preparation and voting are closed");
+  requireState((player.joinedRound??0)<=next.round,409,"Joined mid-episode; your first vote is in the next episode");
   const clock=clockFor(next,nowMs);
-  requireState(clock.stage!=="closed",409,"The four-minute window has ended");
+  if(clock)requireState(clock.stage!=="closed",409,"The four-minute window has ended");
   const t=next.teams[player.teamIndex];
   requireState(!t.locked,409,"This team's decision is locked");
   if(type==="select_advisers"){
+   requireState(next.phase==="prep"||(next.phase==="advisers"&&!next.usePrepPhase),409,
+    "Advisers are locked once the decision clock starts");
    requireState(t.captainId===player.id,403,"Only your team's captain can select advisers");
    requireState(!Object.values(t.votes||{}).some(v=>v.locked),409,
     "Advisers cannot change once team voting has started");
@@ -375,6 +395,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
     &&new Set(picks).size===2,400,"Choose exactly two different advisers");
    t.advisers=picks.slice();
   }else{
+   requireState(next.phase==="advisers",409,"Voting opens only when the host starts the decision clock");
    requireState(t.advisers.length===2,409,"Choose two advisers first");
    if(type==="lock_vote"){
     if(scopedVote)requireState(Number.isSafeInteger(command.expectedRunoffOrdinal)&&
@@ -416,9 +437,10 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
   if(next.round===5){next.phase="complete";next.startedAtMs=null;}
   else{
     next.players=next.players.filter(p=>!p.departed);
-    next.round++;next.startedAtMs=nowMs;
+    next.round++;next.phase=next.usePrepPhase?"prep":"advisers";
+    next.startedAtMs=next.usePrepPhase?null:nowMs;
    next.teams.forEach(t=>{t.advisers=[];t.locked=false;t.lockedAtMs=null;t.timedOut=false;
-    t.votes={};t.participatedIds=[];t.runoff=null;t.roundPenalty=0;});
+    t.votes={};t.participatedIds=[];t.runoff=null;t.voteResolution=null;t.roundPenalty=0;});
   }
  }else throw bad(400,"Unknown command");
  next.revision++;
@@ -426,12 +448,28 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
 }
 // Consequences are delivered only to the team that made the choice. The boardroom
 // and rival teams never receive private financial snapshots during play.
+// Public advance brief is released before the clock, never before the current
+// round finishes. No private advice, proposed ballots or economic state included.
+function nextPublicBrief(room){
+ const round=room.phase==="lobby"?0:
+  room.phase==="advisers"&&room.round<5&&room.teams.every(t=>t.locked)?room.round+1:-1;
+ if(round<0)return null;
+ const e=C.episodes[round];
+ return {number:e.number,title:e.title,time:e.time,kicker:e.kicker,
+  brief:e.brief,question:e.question,pressure:e.pressure,
+  evidence:e.evidence.map(x=>({type:x.type,time:x.time,title:x.title,clue:x.clue,body:x.body}))};
+}
 function lastTeamImpact(economic){
  const history=economic.history;
  if(!history.length)return null;
  const last=history[history.length-1],previous=history[history.length-2];
- return {round:last.round,plan:last.plan,leadIn:last.leadIn||null,fallout:last.fallout,
-  roundSpent:last.roundSpent,trustChange:last.trust-(previous?previous.trust:45),
+ const baseRisks=previous?.risks||C.baseline;
+ const riskChange=Object.fromEntries(["legal","ops","workforce","customer"].map(key=>
+  [key,last.risks[key]-baseRisks[key]]));
+ return {round:last.round,plan:last.plan,signal:last.signal,leadIn:last.leadIn||null,fallout:last.fallout,
+  roundSpent:last.roundSpent,cash:last.cash,trust:last.trust,
+  risks:{...last.risks},riskChange,
+  trustChange:last.trust-(previous?previous.trust:45),
   pendingLiability:last.pendingLiability,paidDeferred:last.paidDeferred.slice(),
   timedOut:!!last.timedOut};
 }
@@ -445,11 +483,11 @@ export function viewFor(room,actor,nowMs=Date.now()){
  if(actor.role==="projector"){
   const episode=publicEpisode(room);
   return {viewer:{role:"projector"},code:room.code,phase:room.phase,round:room.round,
-   revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
+   revision:room.revision,usePrepPhase:!!room.usePrepPhase,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,question:episode.question,pressure:episode.pressure,evidence:episode.evidence}:null,
-   lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),
-   teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,ready:!!t.captainId,locked:t.locked,
+   lastRecap:publicRecap(room.lastRecap),nextPreview:nextPublicBrief(room),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),
+   teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,ready:!!t.captainId,advisersReady:t.advisers.length===2,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,
     votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
     eligibleVoters:currentVoters(room,i).length,
@@ -458,9 +496,9 @@ export function viewFor(room,actor,nowMs=Date.now()){
  }
  const player=actor.role==="player"?room.players.find(p=>!p.departed&&p.id===actor.playerId):null;
  requireState(actor.role==="host"||!!player&&!player.departed,401,"Unauthorized");
- const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
+ const shared={code:room.code,phase:room.phase,usePrepPhase:!!room.usePrepPhase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
-  lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
+  lastRecap:publicRecap(room.lastRecap),nextPreview:nextPublicBrief(room),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.filter(p=>!p.departed).map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
   ...(actor.role==="host"?{hostRoster:room.players.filter(p=>!p.departed).map(p=>({
     id:p.id,nickname:p.nickname,teamIndex:p.teamIndex,
@@ -469,7 +507,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
       !!room.teams[p.teamIndex].votes?.[p.id]?.locked
   }))}:{}),
   teams:room.teams.map((t,i)=>({name:t.name,joined:liveMembers(room,i).length,
-   ready:!!t.captainId,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
+   ready:!!t.captainId,advisersReady:t.advisers.length===2,locked:t.locked,timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,
    roundPenalty:t.roundPenalty,votesSubmitted:Object.values(t.votes||{}).filter(v=>v.locked).length,
    eligibleVoters:currentVoters(room,i).length,
    lockedAtMs:t.lockedAtMs||null})),
@@ -478,11 +516,11 @@ export function viewFor(room,actor,nowMs=Date.now()){
  const t=room.teams[player.teamIndex],eco=t.economic,episode=C.episodes[room.round];
  return {...shared,viewer:{role:"player",teamIndex:player.teamIndex,captain:t.captainId===player.id,nickname:player.nickname},
   privateTeam:{advisers:t.advisers.slice(),teamClock:teamClockFor(room,player.teamIndex,nowMs),
-   voting:privateVoteStatus(room,player),
-   intelligence:room.phase==="advisers"?t.advisers.map(i=>({name:C.advisers[i].name,role:C.advisers[i].role,brief:episode.advice[i]})):[],
+   voting:privateVoteStatus(room,player),voteResolution:t.voteResolution?{...t.voteResolution}:null,
+   intelligence:["prep","advisers"].includes(room.phase)?t.advisers.map(i=>({name:C.advisers[i].name,role:C.advisers[i].role,brief:episode.advice[i]})):[],
    economic:{cash:eco.cash,trust:eco.trust,risks:clone(eco.risks),
     pendingLiability:eco.pending.reduce((sum,x)=>sum+x.cost,0),nextRound:eco.nextRound},
    roundResults:t.roundResults.map(x=>({...x})),
-    storyContext:room.phase==="advisers"?R.storyContext(eco,room.round):null,
+    storyContext:["prep","advisers"].includes(room.phase)?R.storyContext(eco,room.round):null,
     lastImpact:lastTeamImpact(eco)}};
 }

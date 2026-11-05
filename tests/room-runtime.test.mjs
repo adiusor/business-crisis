@@ -369,7 +369,7 @@ try {
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
     await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/sensitive access route is closed/i);
+    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/three-site concept draws attention/i);
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -572,6 +572,27 @@ try {
     await hostUI.waitForFunction(name => document.querySelector("#team-list")?.textContent?.includes(name), newName);
     assert.match(await hostUI.locator("#episode-panel").innerText().catch(() => ""), /|^$/); // Lobby has no episode yet.
     await hostUI.locator("#host-actions button.primary").click();
+    await phoneA.locator(".prep-adviser-panel").waitFor({state:"visible",timeout:8000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "The first preparation phase has no decision clock");
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "Host cannot start a timer before every captain has selected advice");
+    assert.equal(await phoneA.locator("[data-prep-adviser]").count(),6);
+    await phoneA.locator('[data-prep-adviser="0"]').click();
+    await phoneA.locator('[data-prep-adviser="1"]').click();
+    await phoneA.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await phoneA.locator(".chosen-adviser").first().waitFor({state:"visible"});
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "One ready team is insufficient to begin the decision timer");
+    await phoneB.locator('[data-prep-adviser="2"]').click();
+    await phoneB.locator('[data-prep-adviser="3"]').click();
+    await phoneB.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#host-actions button.primary")?.disabled===false,
+      null,{timeout:12000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "No clock runs even when all teams finish adviser preparation");
+    await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
     assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),false,
       "Rules collapse when the host starts");
@@ -587,15 +608,15 @@ try {
     assert.equal(await hostUI.locator(".roster-entry button.roster-remove:disabled").count(),2,
       "Facilitator may not remove a team's only member during a live round");
 
-    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
+    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE INVITATION|OPPORTUNITY/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     assert.equal(await phoneA.locator(".scene-directive").count(),1,
       "The live incident shows a distinctive, actionable dilemma");
-    assert.match(await phoneA.locator(".scene-question").textContent(),/protect trust and keep the business moving/i);
+    assert.match(await phoneA.locator(".scene-question").textContent(),/promise before the details have been tested/i);
     assert.equal(await phoneA.locator(".scene-fact").count(),3,
       "Every incident begins with three public, verifiable facts");
     assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
-      ["600","3","UNKNOWN"],"The opening incident never pretends to know the sender");
+      ["09:17","90 DAYS","3"],"The opening fact-strip identifies the pilot opportunity");
     const editorial=await phoneA.evaluate(()=>{
       const body=getComputedStyle(document.body),
         facts=[...document.querySelectorAll(".scene-fact dd")],
@@ -645,9 +666,9 @@ try {
     assert.equal(await phoneA.locator("body.in-game").count(),1);
     await phoneA.locator(".evidence-item summary").first().click();
     assert.equal(await phoneA.locator(".evidence-item[open]").count(),1);
-    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Subject: RESTRUCTURING/);
+    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Project Spark seeks a credible/);
     await phoneA.locator(".briefing-details summary").click();
-    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/600 employees/);
+    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/Project Spark/);
     assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
     assert.equal(await phoneA.locator(".exposure-panel").evaluate(el=>el.open),false,
       "Finance panel defaults to compact disclosure on a 320px phone");
@@ -659,7 +680,7 @@ try {
       null,{timeout:5000});
     assert.equal(await phoneA.locator("#decision-dock").isVisible(),true,
       "Players have a persistent route to their action despite long evidence");
-    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/CHOOSE TWO ADVISERS/);
+    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/MAKE YOUR TEAM DECISION/);
     await phoneA.locator("#decision-dock").click();
     const rulesPlacement=await phoneA.evaluate(()=>{
       const action=document.querySelector("#player-actions");
@@ -672,7 +693,7 @@ try {
     assert.ok(await phoneA.locator("#player-actions").evaluate(el=>el.getBoundingClientRect().top<innerHeight),
       "Decision dock actually navigates to the actionable form");
 
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE INVITATION"));
     await projected.locator("#projector-ticker").waitFor({state:"visible",timeout:12000});
     assert.equal(await projected.locator(".ticker-team").count(),2);
     assert.equal(await projected.locator(".ticker-clock").count(),2);
@@ -745,21 +766,20 @@ try {
     await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
-    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
-      "Six original illustrated adviser portraits appear in multiplayer");
+    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),0,
+      "The six-adviser picker is absent during timed decisions after its untimed selection");
+    assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
+      "Private advice stays visible during the decision window");
     assert.equal(await phoneA.locator(".jump-decision").count(),1);
     assert.equal(await phoneA.locator("#room-screen").evaluate(el=>getComputedStyle(el).display),"flex",
       "Player decisions are prioritised over long rosters");
-    await phoneA.locator('[data-choice="0"]').click();
-    await phoneA.locator('[data-choice="1"]').click();
-    await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "The two chosen adviser briefings appear immediately under a short heading");
     assert.equal(await phoneA.locator(".adviser-portrait").count(),0,
       "The six-card adviser picker collapses after selection to reduce phone scrolling");
-    assert.equal(await phoneA.locator(".adviser-edit").count(),1,
-      "A captain may still change the pair before any teammate has voted");
+    assert.equal(await phoneA.locator(".adviser-edit").count(),0,
+      "Adviser changes close when the timed decision phase starts");
     const adviserOrder=await phoneA.evaluate(()=>{
       const grid=document.querySelector("#player-actions .strategy-grid"),
         advice=document.querySelector(".chosen-advisers");
@@ -787,11 +807,11 @@ try {
       await phoneA.locator("#room-screen").getAttribute("data-revision"));
     assert.equal(await phoneA.locator('[data-plan="0"]').evaluate(el=>el===document.activeElement),
       true,"Selected choice is keyboard-focused");
-    // An opponent's adviser choice broadcasts another room revision. It must not
-    // reset Alice's keyboard focus, opened strategy detail or draft selection.
-    await phoneB.locator('[data-choice="2"]').click();
-    await phoneB.locator('[data-choice="3"]').click();
-    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    // A rival's submitted vote broadcasts a server revision. It must not
+    // reset Alice's keyboard focus, opened strategy detail or local draft.
+    await phoneB.locator('[data-plan="1"]').click();
+    await phoneB.locator("#player-actions select").last().selectOption("1");
+    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await phoneA.waitForFunction(rev=>
       Number(document.querySelector("#room-screen")?.dataset.revision)>rev,
       revisionBeforeOpposingDecision,{timeout:12000});
@@ -801,7 +821,7 @@ try {
       "Team updates do not collapse chosen strategy's tradeoffs");
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
-    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
+    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===2,
       null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
     await phoneA.locator(".aftershock-report").waitFor({state:"visible",timeout:12000});
@@ -812,11 +832,13 @@ try {
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "Two chosen advisers remain after the ballot locks");
     assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
-    assert.match(await phoneA.locator(".aftershock-report").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/DESIGN THE PROOF/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
-    assert.equal(await phoneB.locator(".aftershock-report").count(),0,
-      "Rival team does not receive Alice's private consequence");
+    assert.equal(await phoneB.locator(".aftershock-report").count(),1,
+      "The rival receives its own consequence after voting");
+    assert.doesNotMatch(await phoneB.locator(".aftershock-report").innerText(),/VERIFY & SECURE/,
+      "The rival must not receive Alice's decision narrative");
     assert.equal(await hostUI.locator(".aftershock-report").count(),0);
     assert.equal(await projected.locator(".aftershock-report").count(),0);
     const frozen=await phoneA.locator("#timer").textContent();
@@ -845,9 +867,6 @@ try {
       null,{timeout:12000});
     const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
     await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
-    await phoneB.locator('[data-plan="1"]').click();
-    await phoneB.locator("#player-actions select").last().selectOption("1");
-    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await hostUI.waitForFunction(()=>document.querySelector("#ready-notice")?.textContent?.includes("ALL TEAMS READY"));
     assert.equal(await hostUI.locator("#host-share").isVisible(),true,"Host can invite late entrants");
     assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
@@ -866,7 +885,7 @@ try {
     await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
-    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
     await lateUI.waitForFunction(()=>document.querySelector(".vote-finished")===null,
@@ -877,19 +896,19 @@ try {
       document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie LEFT"),
       null,{timeout:12000});
     assert.equal(await hostUI.locator("#host-roster").count(),0);
-    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
       "Each episode uses the matching cinematic illustration");
     assert.deepEqual(await phoneB.locator(".scene-fact dd").allTextContents(),
-      ["40","2","AT RISK"],"The workforce incident only displays facts from its evidence");
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      ["600","1","NEW"],"The staff-capacity episode displays facts consistent with the story");
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     // Story continuity should be actual UI content, private to its team's player.
     await phoneA.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
     await phoneB.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
-    assert.match(await phoneA.locator(".team-story-thread").textContent(),/verification trail/i);
-    assert.match(await phoneB.locator(".team-story-thread").textContent(),/access restrictions/i);
+    assert.match(await phoneA.locator(".team-story-thread").textContent(),/evidence-first proposal/i);
+    assert.match(await phoneB.locator(".team-story-thread").textContent(),/three-site vision/i);
     assert.equal(await hostUI.locator(".team-story-thread").count(),0,
       "Facilitator must not see individual team story bridges");
     assert.equal(await projected.locator(".team-story-thread").count(),0,
@@ -900,9 +919,9 @@ try {
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
       "Previous consequence folds away so it does not delay the next timed vote");
-    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/DESIGN THE PROOF/);
     await phoneA.locator(".aftershock-summary").click();
-    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/client receives/i);
+    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/partner welcomes/i);
     await phoneA.locator(".recap-details summary").click();
     const publicAftershock=await phoneA.locator("#round-recap").innerText();
     assert.match(publicAftershock,/RESPONSE COST/);
@@ -945,8 +964,8 @@ try {
       "Both teams should get documented strengths and constructive next steps");
 
     assert.equal(await reportHost.locator(".report-epilogue").count(),1,
-      "Final report acknowledges that the sender is not identified");
-    assert.match(await reportHost.locator(".report-epilogue").innerText(),/not been identified/);
+      "Final report does not fabricate a partner award");
+    assert.match(await reportHost.locator(".report-epilogue").innerText(),/no pilot was awarded|do not claim that a pilot was awarded/i);
     assert.equal(await reportHost.locator(".cash-trajectory svg").count(),2,
       "Final report shows actual response fund trajectory for each team");
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,

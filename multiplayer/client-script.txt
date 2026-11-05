@@ -24,6 +24,8 @@
   const expandedStrategies = new Set();
   let expandedIntel = false;
   let expandedRecap = false;
+  let preBriefOpen = null;
+  const previewEvidenceOpen = new Set();
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   let draftRunoffOrdinal = 0;
@@ -92,7 +94,9 @@
       $("join-form").hidden = false;
       $("join-code-form").hidden = true;
       $("join-caption").textContent = data.phase==="advisers" ?
-        "GAME IN PROGRESS · Join immediately. Teams still preparing can take your vote now; otherwise you vote next episode." :
+        "GAME IN PROGRESS · Join immediately. You may vote this episode if the team's ballot is still open." :
+        data.phase==="prep"?
+        "UNTIMED TEAM PREPARATION · Join now. Read the public evidence, then vote when the host starts the decision clock.":
         "Choose your nickname and team. No account needed. Everyone votes each episode.";
       // A named, explicitly selected team is the default. Previously AUTO
       // appeared as the first option; people believed they had joined the
@@ -101,7 +105,8 @@
       target.replaceChildren();
       data.teams.forEach((team,index)=>{
         const status=data.phase==="advisers"?
-          (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):"";
+          (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):
+          data.phase==="prep"?" · PREPARING":"";
         const option=node("option",team.name+" · "+team.joined+" joined"+status);
         option.value=String(index);target.append(option);
       });
@@ -376,16 +381,16 @@
   // Public, fixed fact-strip. Each label is grounded in the episode evidence
   // and is NOT a live score, private adviser clue or inferred outcome.
   const EPISODE_FACTS=[
-    [["600","STAFF"],["3","CLIENTS"],["UNKNOWN","SENDER"]],
-    [["40","ROLES IN DRAFT"],["2","DEPOTS IN DRAFT"],["AT RISK","SHIFT COVERAGE"]],
-    [["14:00","CLIENT DEADLINE"],["£240K","ANNUAL RENEWAL"],["REQUESTED","VERIFIABLE PLAN"]],
-    [["30 MIN","PRESS DEADLINE"],["UNSIGNED","RESTRUCTURE DRAFT"],["PUBLIC","RUMOUR"]],
-    [["OVERNIGHT","CRITICAL HANDOVER"],["2","EXHAUSTED STAFF"],["UNTESTED","BACKUP ROUTE"]],
-    [["6","BOARD DECISIONS"],["£260K","INITIAL FUND"],["PENDING","CONTRACT RENEWAL"]]
+    [["09:17","INVITATION"],["90 DAYS","PILOT"],["3","POTENTIAL SITES"]],
+    [["600","COMPANY STAFF"],["1","BUSY TEAM"],["NEW","STAFF IDEAS"]],
+    [["14:00","PLAN REVIEW"],["3","SUPPLIER ROUTES"],["OPEN","ACCESS CHECK"]],
+    [["3","PROPOSED SITES"],["NONE","YET APPROVED"],["NEW","VISITOR QUESTIONS"]],
+    [["1","PROTOTYPE"],["OFFLINE","ALTERNATIVE"],["TESTED","NETWORK ISSUE"]],
+    [["6","TEAM DECISIONS"],["£260K","90-DAY RESERVE"],["17:30","BOARD REVIEW"]]
   ];
   function renderPublicFacts(number){
     const facts=node("dl",null,"scene-facts");
-    facts.setAttribute("aria-label","Confirmed incident facts at a glance");
+    facts.setAttribute("aria-label","Verified Project Spark scenario facts at a glance");
     for(const [value,label] of EPISODE_FACTS[number-1]||[]){
       const item=node("div",null,"scene-fact");
       item.append(node("dt",label),node("dd",value));
@@ -425,7 +430,7 @@
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
     const progress=node("ol",null,"episode-progress");
-    ["THE SEND","THE FLOOR","THE CLIENT MEETING","THE PUBLIC CONVERSATION","THE DELIVERY TEST","THE NEXT MOVE"].forEach((name,i)=>{
+    ["THE INVITATION","THE PEOPLE BEHIND THE PLAN","THE PARTNER DEAL","THE SPOTLIGHT","THE REALITY CHECK","THE FINAL CALL"].forEach((name,i)=>{
       const item=node("li",null,i+1===number?"is-current":i+1<number?"is-past":"");
       const marker=node("span",String(i+1).padStart(2,"0"),"episode-index");
       marker.setAttribute("aria-hidden","true");
@@ -487,7 +492,43 @@
   function renderRecap() {
     const box = $("round-recap");
     box.replaceChildren();
-    box.hidden = !state.lastRecap;
+    box.hidden = !state.lastRecap && !state.nextPreview;
+    box.classList.toggle("has-prebrief",!!state.nextPreview);
+    // The host decides when to start the next shared clock. This preview only
+    // contains public episode evidence and never reveals advice, ballots or cash.
+    if(state.nextPreview){
+      const ep=state.nextPreview;
+      const pre=node("details",null,"prebrief-details");
+      pre.open=preBriefOpen===null?state.phase!=="lobby":preBriefOpen;
+      pre.addEventListener("toggle",()=>{preBriefOpen=pre.open;});
+      const lead=node("summary",null,"prebrief-summary");
+      lead.append(node("span","UNTIMED / READ BEFORE THE CLOCK"),
+        node("strong","EPISODE "+ep.number+" · "+ep.title),
+        node("small","Public evidence only. No advisers, votes or countdown until the host starts."));
+      pre.append(lead);
+      const body=node("div",null,"prebrief-body");
+      body.append(node("p",ep.brief,"prebrief-intro"),
+        node("strong",ep.question,"prebrief-question"));
+      const evidence=node("div",null,"prebrief-evidence");
+      ep.evidence.forEach((item,i)=>{
+        const key=ep.number+"-"+i;
+        const exhibit=node("details",null,"prebrief-exhibit");
+        exhibit.open=previewEvidenceOpen.has(key);
+        exhibit.addEventListener("toggle",()=>{
+          if(exhibit.open)previewEvidenceOpen.add(key);
+          else previewEvidenceOpen.delete(key);
+        });
+        const summary=node("summary",null,"prebrief-exhibit-title");
+        summary.append(node("small",item.type+" / "+item.time),
+          node("strong",item.title),node("span",item.clue));
+        exhibit.append(summary,node("p",item.body,"prebrief-source"));
+        evidence.append(exhibit);
+      });
+      body.append(evidence,node("p",
+        "Discuss what the evidence means. The captain chooses two private advisers only after the host starts the timed episode.",
+        "prebrief-note"));
+      pre.append(body);box.append(pre);
+    }
     if (!state.lastRecap) return;
     const details=node("details",null,"recap-details");
     details.open=expandedRecap;
@@ -524,7 +565,7 @@
     const metrics=node("div",null,"exposure-metrics");
     for(const [label,value,kind] of [
       ["RESPONSE CASH","£"+economic.cash.toLocaleString("en-GB"),"cash"],
-      ["CLIENT TRUST",economic.trust+"/100","trust"],
+      ["PARTNER TRUST",economic.trust+"/100","trust"],
       ["FUTURE COMMITMENTS","£"+economic.pendingLiability.toLocaleString("en-GB"),"liability"]
     ]) {
       const item=node("div",null,"exposure-metric "+kind);
@@ -580,7 +621,7 @@
     const trust = impact.trustChange;
     for (const [label,value] of [
       ["TOTAL PAID THIS EPISODE","£" + impact.roundSpent.toLocaleString("en-GB")],
-      ["CLIENT TRUST CHANGE",(trust>0?"+":"") + trust + " pts"],
+      ["PARTNER TRUST CHANGE",(trust>0?"+":"") + trust + " pts"],
       ["REMAINING COMMITMENTS","£" + impact.pendingLiability.toLocaleString("en-GB")]
     ]) {
       const entry=node("div",null,"aftershock-stat");
@@ -591,7 +632,50 @@
       report.append(node("p","PREVIOUS PROMISES PAID THIS EPISODE: "+
         impact.paidDeferred.join("; "),"aftershock-deferred"));
     }
+    if(Number.isFinite(impact.cash)){
+      report.append(node("p",impact.cash<0?
+        "FUNDING POSITION AT EPISODE CLOSE: £"+Math.abs(impact.cash).toLocaleString("en-GB")+
+          " below zero; further promises are not already funded.":
+        "RESPONSE CASH AT EPISODE CLOSE: £"+impact.cash.toLocaleString("en-GB")+
+          ". Future commitments shown above are still obligations, not available cash.",
+        "aftershock-context-line"));
+    }
+    if(impact.risks&&impact.riskChange){
+      const exposure=[["legal","Legal"],["ops","Operations"],["workforce","Workforce"],["customer","Customer"]];
+      const rising=exposure.filter(([key])=>impact.riskChange[key]>0).sort((a,b)=>
+        impact.riskChange[b[0]]-impact.riskChange[a[0]])[0];
+      const falling=exposure.filter(([key])=>impact.riskChange[key]<0).sort((a,b)=>
+        impact.riskChange[a[0]]-impact.riskChange[b[0]])[0];
+      const statements=[];
+      if(falling)statements.push(falling[1]+" exposure fell "+Math.abs(impact.riskChange[falling[0]])+
+        " points to "+impact.risks[falling[0]]+".");
+      if(rising)statements.push(rising[1]+" exposure rose "+impact.riskChange[rising[0]]+
+        " points to "+impact.risks[rising[0]]+".");
+      if(impact.risks.workforce>=68)statements.push("Workforce exposure remains high; capacity promises need care.");
+      if(impact.trust<35)statements.push("Partner confidence is below 35/100; further assurances need evidence.");
+      if(statements.length)report.append(node("p",
+        "MEASURED AFTER THIS EPISODE: "+statements.join(" ")+" Changes include automatic episode pressures and previous commitments.",
+        "aftershock-context-line"));
+    }
     return report;
+  }
+  function renderVoteResolution(info){
+    if(!info)return null;
+    const block=node("div",null,"vote-resolution");
+    block.append(node("strong","HOW YOUR TEAM REACHED THIS RESPONSE"));
+    const count=info.votes+" OF "+info.total+" BALLOTS";
+    const explanation=info.method==="unanimous"?
+      count+" matched the same complete response — unanimous.":
+      info.method==="majority"?
+      count+" supported the winning complete response — an absolute majority.":
+      info.method==="plurality"?
+      count+" supported the winning complete response — the largest tally, not an absolute majority.":
+      info.method==="runoff"?
+      count+" supported the winning package in the private runoff.":
+      info.method==="captain_cast"?
+      "The private runoff ended tied. The captain's runoff ballot determined the response.":
+      "The deadline passed with no resolved team response.";
+    block.append(node("p",explanation));return block;
   }
   function renderChosenAdvisers(privateData){
     const box=node("section",null,"chosen-advisers");
@@ -622,6 +706,46 @@
     if(ctx.pressure)box.append(node("p",ctx.pressure,"story-pressure"));
     return box;
   }
+  // The untimed preparation stage is server-owned. Captains can select two
+  // advisers; nobody can cast a ballot or trigger economic changes yet.
+  function renderPrepAdvisers(target, privateData, captain) {
+    const panel=node("section",null,"prep-adviser-panel");
+    panel.append(node("strong","UNTIMED TEAM PREPARATION","section-label"),
+      node("p","Read the evidence above and choose two advisers. Your three-minute decision timer has NOT started. Discuss the evidence together now.","prep-message"));
+    if(captain){
+      panel.append(node("h3","CAPTAIN / CHOOSE TWO PRIVATE ADVISERS","section-label"));
+      const grid=node("div",null,"choice-grid");
+      for(let i=0;i<ADV.length;i++){
+        const selected=draftPicks.includes(i);
+        const choose=button("",()=>{
+          if(draftPicks.includes(i))draftPicks=draftPicks.filter(n=>n!==i);
+          else if(draftPicks.length<2)draftPicks.push(i);
+          renderPlayerActions(true);
+          target.querySelector('[data-prep-adviser="'+i+'"]')?.focus({preventScroll:true});
+        },"choice"+(selected?" selected":""));
+        choose.dataset.prepAdviser=String(i);
+        choose.setAttribute("aria-pressed",String(selected));
+        if(window.BCPreviewArt && typeof window.BCPreviewArt.portrait==="function"){
+          const portrait=node("span",null,"adviser-portrait");
+          portrait.setAttribute("aria-hidden","true");
+          portrait.innerHTML=window.BCPreviewArt.portrait(i);choose.append(portrait);
+        }
+        choose.append(node("strong",ADV[i][0]),node("small",ADV[i][1]));
+        grid.append(choose);
+      }
+      panel.append(grid);
+      panel.append(button(privateData.advisers.length===2?"UPDATE TWO ADVISERS":"SAVE TWO ADVISERS",
+        ()=>action({type:"select_advisers",advisers:draftPicks.slice()}).catch(e=>error(e.message)),
+        "primary",draftPicks.length!==2));
+    }else panel.append(node("p",privateData.advisers.length===2?
+      "Your captain has selected two advisers. Review their advice with your team.":
+      "Your captain is choosing two advisers. No decision timer is running."));
+    if(privateData.intelligence.length)panel.append(renderChosenAdvisers(privateData));
+    panel.append(node("p",privateData.advisers.length===2?
+      "ADVISERS READY · The host will begin three minutes of team debate and individual voting when all teams are prepared.":
+      "WAITING FOR TWO ADVISERS · The host cannot begin the decision timer yet.","prep-status"));
+    target.append(panel);
+  }
   function renderPlayerActions(force = false) {
     const target = $("player-actions");
     target.hidden = state.viewer.role !== "player";
@@ -633,7 +757,8 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
+      state.nextPreview?.number,
       privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
@@ -676,6 +801,12 @@
       return;
     }
     if(privateData.storyContext)target.append(renderTeamStoryThread(privateData.storyContext));
+    if(state.phase==="prep"){
+      if(privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
+      target.append(renderPrivateExposure(privateData.economic));
+      renderPrepAdvisers(target,privateData,state.viewer.captain);
+      return;
+    }
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null,canVote:true};
     // After locking a ballot, remove ALL voting controls. Only the two chosen
     // advisers and a concise status remain on this screen.
@@ -688,7 +819,10 @@
         "You are with "+mine.name+". Follow this scene with your team; you can vote as soon as the host starts the next episode."));
       else if(voting.myVote&&!mine.locked)target.append(node("p",
         "Your answer is locked. Other teammates are still deciding; you do not need to do anything else."));
+      if(mine.locked&&privateData.voteResolution)target.append(renderVoteResolution(privateData.voteResolution));
       if(mine.locked&&privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
+      if(mine.locked&&state.nextPreview)target.append(node("p",
+        "THE NEXT EPISODE IS READY: open the untimed public briefing above before your host starts the next clock.","prebrief-note"));
       return;
     }
     if (privateData.lastImpact) target.append(renderTeamAftershock(privateData.lastImpact));
@@ -702,10 +836,10 @@
     progress.append(node("p", mine.locked ?
       (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
-      "Only vote progress is shown before the team decides. The most popular complete proposal wins; a tie triggers a private revote."));
+      "Only vote progress is public until everyone votes. The highest-tally matching complete proposal wins (not necessarily a majority). Tied leaders enter a private runoff."));
     target.append(progress);
 
-    if (state.viewer.captain && !voting.runoff &&
+    if (state.viewer.captain && !state.usePrepPhase && !voting.runoff &&
         (privateData.advisers.length!==2||adviserEditOpen)) {
       target.append(node("h3", "01 / CAPTAIN — SELECT TWO ADVISERS", "section-label"));
       target.append(node("p", "Once saved, the briefings are available privately to all your teammates."));
@@ -744,7 +878,7 @@
     // several screens above the strategy and statement choices.
     if(privateData.intelligence.length){
       target.append(renderChosenAdvisers(privateData));
-      if(state.viewer.captain&&!adviserEditOpen&&!voting.runoff &&
+      if(state.viewer.captain&&!state.usePrepPhase&&!adviserEditOpen&&!voting.runoff &&
          voting.lockedVotes===0&&!mine.locked){
         target.append(button("CHANGE MY TWO ADVISERS",()=>{
           adviserEditOpen=true;draftPicks=privateData.advisers.slice();
@@ -760,7 +894,8 @@
     const ep = state.episode;
     if (voting.runoff) {
       target.append(node("h3", "PRIVATE TEAM DEBATE / TIE BREAK", "section-label"));
-      target.append(node("p", "Tie. Debate the two closest proposals, then everyone votes again while the clock runs. If the revote is also tied, the captain's ballot decides."));
+      target.append(node("p", voting.runoff.tiedProposals+" equally supported complete proposals ("+
+        voting.runoff.tiedSupport+" votes each). The two closest packages by strategy, statement and investment reached this private runoff; a distance tie uses original join order. Debate them now. If the revote ties, the captain's runoff ballot decides. The clock continues."));
       voting.runoff.choices.forEach((proposal, i) => {
         const plan = ep.plans[proposal.planIndex], statement = ep.signals[proposal.signalIndex];
         const selected = draftPlan === proposal.planIndex && draftSignal === proposal.signalIndex &&
@@ -865,8 +1000,8 @@
     details.open=hostManageOpen;
     details.addEventListener("toggle",()=>{hostManageOpen=details.open;});
     details.append(node("summary","FACILITATOR · MANAGE "+roster.length+" PARTICIPANTS"));
-    const note=node("p",state.phase==="lobby"?
-      "Correct accidental joins or hand over captainship before starting.":
+    const note=node("p",["lobby","prep"].includes(state.phase)?
+      "Correct accidental joins or transfer captainship before the timed decision.":
       "If a player disappears, transfer captainship. After 90 seconds you may remove a member who has not voted; locked votes cannot be discarded.",
       "host-roster-help");
     details.append(note);
@@ -888,7 +1023,7 @@
         promote.dataset.hostPromote=p.id;
         buttons.append(promote);
       }
-      const eligible=state.phase==="lobby"||
+      const eligible=["lobby","prep"].includes(state.phase)||
         (state.phase==="advisers"&&!team.locked&&!p.hasVoted&&team.joined>1&&state.clock?.stage!=="closed");
       const remove=button("REMOVE",async()=>{
         if(!window.confirm("Remove "+p.nickname+" from "+team.name+
@@ -912,19 +1047,20 @@
     target.hidden=!showHost;
     target.replaceChildren();
     if(!showHost)return;
-    const live=state.phase==="advisers",total=state.teams.length;
-    const ready=state.teams.filter(t=>live?t.locked:t.ready).length;
+    const live=state.phase==="advisers",prep=state.phase==="prep",total=state.teams.length;
+    const ready=state.teams.filter(t=>live?t.locked:prep?t.advisersReady:t.ready).length;
     const top=node("div",null,"host-command-heading");
     const copy=node("div",null,"host-command-copy");
-    copy.append(node("small",live?"FACILITATOR / LIVE OPERATIONS":"FACILITATOR / BEFORE THE INCIDENT"));
-    copy.append(node("h2",live?"YOUR ROOM. YOUR CALL.":"PREPARE THE ROOM."));
+    copy.append(node("small",live?"FACILITATOR / LIVE OPERATIONS":prep?"FACILITATOR / UNTIMED TEAM PREP":"FACILITATOR / BEFORE THE CHALLENGE"));
+    copy.append(node("h2",live?"YOUR ROOM. YOUR CALL.":prep?"LET TEAMS PREPARE.":"PREPARE THE ROOM."));
     copy.append(node("p",live?
-      "Watch participation and time, not private advice or anyone's ballot. Teams decide. You control when the next incident starts.":
+      "Watch participation and time, not private advice or anyone's ballot. Teams decide. You control when the next chapter starts.":
+      prep?"All captains select two private advisers. Let everyone read and discuss the evidence before you start the three-minute team decision window.":
       "Invite your players, check team attendance and read the rules aloud. Start when every team has at least one person."));
     top.append(copy);
     const tally=node("div",null,"host-command-tally");
     tally.append(node("strong",ready+" / "+total));
-    tally.append(node("small",live?"TEAMS FINISHED":"TEAMS REPRESENTED"));
+    tally.append(node("small",live?"TEAMS FINISHED":prep?"TEAMS WITH ADVISERS":"TEAMS REPRESENTED"));
     top.append(tally);target.append(top);
     const grid=node("div",null,"host-command-grid");
     state.teams.forEach((team,i)=>{
@@ -932,7 +1068,8 @@
       const name=node("div",null,"host-command-team-name");
       name.append(node("strong",team.name));
       name.append(node("span",live?(team.timedOut?"TIME EXPIRED":team.locked?
-        "RESPONSE LOCKED":"DECIDING"):(team.ready?"REPRESENTED":"WAITING FOR PLAYER"),"host-command-team-status"));
+        "RESPONSE LOCKED":"DECIDING"):prep?(team.advisersReady?"ADVISERS READY":"CHOOSING ADVISERS"):
+        (team.ready?"REPRESENTED":"WAITING FOR PLAYER"),"host-command-team-status"));
       card.append(name);
       const count=team.eligibleVoters??team.joined;
       const votes=Math.min(team.votesSubmitted||0,count);
@@ -955,7 +1092,9 @@
     foot.append(node("span",live?
       (ready===total?"ALL TEAMS FINISHED · THE NEXT SCENE IS YOUR CALL":
         "SHARED CLOCK / EVERY TEAM HAS ITS OWN RESPONSE DEADLINE"):
-      "THE INCIDENT STARTS ONLY WHEN EVERY TEAM HAS JOINED"));
+      prep?(ready===total?"ALL ADVISERS READY · HOST CAN START THE CLOCK":
+        "UNTIMED PREPARATION · WAITING FOR TEAM ADVISERS"):
+      "THE CHALLENGE STARTS WHEN EVERY TEAM HAS JOINED"));
     foot.append(button(live?"REVIEW ROUND CONTROLS":"REVIEW START CONTROLS",()=>{
       $("host-actions").scrollIntoView({behavior:"smooth",block:"center"});
     },"secondary"));
@@ -974,17 +1113,26 @@
     if (target.hidden) return;
     if (state.phase === "lobby") {
       const ready = state.teams.every(t => t.ready);
-      target.append(node("p", "Read the six RULES OF ENGAGEMENT aloud before starting. Share the QR link so everyone joins a team."));
-      target.append(button("START THE FIRST 3-MINUTE WINDOW",
-        () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
-      if (!ready) target.append(node("p", "Every team must have a participant before the first episode."));
+      target.append(node("p", "Read the RULES OF ENGAGEMENT and invite teams to read episode 1. Open untimed team preparation to let captains choose two confidential advisers before the clock."));
+      target.append(button("OPEN UNTIMED TEAM PREPARATION",
+        () => action({type: "start_prep"}).catch(e => error(e.message)), "primary", !ready));
+      if (!ready) target.append(node("p", "Every team must have a participant before preparation begins."));
+    } else if (state.phase === "prep") {
+      const ready=state.teams.every(t=>t.advisersReady&&t.ready);
+      target.append(node("p","EPISODE "+(state.round+1)+" / 6 · UNTIMED EVIDENCE & ADVISER PREPARATION. Players can discuss; only captains choose private advisers."));
+      target.append(button("START 3-MINUTE TEAM DECISION",
+        ()=>action({type:"start"}).catch(e=>error(e.message)),"primary",!ready));
+      if(!ready)target.append(node("p","Waiting for every team captain to select exactly two advisers. The decision clock has not started."));
+      else target.append(node("p","All advisers selected. Start the clock when teams are ready to debate and vote."));
     } else if (state.phase === "advisers") {
       const ready = state.teams.every(t => t.locked);
       target.append(node("p","EPISODE "+(state.round+1)+" / 6 · "+state.episode.title));
       target.append(button(state.round===5?"REVEAL THE BOARDROOM VERDICT":"START NEXT EPISODE",
         ()=>action({type:"advance"}).catch(e=>error(e.message)),"primary",!ready));
       if (!ready) target.append(node("p", "Teams still deciding or debating. Each team freezes its own clock after everyone votes and a winning proposal is confirmed."));
-      else target.append(node("p", "ALL TEAMS FINISHED. You can start the next episode now."));
+      else target.append(node("p", state.round===5?
+        "ALL TEAMS FINISHED. Reveal the boardroom verdict when ready.":
+        "ALL TEAMS FINISHED. Ask participants to open the untimed next-episode briefing before starting the next clock."));
     } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
     renderHostRoster(target);
   }
@@ -1022,7 +1170,7 @@
     return wrap;
   }
   function friendlyStatus(status){
-    return ({RENEWED:"RENEWAL-READY",CONDITIONAL:"MOMENTUM TO BUILD", "AT RISK":"IMPROVEMENTS TO MAKE", LOST:"RESET AND REBUILD"})[status]||status;
+    return ({BOARD_READY:"BOARD-READY PILOT",CONDITIONAL:"PROMISING WITH CONDITIONS", "AT RISK":"REWORK NEEDED", LOST:"NOT YET VIABLE"})[status]||status;
   }
   function renderResults() {
     const target = $("results");
@@ -1034,7 +1182,7 @@
     if(state.viewer.role==="projector"){
       // An uncluttered public finale; host and players keep the full report.
       const stage=node("section",null,"projection-verdict");
-      stage.append(node("small","EPISODE 06 / THE NEXT MOVE","projection-verdict-kicker"),
+      stage.append(node("small","EPISODE 06 / THE FINAL CALL","projection-verdict-kicker"),
         node("h2","THE BOARDROOM VERDICT"));
       stage.append(node("p",verdict.hasChampion?"BOARDROOM CHAMPION":"HIGHEST TEAM SCORE",
         "projection-champion-label"));
@@ -1051,7 +1199,7 @@
         ranks.append(entry);
       });
       stage.append(ranks);
-      stage.append(node("p","Highest score recognises the strongest simulated response. Championship also requires renewal readiness, cash and viable delivery.","projection-verdict-foot"));
+      stage.append(node("p","Highest score recognises the strongest simulated response. Championship also requires a board-ready plan, available reserve and viable delivery. No contract has been awarded.","projection-verdict-foot"));
       target.append(stage);
       return;
     }
@@ -1071,12 +1219,12 @@
     winner.append(node("strong", verdict.hasChampion ? verdict.champions.join(" / ") :
       "STRONGEST TEAM RESPONSE · " + verdict.leader));
     winner.append(node("p", verdict.hasChampion ?
-      "Your team met the simulation's renewal criteria and earned the strongest adjusted score. Exact ties share the title; otherwise remaining cash breaks ties." :
-      "Every team completed the challenge. This team earned the highest simulated score; no team met all the renewal criteria. The result shows what to build on next."));
+      "Your team met the simulation's board-readiness criteria and earned the strongest adjusted score. Exact ties share the title; otherwise remaining cash breaks ties." :
+      "Every team completed the challenge. This team earned the highest simulated score; no team met all the board-readiness criteria. The result shows what to improve next."));
     header.append(winner);
     sheet.append(header);
     sheet.append(node("h3", "FINAL TEAM RANKINGS", "report-section-title"));
-    sheet.append(node("p", "Final score = simulated economic score minus late/missed-deadline penalties (minimum 0). The championship additionally requires renewal-readiness, available cash and viable delivery. These outcomes do not constitute a signed contract.", "report-explain"));
+    sheet.append(node("p", "Final score = simulated economic score minus late/missed-deadline penalties (minimum 0). The championship additionally requires board-readiness, available reserve and viable delivery. These outcomes do not constitute a signed contract.", "report-explain"));
     const scoring=node("details",null,"report-advanced");
     scoring.append(node("summary","HOW SCORING WORKS"));
     scoring.append(node("p","Economic score starts at 100 minus the risk index: 24% legal, 27% operations, 18% workforce, 31% customer, multiplied by 0.62. Trust above/below 50 contributes 0.25 points per index point. Liquidity risk over 40 costs 0.16 points per point. Unpaid commitments cost up to 18 points, at one point per £4,000."));
@@ -1105,7 +1253,7 @@
       const metrics = node("div", null, "report-metrics");
       for(const [label,value] of [
         ["CASH REMAINING",cash(team.cash)],
-        ["CLIENT TRUST",team.trust + "/100"],
+        ["PARTNER TRUST",team.trust + "/100"],
         ["AVERAGE RISK",String(team.avgRisk)],
         ["OUTSTANDING LIABILITIES",cash(team.unpaid)]
       ]) {
@@ -1162,7 +1310,7 @@
     awards.append(node("h3","BEYOND THE SCOREBOARD","report-section-title"));
     const awardGrid=node("div",null,"boardroom-awards-grid");
     const awardSpecs=[
-      ["THE TRUST BUILDERS","HIGHEST CLIENT TRUST","trust",true," / 100"],
+      ["THE TRUST BUILDERS","HIGHEST PARTNER TRUST","trust",true," / 100"],
       ["THE RISK NAVIGATORS","LOWEST AVERAGE BUSINESS RISK","avgRisk",false," / 100"],
       ["THE RESOURCE STRATEGISTS","MOST RESPONSE CASH LEFT","cash",true,""],
       ["THE TIMING PROS","FEWEST TIME PENALTY POINTS","timingPenalty",false," PTS LOST"]
@@ -1224,7 +1372,7 @@
       (totalDecisions-answered)+"",answered+" of "+totalDecisions+
       " team responses beat the hard deadline.",totalDecisions-answered,totalDecisions,"#be796d"));
     statGrid.append(ringStat("THE BEST TRUST INDEX",
-      bestTrust+"/100","Highest client trust remaining after six episodes. This is an index, not a probability.",
+      bestTrust+"/100","Highest partner confidence remaining after six episodes. This is an index, not a probability.",
       bestTrust,100,"#397f79"));
     const surprise=node("article",null,"verdict-fact verdict-surprise");
     surprise.append(node("small","MOST EXPENSIVE CHAPTER"));
@@ -1244,7 +1392,7 @@
       const firstDecision=verdict.ranked[0]?.decisions[i];
       const top=node("summary",null,"compare-round-title");
       top.append(node("span","EP "+String(i+1).padStart(2,"0")),
-        node("strong",firstDecision?.episode||"THE INCIDENT"),
+        node("strong",firstDecision?.episode||"THE CHALLENGE"),
         node("small","COMPARE "+verdict.ranked.length+" TEAMS"));
       roundLine.append(top);
       const cells=node("div",null,"compare-teams");
@@ -1271,8 +1419,8 @@
     }
     trail.append(comparison);sheet.append(trail);
     const coda=node("aside",null,"report-epilogue");
-    coda.append(node("strong","ONE FINAL UNANSWERED QUESTION"));
-    coda.append(node("p","The original sender has not been identified. A contractor access log was evidence of access, not proof of responsibility. This verdict evaluates how each team responded to the unexpected distribution — it does not invent an attribution."));
+    coda.append(node("strong","ONE OPPORTUNITY. MANY POSSIBLE FUTURES."));
+    coda.append(node("p","Project Spark remains a fictional proposal awaiting a partner decision. Your results measure the choices your team made, the available reserve and the risks still to manage. They do not claim that a pilot was awarded or a contract signed."));
     sheet.append(coda);
     const footer=node("footer",null,"report-foot");
     footer.append(node("strong","THE 09:17 CHALLENGE / SIX DECISIONS"));
@@ -1327,7 +1475,10 @@
     if(!next || next.code !== roomCode)return;
     if(state && state.code===next.code && next.revision < state.revision)return;
     const prevRound = state?.round, prevCode=state?.code, prevPhase=state?.phase;
+    const previousPreviewNumber=state?.nextPreview?.number;
     state = next;
+    if(previousPreviewNumber!==state.nextPreview?.number)
+      preBriefOpen=state.phase==="advisers"&&!!state.nextPreview&&state.viewer.role!=="projector";
     clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
     if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
       playerRenderKey = null;
@@ -1354,9 +1505,9 @@
     const projection = state.viewer.role === "projector";
     document.body.classList.toggle("projector-mode", projection);
     document.body.classList.toggle("player-view", state.viewer.role === "player");
-    document.body.classList.toggle("in-game", state.phase === "advisers");
+    document.body.classList.toggle("in-game", ["prep","advisers"].includes(state.phase));
     document.body.classList.toggle("game-complete", state.phase === "complete");
-    document.body.dataset.episode = state.phase === "advisers" ? String(state.round + 1) : "";
+    document.body.dataset.episode = ["prep","advisers"].includes(state.phase) ? String(state.round + 1) : "";
     $("viewer-mode").hidden = !projection;
     $("projector-invite").hidden = !projection || state.phase !== "lobby";
     // Open the six-point briefing on first entry; keep an individual's
@@ -1389,8 +1540,9 @@
     renderDecisionDock();renderRosterNotifications();renderHostReadyDialog();tick();
     $("leave-room").hidden=state.viewer.role!=="player"||state.phase==="complete";
     if(prevCode===state.code &&
-      ((prevRound!==state.round&&state.phase==="advisers")||
-       (prevPhase==="lobby"&&state.phase==="advisers"))){
+      ((prevRound!==state.round&&["prep","advisers"].includes(state.phase))||
+       (prevPhase==="lobby"&&["prep","advisers"].includes(state.phase))||
+       (prevPhase==="prep"&&state.phase==="advisers"))){
       requestAnimationFrame(()=>window.scrollTo(0,0));
     }
     if(prevPhase==="advisers"&&state.phase==="complete"&&state.viewer.role!=="projector")
@@ -1459,15 +1611,18 @@
       } catch (e) {
         const retryable = e.httpStatus === 409 &&
           e.message.includes("Room changed; refresh state and retry") &&
-          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote", "start", "advance", "set_captain", "remove_player"].includes(command.type);
+          ["select_advisers", "rename_team", "change_team", "lock_advisers", "submit_decision", "lock_vote", "start_prep", "start", "advance", "set_captain", "remove_player"].includes(command.type);
         try { showRoom((await getState()).state); } catch (_) { throw e; }
         if (retryable && attempt === 0) {
           if (["set_captain","remove_player"].includes(command.type) &&
               !state.hostRoster?.some(p=>p.id===command.playerId))throw e;
           if (command.type === "advance" &&
             !(state.phase === "advisers" && state.teams.every(t=>t.locked))) throw e;
-          if (command.type === "start" &&
+          if (command.type === "start_prep" &&
             !(state.phase === "lobby" && state.teams.every(t=>t.ready))) throw e;
+          if (command.type === "start" &&
+            !((state.phase === "lobby" && state.teams.every(t=>t.ready)) ||
+              (state.phase === "prep" && state.teams.every(t=>t.ready&&t.advisersReady)))) throw e;
           if (command.type === "lock_vote") {
             const team = state.teams[state.viewer.teamIndex];
             // The initial vote may already have landed before the revision conflict.
