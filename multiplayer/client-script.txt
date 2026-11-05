@@ -60,6 +60,7 @@
   let adviserEditOpen = false;
   let lastRosterSeq = null;
   let presenceDismiss = null;
+  const rosterNoticeQueue=[];
   let hostReadySeen = null;
   let hostReadyDismissed = null;
   let evidenceFolderOpen = null;
@@ -161,26 +162,34 @@
       $("team-list").append(card);
     });
   }
+  function showNextRosterNotice(){
+    const toast=$("presence-toast");
+    if(!rosterNoticeQueue.length){toast.hidden=true;presenceDismiss=null;return;}
+    const noticeItem=rosterNoticeQueue.shift();
+    const label=noticeItem.kind==="joined"?"JOINED":noticeItem.kind==="left"?"LEFT":
+      noticeItem.kind==="moved"?"SWITCHED TO":"REMOVED FROM";
+    toast.replaceChildren();
+    toast.append(node("strong","PLAYER UPDATE"),node("span",
+      noticeItem.nickname+" "+label+" "+noticeItem.team));
+    toast.hidden=false;
+    // Every distinct join/leave is shown, even if several updates arrive in
+    // one WebSocket snapshot. A slow mobile connection cannot erase a name.
+    presenceDismiss=setTimeout(()=>{
+      presenceDismiss=null;showNextRosterNotice();
+    },4000);
+  }
   function renderRosterNotifications(){
     const events=state?.rosterEvents||[];
     const latest=events.length?events[events.length-1].seq:0;
     if(lastRosterSeq===null){lastRosterSeq=latest;return;}
     const updates=events.filter(x=>x.seq>lastRosterSeq);
     lastRosterSeq=Math.max(lastRosterSeq,latest);
-    if(!updates.length)return;
-    const newest=updates[updates.length-1];
-    if(newest.kind==="joined"&&state.viewer.role==="player"&&newest.nickname===state.viewer.nickname)
-      return;
-    const label=newest.kind==="joined"?"JOINED":newest.kind==="left"?"LEFT":
-      newest.kind==="moved"?"SWITCHED TO":"REMOVED FROM";
-    const toast=$("presence-toast");
-    toast.replaceChildren();
-    toast.append(node("strong","PLAYER UPDATE"),node("span",
-      newest.nickname+" "+label+" "+newest.team+
-      (updates.length>1?" · "+updates.length+" recent changes":"")));
-    toast.hidden=false;
-    clearTimeout(presenceDismiss);
-    presenceDismiss=setTimeout(()=>{toast.hidden=true;},6500);
+    for(const event of updates){
+      if(event.kind==="joined"&&state.viewer.role==="player"&&
+         event.nickname===state.viewer.nickname)continue;
+      rosterNoticeQueue.push(event);
+    }
+    if(!presenceDismiss&&rosterNoticeQueue.length)showNextRosterNotice();
   }
   function renderHostReadyDialog(){
     const box=$("host-ready-dialog");
@@ -191,6 +200,7 @@
     if(hostReadySeen!==key){
       hostReadySeen=key;hostReadyDismissed=null;
     }
+    const wasHidden=box.hidden;
     box.hidden=hostReadyDismissed===key;
     if(box.hidden)return;
     $("host-ready-title").textContent=state.round===5 ?
@@ -200,7 +210,7 @@
       "Every team's window has ended. At least one team missed the deadline." :
       state.teams.length+" teams have confirmed their answers. Advance when you're ready.";
     $("ready-next").textContent=state.round===5?"REVEAL BOARDROOM VERDICT":"START NEXT EPISODE";
-    if(document.activeElement===document.body) $("ready-next").focus({preventScroll:true});
+    if(wasHidden)$("ready-next").focus({preventScroll:true});
   }
   function renderReadyNotice() {
     const banner = $("ready-notice");
@@ -1508,6 +1518,21 @@
     try{await action({type:"advance"});}
     catch(e){error(e.message);}
     finally{$("ready-next").disabled=false;}
+  });
+  document.addEventListener("keydown",event=>{
+    const modal=$("host-ready-dialog");
+    if(modal.hidden)return;
+    if(event.key==="Escape"){
+      event.preventDefault();$("ready-later").click();return;
+    }
+    if(event.key!=="Tab")return;
+    const buttons=[$("ready-next"),$("ready-later")].filter(x=>!x.disabled);
+    const index=buttons.indexOf(document.activeElement);
+    if(index<0){event.preventDefault();buttons[0]?.focus();return;}
+    if(event.shiftKey&&index===0){event.preventDefault();buttons.at(-1)?.focus();}
+    else if(!event.shiftKey&&index===buttons.length-1){
+      event.preventDefault();buttons[0]?.focus();
+    }
   });
   $("ready-later").addEventListener("click",()=>{
     hostReadyDismissed=state?.code+":"+state?.round;

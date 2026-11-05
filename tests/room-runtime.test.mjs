@@ -573,6 +573,14 @@ try {
       "Players have a persistent route to their action despite long evidence");
     assert.match(await phoneA.locator("#decision-dock-label").textContent(),/CHOOSE TWO ADVISERS/);
     await phoneA.locator("#decision-dock").click();
+    const rulesPlacement=await phoneA.evaluate(()=>{
+      const action=document.querySelector("#player-actions");
+      const rules=document.querySelector("#game-rules");
+      return {actionY:action.getBoundingClientRect().top+scrollY,
+        rulesY:rules.getBoundingClientRect().top+scrollY};
+    });
+    assert.ok(rulesPlacement.rulesY>rulesPlacement.actionY,
+      "During a live episode the Rules of Engagement must follow the decision, not obstruct it");
     assert.ok(await phoneA.locator("#player-actions").evaluate(el=>el.getBoundingClientRect().top<innerHeight),
       "Decision dock actually navigates to the actionable form");
 
@@ -738,6 +746,13 @@ try {
     // Network loss while a team is waiting must not lose its saved session.
     await phoneB.context().setOffline(true);
     await hostUI.locator("#host-ready-dialog").waitFor({state:"visible",timeout:10000});
+    assert.equal(await hostUI.locator("#ready-next").evaluate(el=>document.activeElement===el),true,
+      "The host-ready modal must move keyboard focus onto the next-episode action");
+    await hostUI.keyboard.press("Shift+Tab");
+    assert.equal(await hostUI.locator("#ready-later").evaluate(el=>document.activeElement===el),true,
+      "Focus stays inside the two-action host prompt");
+    await hostUI.keyboard.press("Tab");
+    assert.equal(await hostUI.locator("#ready-next").evaluate(el=>document.activeElement===el),true);
     assert.match(await hostUI.locator("#host-ready-title").textContent(),/ready/i);
     await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();

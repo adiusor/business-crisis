@@ -1230,3 +1230,12 @@ body.in-game:not(.projector-mode):not(.player-view) #projector-share>p{display:n
 .report-actions .primary{font-size:14px;min-height:52px}
 .report-actions p{font-size:12px;line-height:1.45;color:#d2e0e6}
 @media(max-width:800px){.boardroom-awards-grid{grid-template-columns:1fr}}
+
+
+/* Active players reach their decision first. Optional rules and voluntary exit
+   are at the very bottom; the lobby briefing remains prominent on entry. */
+body.player-view.in-game #game-rules{order:98;margin:22px 0 5px}
+body.player-view.in-game #leave-room{order:99;margin:8px 0 20px}
+body.player-view.in-game #host-actions,
+body.player-view.in-game #results{order:100}
+#host-ready-dialog:focus-visible{outline:2px solid #e6bc8a}
