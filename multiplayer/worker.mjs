@@ -215,6 +215,7 @@ export class CrisisRoom extends DurableObject {
           actor = await this.actor(room, request);
           return applyRoomAction(room, actor, command, Date.now());
         });
+        if(command.type==="leave_room")return json({left:true});
         return json({state: viewFor(next, actor)});
       }
       if (path === "/socket" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
