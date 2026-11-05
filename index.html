@@ -221,7 +221,7 @@ plans:[
 signals:[
 {name:"CORRECT THE RECORD",line:"This is a draft; no final restructuring decision has been approved.",delta:{legal:-4,workforce:-5,customer:-3},trust:4},
 {name:"ACKNOWLEDGE CONCERNS",line:"We understand the concerns and will answer with verified information.",delta:{workforce:-4,customer:-4,legal:3},trust:3},
-{name:"STAFF FIRST",line:"We are briefing colleagues directly before sharing further public detail.",delta:{legal:-2,workforce:-5,customer:7},trust:1}
+{name:"STAFF FIRST",line:"We will answer colleagues directly before sharing our verified client update.",delta:{legal:-2,workforce:-11,customer:7},trust:1}
 ]},
 {id:"warehouse",number:"05",time:"15:40",title:"THE DELIVERY TEST",kicker:"Plans count only when the team can deliver.",scene:"warehouse",base:17000,
 brief:"At 14:00, procurement logged whatever response your team provided—or the lack of one—and did not confirm renewal. Now the overnight service run is at risk: a contractor wants a supervised transition, two senior operators are exhausted, and procurement is still demanding verified delivery milestones.",
@@ -246,7 +246,7 @@ plans:[
 ],
 signals:[
 {name:"MILESTONE ALERT",line:"Here are the priority milestones and a realistic recovery path.",delta:{customer:-5,legal:-2},trust:5},
-{name:"CONFIDENT UPDATE",line:"Our priority commitments remain on track, with specific contingencies.",delta:{customer:-4,legal:5,ops:3},trust:5,delay:{due:6,cost:10000,label:"Customer assurance contingency",delta:{customer:9}}},
+{name:"CONFIDENT UPDATE",line:"We are protecting priority service with named contingencies, and will report any milestone change.",delta:{customer:-8,legal:5,ops:3},trust:5,delay:{due:6,cost:10000,label:"Customer assurance contingency",delta:{customer:9}}},
 {name:"VERIFY BEFORE UPDATING",line:"We will confirm the next milestone after operational checks are complete.",delta:{ops:-2,customer:9},trust:-4}
 ]},
 {id:"board",number:"06",time:"17:30",title:"THE NEXT MOVE",kicker:"Choose the company you want to build.",scene:"board",base:9000,
@@ -273,7 +273,7 @@ plans:[
 signals:[
 {name:"OWN THE TRADE-OFFS",line:"Here is what we will fund, what we will stop and how we will report progress.",delta:{legal:-5,customer:-6,workforce:-3},trust:6},
 {name:"BUILD MOMENTUM",line:"We will accelerate the most important commitments with published milestones.",delta:{customer:-7,legal:7,workforce:8},trust:8,delay:{due:7,cost:16000,label:"Accelerated milestone investment",delta:{liquidity:5}}},
-{name:"SHARE THE NEXT STEPS",line:"The immediate response is under control; longer-term improvements continue.",delta:{legal:-2,customer:3,workforce:2},trust:2}
+{name:"SHARE THE NEXT STEPS",line:"We will publish owners and a verified handover timetable for the next shift.",delta:{legal:-2,customer:3,workforce:2,ops:-8},trust:2}
 ]}
 ];
 g.BCContent={advisers:advisers,episodes:episodes,initialCash:260000,annualContractValue:240000,baseline:{legal:47,ops:38,workforce:44,customer:51,liquidity:25},variants:[

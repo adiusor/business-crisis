@@ -116,3 +116,37 @@ test("The 09:17 Challenge presents three defensible strategic options per scene,
 });
 
 test("story respects fatigued staff and makes recovery trade-offs coherent",()=>{ const work=C.episodes[4],p=work.plans.find(x=>x.name==="REDEPLOY THE CREW"); assert.match(work.evidence[2].body,/unsafe/);assert.match(p.desc,/rested/);assert.ok(p.delay.cost>0);assert.match(C.episodes[0].plans[1].delay.label,/Controlled access/);assert.match(C.episodes[2].brief,/service milestones/);});
+
+test("every business choice has a genuine quantified trade-off, not a strictly dominated alternative",()=>{
+ const levers=["legal","ops","workforce","customer","liquidity"];
+ const cost=x=>x.spend||0,commitment=x=>x.delay?.cost||0,trust=x=>x.trust||0;
+ const risks=(x,key)=>x.delta?.[key]||0;
+ const weaklyBetter=(a,b)=>cost(a)<=cost(b)&&commitment(a)<=commitment(b)&&
+  trust(a)>=trust(b)&&levers.every(key=>risks(a,key)<=risks(b,key));
+ const strictlyBetter=(a,b)=>cost(a)<cost(b)||commitment(a)<commitment(b)||
+  trust(a)>trust(b)||levers.some(key=>risks(a,key)<risks(b,key));
+ for(const e of C.episodes)for(const type of ["plans","signals"]){
+   for(const a of e[type])for(const b of e[type]){
+     if(a===b)continue;
+     assert.ok(!(weaklyBetter(a,b)&&strictlyBetter(a,b)),
+       e.title+": "+a.name+" strictly dominates "+b.name+" in "+type);
+   }
+ }
+});
+test("all 18 strategic and all 18 statement choices affect the six-chapter model",()=>{
+ const plans=Array(6).fill(0),signals=Array(6).fill(0);
+ const run=(p,s)=>{let t=R.createTeam(0,"TEST TEAM");
+  for(let round=0;round<6;round++)t=R.applyTurn(t,round,p[round],s[round],[0,1],0,{amount:0,route:null});
+  const scored=R.evaluate(t);
+  assert.equal(t.cash,C.initialCash-t.ledger.reduce((sum,x)=>sum+x.amount,0));
+  return JSON.stringify({cash:t.cash,risks:t.risks,trust:t.trust,pending:t.pending,score:scored.score,status:scored.status});
+ };
+ for(let round=0;round<6;round++)for(let choice=1;choice<3;choice++){
+   const p=[...plans],s=[...signals];p[round]=choice;
+   assert.notEqual(run(p,signals),run(plans,signals),
+     "Strategy should change economic model: "+C.episodes[round].plans[choice].name);
+   s[round]=choice;
+   assert.notEqual(run(plans,s),run(plans,signals),
+     "Statement should change economic model: "+C.episodes[round].signals[choice].name);
+ }
+});
