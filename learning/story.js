@@ -3,6 +3,7 @@
 // Original fictional educational scenario; deliberately independent from the existing 09:17 story.
 const scene={
   "id": "opening-night",
+  "scenarioType": "event",
   "title": "Opening Night",
   "subtitle": "Six scenes. One launch. A thousand unexpected possibilities.",
   "studio": "FIELDWORK HOUSE",
