@@ -56,7 +56,7 @@ test("commercial incident choices originate in canonical opening story",()=>{
  assert.match(page,/href="#try-a-decision">Try a sample decision/);
  assert.equal((page.match(/class="demo-choice"/g)||[]).length,3);
  for(const option of first.plans){
-   assert.ok(page.includes(option.name));
+   assert.ok(page.includes(option.name.replaceAll("&","&amp;")),"Rendered choice must match the canonical story after HTML escaping");
    assert.ok(page.includes(option.fallout));
    assert.ok(page.includes("£"+(first.base+option.spend).toLocaleString("en-GB")));
  }
