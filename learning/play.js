@@ -4,6 +4,7 @@
 // that powers the original incident. It is NOT a real-time multi-device room.
 const C=g.BCLearningContent;
 const R=g.BCCreateRules(C);
+const X=g.BCLearningExperience;
 const KEY="bip-opening-night-preview-v1";
 const TEAMS=["THE SPARKS","TEAM HORIZON","THE MAKERS","THE WILD CARDS"];
 const MODES={
@@ -18,8 +19,8 @@ let session=null;
 let screen="intro";
 let active=-1;
 let notice="";
-let draft={advisers:[],revealed:false,plan:-1,signal:-1};
-function freshDraft(){draft={advisers:[],revealed:false,plan:-1,signal:-1};}
+let draft={advisers:[],revealed:false,plan:-1,signal:-1,allocation:{amount:0,route:null}};
+function freshDraft(){draft={advisers:[],revealed:false,plan:-1,signal:-1,allocation:{amount:0,route:null}};}
 function save(){try{sessionStorage.setItem(KEY,JSON.stringify({session,screen,active,draft}));}catch(_){}}
 function clearSaved(){try{sessionStorage.removeItem(KEY)}catch(_){}}
 function restore(){
@@ -29,7 +30,7 @@ function restore(){
   if(!v.session.teams.every((t,i)=>t?.economic?.history?.length<=6&&t?.name===TEAMS[i]))return;
   session=v.session;screen=["team","play","recap","final"].includes(v.screen)?v.screen:"team";
   active=Number.isInteger(v.active)?v.active:-1;
-  if(v.draft&&Array.isArray(v.draft.advisers))draft=v.draft; 
+  if(v.draft&&Array.isArray(v.draft.advisers))draft={...draft,...v.draft,allocation:v.draft.allocation||{amount:0,route:null}}; 
  }catch(_){}
 }
 function setScreen(s){screen=s;save();render();}
@@ -75,17 +76,39 @@ function teamPicker(){
 function itemExhibits(ep){
  return '<div class="exhibits">'+ep.evidence.map((x,i)=>'<details class="exhibit"><summary><span class="label">SOURCE '+(i+1)+' · '+esc(x.type)+' · '+esc(x.time)+'</span><br><strong>'+esc(x.title)+'</strong></summary><p>'+esc(x.body)+'</p><p><b>What it tells you:</b> '+esc(x.clue)+'</p></details>').join("")+'</div>';
 }
+function collaboration(ep){
+ const b=X[ep.id];
+ return '<section class="panel" aria-label="Team collaboration challenge"><div class="row"><p class="eyebrow">'+esc(b.act)+'</p><span class="chip">GROUP DISCUSSION / 60 SECONDS</span></div>'+
+ '<h3>'+esc(b.intro)+'</h3><div class="grid2">'+b.roles.map((r,i)=>
+ '<blockquote class="exhibit"><p class="eyebrow">'+esc(r[0])+'</p><p>'+esc(r[1])+'</p></blockquote>').join("")+'</div>'+
+ '<p class="hint"><b>Before voting:</b> '+esc(b.challenge)+'</p>'+
+ '<p class="small subtle">Different arguments are encouraged. There is no bonus for guessing a predetermined textbook answer.</p></section>';
+}
+function investmentMarkup(){
+ if(![2,4].includes(session.round))return "";
+ const a=draft.allocation||{amount:0,route:null};
+ const amount=[0,10000,20000].map(n=>'<button type="button" class="secondary" data-action="amount" data-index="'+n+'" aria-pressed="'+(a.amount===n)+'">'+(n===0?"KEEP CASH":money(n))+'</button>').join("");
+ const routes=a.amount===0?"":'<div class="grid3">'+R.allocations.map(r=>
+   '<button type="button" class="choice" data-action="route" data-route="'+esc(r.id)+'" aria-pressed="'+(a.route===r.id)+'"><span class="eyebrow">EXTRA RESOURCE</span><strong>'+esc(r.name)+'</strong><small>Fund a real extra commitment; it changes the game engine&#39;s risk and trust indices.</small></button>').join("")+'</div>';
+ return '<section class="panel"><p class="eyebrow">TACTICAL RESOURCE ALLOCATION / OPTIONAL</p>'+
+ '<h3>Would you invest part of your remaining response fund?</h3>'+
+ '<p class="subtle">This expense is applied exactly once by the same economic engine used in the original game. Spending more does not automatically mean winning.</p>'+
+ '<div class="row gap">'+amount+'</div>'+routes+'</section>';
+}
 function play(){
  if(active<0||active>=session.teams.length){screen="team";return teamPicker();}
- const t=session.teams[active],ep=C.episodes[session.round];
+ const t=session.teams[active],ep=C.episodes[session.round],beat=X[ep.id];
+ const previous=t.economic.history.at(-1);
+ const echo=previous?'<div class="notes"><p class="eyebrow">PREVIOUSLY, YOUR TEAM CHOSE '+esc(previous.plan)+'</p><p>'+esc(previous.fallout)+'</p><p class="small subtle">The economic consequences of that choice are already in your cash, risk and commitments.</p></div>':"";
  const cards=C.advisers.map((a,i)=>'<button class="choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
  const selections=draft.advisers.length;
  const dossier=draft.revealed?'<div class="notes" aria-label="Confidential adviser notes"><p class="eyebrow">TWO PRIVATE TEAM PERSPECTIVES</p>'+draft.advisers.map(i=>'<p><b>'+esc(C.advisers[i].name)+':</b> '+esc(ep.advice[i])+'</p>').join("")+'</div>':"";
  const decisions=draft.revealed?'<h3>Choose one strategy</h3><div class="grid3">'+ep.plans.map((x,i)=>
   '<button type="button" class="choice" data-action="plan" data-index="'+i+'" aria-pressed="'+(i===draft.plan)+'"><span class="eyebrow">ROUTE 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.desc)+'</small><small>'+x.benefits.map(esc).join(" · ")+'</small><small class="cost">'+money(x.spend)+' · '+esc(x.cost)+'</small></button>').join("")+'</div>'+
- '<h3>Choose your public response</h3><div class="grid3">'+ep.signals.map((x,i)=>
+ '<h3>'+esc(beat.label)+'</h3><p class="subtle">'+esc(beat.spotlight)+'</p><div class="grid3">'+ep.signals.map((x,i)=>
   '<button type="button" class="choice" data-action="signal" data-index="'+i+'" aria-pressed="'+(i===draft.signal)+'"><span class="eyebrow">STATEMENT 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.line)+'</small></button>').join("")+'</div>'+
- '<div class="row gap"><button type="button" class="primary" data-action="lock" '+(draft.plan<0||draft.signal<0?"disabled":"")+'>LOCK '+esc(t.name)+' RESPONSE</button><button type="button" class="secondary" data-action="change-advisers">CHANGE ADVISERS</button></div>':"";
+ investmentMarkup()+
+ '<div class="row gap"><button type="button" class="primary" data-action="lock" '+(draft.plan<0||draft.signal<0||(draft.allocation?.amount>0&&!draft.allocation?.route)?"disabled":"")+'>LOCK '+esc(t.name)+' RESPONSE</button><button type="button" class="secondary" data-action="change-advisers">CHANGE ADVISERS</button></div>':"";
  return top()+'<section class="section"><div class="row"><span class="eyebrow">TEAM '+(active+1)+': '+esc(t.name)+'</span><span class="time">'+esc(ep.time)+'</span><span class="chip">'+money(t.economic.cash)+' REMAINING</span></div>'+
  '<h1 class="title">'+esc(ep.title)+'</h1><p class="lead">'+esc(ep.brief)+'</p>'+
  '<div class="two"><div><p class="eyebrow">THE EVIDENCE / OPEN ANY SOURCE</p>'+itemExhibits(ep)+'</div>'+
@@ -93,7 +116,7 @@ function play(){
  '<div class="metric"><span>Available event fund</span><strong>'+money(t.economic.cash)+'</strong></div>'+
  '<div class="metric"><span>Annual sponsorship</span><strong>NOT CASH</strong></div>'+
  (session.mode!=="social"?'<p class="hint"><b>Learning focus:</b> '+esc(ep.learning.topic)+'. '+esc(ep.learning.pearsonLO)+'</p>':"")+
- '</div></div><h3>Consult exactly two perspectives</h3><p class="subtle">Select the advice you believe will change your decision. You cannot open every briefing.</p>'+
+ '</div></div>'+echo+collaboration(ep)+'<h3>Consult exactly two perspectives</h3><p class="subtle">Select the advice you believe will change your decision. You cannot open every briefing.</p>'+
  '<div class="grid3">'+cards+'</div><p class="status">'+selections+' of 2 selected. '+(draft.revealed?"Briefings revealed.":"Change your selection before revealing.")+'</p>'+
  (!draft.revealed?'<div class="row gap"><button class="primary" data-action="reveal" '+(selections!==2?"disabled":"")+'>REVEAL TWO BRIEFINGS</button><button class="secondary" data-action="back-teams">BACK TO TEAMS</button></div>':"")+
  dossier+decisions+'</section>';
@@ -107,7 +130,10 @@ function recap(){
   '<div class="metric"><span>Event cash</span><strong>'+money(t.economic.cash)+'</strong></div>'+
   '<div class="metric"><span>Cost this scene</span><strong>'+money(-delta)+'</strong></div>'+
   '<div class="metric"><span>Trust index</span><strong>'+t.economic.trust+'/100</strong></div>'+
-  '<p class="small subtle">Public statement: '+esc(last.signal)+'</p></article>';
+  '<p class="small subtle">Response or negotiation tactic: '+esc(last.signal)+'</p>'+
+  (last.allocation?'<p class="small"><b>Extra resource:</b> '+money(last.allocation.amount)+' · '+esc(last.allocation.route)+'</p>':"")+
+  (last.paidDeferred?.length?'<p class="small"><b>Earlier commitments paid:</b> '+esc(last.paidDeferred.join("; "))+'</p>':"")+
+  '<p class="small subtle">Pending liabilities: '+money(last.pendingLiability)+'</p></article>';
  }).join("");
  const previousCondition=session.round===1&&session.teams.some(t=>t.economic.history[0]?.plan==="KEEP THE HYPE")?
   '<p class="hint">Delayed story consequence: teams that kept the ambiguous invitation alive entered the staff discussion with an avoidable trust problem. Their earlier response remains in the ledger.</p>':
@@ -115,7 +141,7 @@ function recap(){
    '<p class="hint">Earlier sponsor-control decisions shaped the negotiation context. The final finance and risk states still come from the shared engine.</p>':"";
  return top()+'<section class="section"><p class="eyebrow">THE AFTERMATH / SCENE '+(session.round+1)+'</p>'+
  h2("Different decisions. Different consequences.")+'<p class="lead">'+esc(ep.headline)+'</p><div class="grid2">'+result+'</div>'+
- previousCondition+
+ previousCondition+'<p class="hint"><b>Next in the story:</b> '+esc(X[ep.id].next)+'</p>'+
  '<div class="debrief"><p class="eyebrow">REFLECTION / '+esc(session.mode.toUpperCase())+'</p>'+
  '<h3>One question worth discussing</h3><p>'+esc(session.mode==="social"?MODES.social.debrief:ep.learning.facilitatorPrompt)+'</p>'+
  '<p class="small subtle">A fictional team score does not measure individual leadership competence.</p></div>'+
@@ -154,8 +180,9 @@ function reset(){
 function lock(){
  const t=session.teams[active];
  if(draft.advisers.length!==2||!draft.revealed||draft.plan<0||draft.signal<0)return;
+ if(draft.allocation?.amount>0&&!draft.allocation?.route)return;
  if(t.locked)return;
- try{t.economic=R.applyTurn(t.economic,session.round,draft.plan,draft.signal,draft.advisers,R.seedVariant("OPENING-NIGHT"),{amount:0,route:null});
+ try{t.economic=R.applyTurn(t.economic,session.round,draft.plan,draft.signal,draft.advisers,R.seedVariant("OPENING-NIGHT"),draft.allocation||{amount:0,route:null});
   t.locked=true;t.advisers=draft.advisers.slice();active=-1;freshDraft();notice=t.name+" has locked its decision.";
   if(session.teams.every(x=>x.locked)){setScreen("recap");}
   else setScreen("team");
@@ -196,6 +223,8 @@ document.addEventListener("click",event=>{
  if(a==="change-advisers"){draft.revealed=false;draft.plan=-1;draft.signal=-1;render();return;}
  if(a==="plan"){if(i>=0&&i<3)draft.plan=i;render();return;}
  if(a==="signal"){if(i>=0&&i<3)draft.signal=i;render();return;}
+ if(a==="amount"&&[2,4].includes(session.round)){if([0,10000,20000].includes(i)){draft.allocation={amount:i,route:null};render();}return;}
+ if(a==="route"&&[2,4].includes(session.round)&&draft.allocation?.amount>0){const route=target.dataset.route;if(R.allocations.some(x=>x.id===route)){draft.allocation.route=route;render();}return;}
  if(a==="lock"){lock();return;}
  if(a==="next"){next();return;}
  if(a==="download"){download();return;}
