@@ -36,6 +36,8 @@ jobs:
           node --test learning/tests/game.test.cjs
           node tests/rules.test.cjs
           node --test tests/storyline.test.cjs
+      - name: Audit buyer-specific website pages, links and noindex
+        run: node --test learning/tests/site.test.cjs
       - name: Install Chromium and WebKit for a real browser journey
         run: |
           npm install --no-audit --no-fund
