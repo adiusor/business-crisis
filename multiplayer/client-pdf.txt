@@ -81,7 +81,7 @@ function cover(v){
  p.ring(M+351,658,44,trust/100,gold);
  p.txt(M+79,645,total?Math.round(completed/total*100)+"%":"0%",18,paper,"F2");
  p.txt(M+337,645,trust+"",19,paper,"F2");
- p.txt(M+20,717,"ON-TIME RESPONSES",10,paper,"F2");
+ p.txt(M+20,717,"FILED BEFORE 4:00",10,paper,"F2");
  p.txt(M+265,717,"LEADER'S TRUST / 100",10,paper,"F2");
  p.txt(M,769,"Based only on recorded team decisions. The score combines",10,muted);
  p.txt(M,784,"economics and time penalties; renewal has separate rules.",10,muted);
