@@ -137,7 +137,7 @@ advice:[
 ],
 plans:[
 {name:"VERIFY & SECURE",verb:"Protect the facts",desc:"Restrict risky external sharing, preserve evidence and assign clear investigation owners.",benefits:["Protects verified evidence","Supports credible client updates"],cost:"Targeted controls take resources and slow some handovers.",spend:18000,delta:{legal:-11,ops:6,workforce:2,customer:-8},trust:8,fallout:"The client receives a verified update and an owner for next steps. Services continue with a slower, supervised handover.",tag:"CONTROL"},
-{name:"PROTECT THE SYSTEMS",verb:"Prioritise secure access",desc:"Temporarily suspend contractor access and external sharing while operations agree a safe workaround.",benefits:["Closes the known access route","Creates a visible control"],cost:"Extra restoration work and slower operations remain likely.",spend:32000,delta:{legal:-14,ops:16,workforce:7,customer:-4},trust:3,delay:{due:2,cost:9000,label:"Emergency restoration after blanket shutdown",delta:{ops:5}},fallout:"The sensitive access route is closed. Your team now needs a funded recovery route for the delayed delivery handover.",tag:"SHUTDOWN"},
+{name:"PROTECT THE SYSTEMS",verb:"Prioritise secure access",desc:"Temporarily suspend contractor access and external sharing while operations agree a safe workaround.",benefits:["Closes the known access route","Creates a visible control"],cost:"Extra restoration work and slower operations remain likely.",spend:32000,delta:{legal:-14,ops:16,workforce:7,customer:-4},trust:3,delay:{due:2,cost:9000,label:"Controlled access restoration and delivery handover",delta:{ops:5}},fallout:"The sensitive access route is closed. Your team now needs a funded recovery route for the delayed delivery handover.",tag:"SHUTDOWN"},
 {name:"PUT CLIENTS FIRST",verb:"Lead with communication",desc:"Keep essential services running and brief the client promptly while technical verification begins.",benefits:["Preserves client confidence","Keeps critical work moving"],cost:"Unverified exposure persists until the evidence review catches up.",spend:9000,delta:{legal:12,ops:-3,workforce:-2,customer:-14},trust:12,delay:{due:2,cost:13000,label:"Late forensic remediation",delta:{legal:5}},fallout:"The client values the direct call and a named contact. Security asks for extra remediation because the source is still unresolved.",tag:"RELATIONSHIP"}
 ],
 signals:[
@@ -172,7 +172,7 @@ signals:[
 {name:"PAUSE ROLE CHANGES",line:"We will pause proposed role changes while formal consultation is organised.",delta:{workforce:-7,legal:5},trust:4,delay:{due:4,cost:12000,label:"Temporary consultation and staffing protection",delta:{legal:6}}}
 ]},
 {id:"client",number:"03",time:"11:24",title:"THE CLIENT MEETING",kicker:"Trust is an opportunity you can earn.",scene:"client",base:14000,
-brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00 and a service guarantee that the board can sign.",
+brief:"Your largest client has moved its renewal discussion forward. It wants an independently verifiable recovery plan by 14:00, an accountable owner and service milestones the board can genuinely deliver.",
 headline:"A RENEWAL IS WON WITH EVIDENCE.",question:"What can you show the client by 14:00 to earn confidence?",pressure:"The £240k annual renewal is at stake, but future contract revenue is not today's cash.",
 evidence:[
 {type:"PROCUREMENT NOTE",time:"11:03",title:"THE CONDITIONS",body:"The client requires an incident owner, an audit trail and a credible plan for uninterrupted service. A full unconditional guarantee is not required.",clue:"A bounded commitment may be more credible than an absolute promise."},
@@ -209,7 +209,7 @@ advice:[
 "Correct false factual claims, but do not deny the existence of the genuine draft.",
 "Make sure public statements do not contradict what shift managers are telling staff.",
 "Clients will read the press statement. Coordinate it with the account update.",
-"Litigation threats consume money without guaranteeing a retraction.",
+"A targeted request to protect personal data may help; suppressing all coverage would damage credibility.",
 "Publish only facts verified by the investigation. Preserve screenshots and timestamps.",
 "An anonymous employee is not an enemy to be publicly identified."
 ],
@@ -241,7 +241,7 @@ advice:[
 ],
 plans:[
 {name:"ACTIVATE THE BACKUP",verb:"Share delivery load",desc:"Fund a vetted specialist partner and a controlled handover to restore capacity.",benefits:["Diversifies delivery resources","Creates breathing room for staff"],cost:"A significant cash and transition commitment remains.",spend:38000,delta:{ops:-15,workforce:-5,customer:-5,legal:2},trust:5,delay:{due:7,cost:9000,label:"Vendor transition close-out",delta:{liquidity:4}},fallout:"The specialist partner takes part of the load. The company funds a handover and future vendor close-out.",tag:"RESILIENCE"},
-{name:"SUPPORT THE FRONT LINE",verb:"Deliver with trusted staff",desc:"Offer paid, time-limited additional coverage and planned recovery time for experienced colleagues.",benefits:["Fast operational response","Uses proven expertise"],cost:"Fatigue and related costs still need close management.",spend:24000,delta:{ops:-14,workforce:18,legal:4,customer:-4},trust:3,delay:{due:6,cost:12000,label:"Fatigue-related recovery and staffing",delta:{ops:10,workforce:7}},fallout:"Critical deliveries move. The team has to honour promised recovery time, not rely on another emergency shift.",tag:"OVERTIME"},
+{name:"REDEPLOY THE CREW",verb:"Bring in rested specialists",desc:"Transfer qualified, rested colleagues from lower-priority work, fund cover for their previous assignments and protect exhausted staff.",benefits:["Uses experienced staff without unsafe overtime","Restores critical delivery quickly"],cost:"Reassignment costs money and can delay lower-priority clients.",spend:24000,delta:{ops:-14,workforce:-4,legal:2,customer:6},trust:3,delay:{due:6,cost:12000,label:"Temporary specialist cover and handover",delta:{ops:6,customer:4}},fallout:"Rested specialists secure the urgent delivery. Other clients need a clear transition plan while their normal team is temporarily reassigned.",tag:"PEOPLE"},
 {name:"RENEGOTIATE PRIORITIES",verb:"Focus on what matters",desc:"Agree a short-term priority order with the client, protecting critical work and employee capacity.",benefits:["Protects frontline capacity","Uses cash responsibly"],cost:"A change of scope needs an agreed concession.",spend:11000,delta:{ops:5,workforce:-11,customer:12,legal:-3},trust:-6,fallout:"The most important delivery remains viable. The client requests a fair adjustment for rescheduled work.",tag:"TRADE-OFF"}
 ],
 signals:[
@@ -414,7 +414,7 @@ if(!reasons.length)reasons.push("The company retains sufficient cash and has con
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
 }
 function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
-// Scores compare performance. The title requires the flagship renewal to be signed.
+// Scores compare modelled performance. Championship means renewal readiness in the simulation, not a real signed contract.
 function championshipResult(teams){
 const ranked=rankTeams(teams);
 const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
