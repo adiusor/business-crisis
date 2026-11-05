@@ -427,6 +427,12 @@
       dilemma.append(node("span","Find the strongest trade-off — not a perfect answer.","scene-pressure"));
       copy.append(dilemma);
     }
+    if(e.teamPrompt && state.viewer.role!=="projector"){
+      const talk=node("aside",null,"scene-team-prompt");
+      talk.append(node("small","TALK IT THROUGH · BEFORE YOU VOTE"));
+      talk.append(node("p",e.teamPrompt));
+      copy.append(talk);
+    }
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
     const progress=node("ol",null,"episode-progress");
