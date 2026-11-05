@@ -81,6 +81,7 @@ test("corporate challenge branding stays positive and coherent across each publi
  assert.match(home,/THE 09:17 CHALLENGE/);
  assert.match(home,/HOST A PRIVATE GAME/);
  assert.match(home,/JOIN A ROOM/);
+ assert.match(home,/href="\/education-team-challenge"/);
 });
 
 test("Project Spark is reflected in social sharing, public marketing and Romanian copy",()=>{
@@ -98,3 +99,16 @@ test("Project Spark is reflected in social sharing, public marketing and Romania
 });
 
 test("original site navigation and joining instructions remain intact after the rebrand",()=>{const home=renderPublicPage("/",preview,{}).html;for(const path of ["/corporate-team-building-game","/virtual-team-building","/leadership-team-building","/for-facilitators"]){assert.ok(PAGES[path]);assert.ok(home.includes('href="'+path+'"'));}assert.match(home,/How does someone choose or get assigned/);assert.match(home,/4-character code or QR/);assert.match(home,/HOST A PRIVATE GAME/);assert.match(home,/JOIN A ROOM/);});
+
+test("education pathway is truthful about classroom scope and individual assessment",()=>{
+ const education=renderPublicPage("/education-team-challenge",live,cfg);
+ assert.equal(education.indexable,true);
+ assert.match(education.html,/university|universit/i);
+ assert.match(education.html,/Does this grade or certify students/);
+ assert.match(education.html,/not a validated student assessment|not a validated assessment/i);
+ assert.doesNotMatch(education.html,/guaranteed pass|accredited leadership/i);
+ const sample=renderPublicPage("/",live,cfg).html;
+ assert.match(sample,/MAKE YOUR CALL/);
+ assert.match(sample,/TRY ANOTHER APPROACH/);
+ assert.equal((sample.match(/data-demo-result="/g)||[]).length,3);
+});
