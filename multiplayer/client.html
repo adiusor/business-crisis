@@ -73,11 +73,14 @@
         </div>
         <div id="projector-share" hidden class="projector-access">
           <div class="eyebrow">SEPARATE PROJECTOR DISPLAY</div>
-          <p>Generate a read-only projection link. Reissuing it revokes the previous projector access; keep the link with the organiser.</p>
+          <p>Use <strong>COPY PROJECTOR LINK</strong> to open the same read-only screen on another device. Copying the host's room address will not transfer projector access. Rotating revokes the previous link.</p>
           <button id="rotate-projector" type="button" class="secondary">GENERATE / ROTATE PROJECTOR LINK</button>
+          <button id="copy-projector-link" type="button" class="primary" hidden>COPY PROJECTOR LINK</button>
           <a id="projector-link" hidden rel="noopener noreferrer" target="_blank">OPEN PROJECTOR DISPLAY</a>
         </div>
-        <p id="viewer-mode" hidden class="projection-label">PUBLIC DISPLAY / READ-ONLY / NO PLAYER CREDENTIALS</p>
+        <div id="viewer-mode" hidden class="projection-label">PUBLIC DISPLAY / READ-ONLY
+          <button id="copy-projector-view" type="button" class="secondary">COPY THIS PROJECTOR LINK</button>
+        </div>
         <section id="projector-invite" hidden class="projector-invite" aria-label="Join this game from your phone">
           <div class="projector-invite-copy">
             <div class="eyebrow">JOIN THIS GAME / SCAN THE CODE</div>

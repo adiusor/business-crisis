@@ -32,3 +32,8 @@
 
 ## Boundaries of this playtest
 Room data expires after 24 hours. This staging prototype is **not commercially ready**: real 30-device load, 40–80 participant support, robust entry rate limits, host account recovery, consent-based email delivery, privacy processes, payments, accessibility and physical projector/mobile testing remain outstanding. Never put real customer, staff or commercially sensitive information into test nicknames or notes.
+
+## Sharing the projector safely
+A normal `/?room=CODE` link is not a projector invitation. On the **host** page choose **GENERATE / ROTATE PROJECTOR LINK** then **COPY PROJECTOR LINK**. Open or paste the entire `/projector?room=CODE#access=…` link on another device. You can also copy the projector address bar or use **COPY THIS PROJECTOR LINK**. This is a transferable **read-only bearer capability**. Anyone with the link can see the public game stage but cannot manage it, see private ballots/advice or act as a team. Don't post the link publicly; rotating invalidates earlier copies.
+
+The 720p projector lobby keeps room code, QR and team readiness on a single screen. Expand Rules of Engagement on request. During live play, the scene and three evidence summaries fit a single screen; opening a full source overlays it rather than making the page scroll. Host and players retain the full verdict report; projector displays a concise scoreboard.

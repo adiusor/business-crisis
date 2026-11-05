@@ -33,6 +33,7 @@
   let exposureOpen = null;
   let decisionNear = false;
   let voteSending = false;
+  let evidenceFolderOpen = null;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -372,7 +373,18 @@
     brief.addEventListener("toggle",()=>{briefingOpen=brief.open;});
     brief.append(node("summary","READ THE INCIDENT BRIEF · FULL CONTEXT"));
     brief.append(node("p",e.brief,"episode-intro"));
+    brief.append(button("CLOSE FULL BRIEF",()=>{
+      brief.open=false;brief.querySelector("summary").focus();
+    },"dismiss-brief"));
     box.append(brief);
+    const folder=node("details",null,"evidence-folder");
+    folder.open=evidenceFolderOpen===null ?
+      (!window.matchMedia||!window.matchMedia("(max-width:700px)").matches) : evidenceFolderOpen;
+    folder.addEventListener("toggle",()=>{evidenceFolderOpen=folder.open;});
+    const folderSummary=node("summary",null,"evidence-folder-summary");
+    folderSummary.append(node("strong","THE EVIDENCE · 3 VERIFIED EXHIBITS"),
+      node("span","Investigate sources before voting. Open each file to read the full document."));
+    folder.append(folderSummary);
     const heading=node("div",null,"evidence-heading");
     heading.append(node("strong","THE EVIDENCE"));
     heading.append(node("small","THREE EXHIBITS · TAP FOR SOURCE DETAILS"));
@@ -393,9 +405,13 @@
       const source=node("div",null,"evidence-source");
       source.append(node("small","SOURCE DOCUMENT / EXPAND TO READ"));
       source.append(node("p",d.body));
+      source.append(button("CLOSE SOURCE FILE",()=>{
+        card.open=false;summary.focus();
+      },"dismiss-exhibit"));
       card.append(source);list.append(card);
     });
-    box.append(list);
+    folder.append(heading,list);
+    box.append(folder);
   }
   function renderRecap() {
     const box = $("round-recap");
@@ -829,6 +845,30 @@
     if (target.hidden) return;
     const verdict = state.verdict;
     const cash = amount => "£" + Number(amount).toLocaleString("en-GB");
+    if(state.viewer.role==="projector"){
+      // An uncluttered public finale; host and players keep the full report.
+      const stage=node("section",null,"projection-verdict");
+      stage.append(node("small","EPISODE 06 / THE BOARD VOTE","projection-verdict-kicker"),
+        node("h2","THE BOARDROOM VERDICT"));
+      stage.append(node("p",verdict.hasChampion?"BOARDROOM CHAMPION":"NO BOARDROOM CHAMPION",
+        "projection-champion-label"));
+      stage.append(node("h3",verdict.hasChampion?verdict.champions.join(" / "):
+        "LEADING RESPONSE · "+verdict.leader,"projection-champion"));
+      const ranks=node("div",null,"projection-rankings");
+      verdict.ranked.forEach((team,i)=>{
+        const entry=node("article",null,"projection-rank");
+        entry.append(node("span",String(i+1).padStart(2,"0"),"projection-rank-number"));
+        const identity=node("div",null,"projection-rank-name");
+        identity.append(node("strong",team.name),node("small",team.status));
+        entry.append(identity,node("strong",team.score+" / 100","projection-rank-score"),
+          node("span",cash(team.cash)+" CASH · "+team.trust+"/100 TRUST","projection-rank-metrics"));
+        ranks.append(entry);
+      });
+      stage.append(ranks);
+      stage.append(node("p","A champion must secure renewal, solvent funds and viable operations. Highest score alone is not enough.","projection-verdict-foot"));
+      target.append(stage);
+      return;
+    }
     const sheet = node("section", null, "report-sheet");
     sheet.id = "boardroom-report";
     const header = node("header", null, "report-head");
@@ -980,6 +1020,7 @@
       draftRound = state.round;
       exposureOpen = null;
       voteSending = false;
+      evidenceFolderOpen = null;
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
       draftRunoffOrdinal = 0;
@@ -1008,7 +1049,7 @@
     // collapse it to a small optional reference and remove it from projection.
     const rules=$("game-rules");
     if(prevPhase!==state.phase || prevCode!==state.code)
-      rules.open=state.phase==="lobby";
+      rules.open=state.phase==="lobby" && !projection;
     rules.hidden=projection && state.phase!=="lobby";
     $("rules-host-note").hidden=state.viewer.role!=="host" || state.phase!=="lobby";
     if (projection) {
@@ -1133,6 +1174,7 @@
     if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) socket.close();
     setConnection(false);
     if (isProjector) {
+      history.replaceState(null,"",location.pathname+location.search);
       show("join"); $("join-form").hidden = true;
       $("join-caption").textContent = "This projector link is invalid or has been rotated. Ask the host to generate a new one.";
     } else if (location.pathname === "/join") {
@@ -1254,9 +1296,30 @@
       const href = location.origin + "/projector?room=" + roomCode + "#access=" + response.projectorToken;
       $("projector-link").href = href;
       $("projector-link").hidden = false;
-      notice("Projection link generated. The previous projection link, if any, has been revoked.");
+      $("copy-projector-link").hidden = false;
+      notice("Projector access created. Copy this link, not the host room URL. Previous projector links have been revoked.");
     } catch (e) {error(e.message);}
     finally {$("rotate-projector").disabled = false;}
+  });
+  function shareProjectorUrl(){
+    if(!roomCode||!isProjector||!/^[0-9a-f]{64}$/.test(credential||""))return "";
+    return location.origin+"/projector?room="+roomCode+"#access="+credential;
+  }
+  async function copyShareUrl(href){
+    if(!href){notice("Generate the projector link from the host page first.");return;}
+    try{await navigator.clipboard.writeText(href);notice("Read-only projector link copied. It opens on another browser or device.");}
+    catch(_){notice("Clipboard unavailable. Select and copy the complete link from your browser address bar.");}
+  }
+  $("copy-projector-link").addEventListener("click",()=>copyShareUrl($("projector-link").href));
+  $("copy-projector-view").addEventListener("click",()=>copyShareUrl(shareProjectorUrl()));
+  document.addEventListener("keydown",evt=>{
+    if(evt.key!=="Escape"||!isProjector)return;
+    const opened=document.querySelector(".evidence-item[open],.briefing-details[open]");
+    if(opened){
+      opened.open=false;
+      opened.querySelector("summary")?.focus();
+      evt.preventDefault();
+    }
   });
   window.addEventListener("online", () => {setConnection(false);refreshConnection();});
   window.addEventListener("offline", () => setConnection(false));
@@ -1278,16 +1341,21 @@
       if (/^[0-9a-f]{64}$/.test(fragment)) {
         try {sessionStorage.setItem(roleKey(roomCode), fragment);} catch (_) {}
         credential = fragment;
-        history.replaceState(null, "", location.pathname + location.search); // Remove credential from address bar.
+        // The read-only fragment is intentionally transferable, and is never
+        // sent in the HTTP URL. Rotation revokes old copies.
       }
     }
     if (!credential) {
       try {credential = sessionStorage.getItem(roleKey(roomCode));} catch (_) {}
     }
+    if(isProjector && /^[0-9a-f]{64}$/.test(credential||"") &&
+      !new URLSearchParams(location.hash.slice(1)).get("access")){
+      history.replaceState(null,"",location.pathname+location.search+"#access="+credential);
+    }
     if (credential) authenticateSession();
     else if (isProjector) {
       show("join");$("join-form").hidden = true;
-      $("join-caption").textContent = "Missing projector access. Ask the host for a new projection link.";
+      $("join-caption").textContent = "A room address alone cannot open a projector. On the host page choose GENERATE / ROTATE PROJECTOR LINK, then COPY PROJECTOR LINK.";
     } else if (location.pathname === "/join") lobby();
     else {show("create");error("Host login is not available on this tab. Use the original host tab or create a new room.");}
   } else if (location.pathname === "/join") {
