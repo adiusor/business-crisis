@@ -233,8 +233,9 @@ export function finalVerdict(room){
   return {id:i,name:t.name,rawScore:outcome.score,timingPenalty:t.penaltyPoints,score,
    status:outcome.status,eligible,cash:t.economic.cash,trust:t.economic.trust,
    unpaid:outcome.unpaid,avgRisk:outcome.avgRisk,reasons:outcome.reasons.slice(),
+   scoreBreakdown:{...outcome.scoreBreakdown},strengths:outcome.strengths.slice(),nextSteps:outcome.nextSteps.slice(),
    decisions:t.economic.history.map(h=>({round:h.round,episode:h.episode,plan:h.plan,signal:h.signal,
-    spent:h.roundSpent,cash:h.cash,trust:h.trust,timedOut:!!h.timedOut,fallout:h.fallout}))};
+    spent:h.roundSpent,cash:h.cash,trust:h.trust,timedOut:!!h.timedOut,leadIn:h.leadIn||null,fallout:h.fallout}))};
  }).sort((a,b)=>b.score-a.score||b.cash-a.cash||a.id-b.id);
  const eligible=ranked.filter(x=>x.eligible),champion=eligible[0]||null;
  // Score ties break on remaining cash, matching the ranked ordering.
@@ -429,7 +430,7 @@ function lastTeamImpact(economic){
  const history=economic.history;
  if(!history.length)return null;
  const last=history[history.length-1],previous=history[history.length-2];
- return {round:last.round,plan:last.plan,fallout:last.fallout,
+ return {round:last.round,plan:last.plan,leadIn:last.leadIn||null,fallout:last.fallout,
   roundSpent:last.roundSpent,trustChange:last.trust-(previous?previous.trust:45),
   pendingLiability:last.pendingLiability,paidDeferred:last.paidDeferred.slice(),
   timedOut:!!last.timedOut};
@@ -482,5 +483,6 @@ export function viewFor(room,actor,nowMs=Date.now()){
    economic:{cash:eco.cash,trust:eco.trust,risks:clone(eco.risks),
     pendingLiability:eco.pending.reduce((sum,x)=>sum+x.cost,0),nextRound:eco.nextRound},
    roundResults:t.roundResults.map(x=>({...x})),
+    storyContext:room.phase==="advisers"?R.storyContext(eco,room.round):null,
     lastImpact:lastTeamImpact(eco)}};
 }
