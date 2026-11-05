@@ -5,7 +5,7 @@ Implemented:
 - Server-rendered unique pages for homepage, corporate game, remote teams, leadership, facilitators, about, Romanian entry, pricing status and demo status.
 - Dedicated room experience at /play, /join and /projector. Old /?room=CODE links remain valid.
 - Static semantic HTML, descriptions, one H1 per page, canonical gated by verified domain, Open Graph, JSON-LD, and an own SVG share preview.
-- Site CSS is self hosted. The staging host always returns noindex headers and HTML directives. No staging XML sitemap exists.
+- Site CSS is self hosted. The staging host always returns noindex headers and HTML directives. No staging XML sitemap exists. Robots allow crawling the public HTML so Google can read noindex; only /api/ is disallowed. This is not password-based privacy.
 - /pricing and /demo remain noindex because no confirmed checkout, price or booking channel exists.
 - Unit and real Cloudflare Worker integration tests.
 

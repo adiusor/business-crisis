@@ -28,6 +28,7 @@ test("only a configured HTTPS custom domain indexes validated content",()=>{
  assert.match(home.html,/hreflang="ro"/);
  assert.match(home.html,/application\/ld\+json/);
  assert.match(renderPublicPage("/ro",live,cfg).html,/lang="ro"/);
+ assert.match(renderPublicPage("/ro",live,cfg).html,/hreflang="en"/);
  assert.equal(renderPublicPage("/pricing",live,cfg).indexable,false);
  assert.equal(renderPublicPage("/demo",live,cfg).indexable,false);
 });
@@ -39,6 +40,7 @@ test("sitemap excludes all private game paths and staging publishes none",()=>{
  assert.match(xml,/virtual-team-building/);
  assert.match(xml,/\/ro<\/loc>/);
  assert.doesNotMatch(xml,/projector|\/play|\/join|\/demo|\/pricing/);
- assert.match(robotsText(live.origin,cfg),/Disallow: \/join/);
+ assert.doesNotMatch(robotsText(live.origin,cfg),/Disallow: \/join/);
+ assert.match(robotsText(live.origin,cfg),/Disallow: \/api\//);
  assert.equal((xml.match(/<loc>/g)||[]).length,PUBLIC_PATHS.length-2);
 });

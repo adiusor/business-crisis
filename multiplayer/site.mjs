@@ -29,7 +29,7 @@ export function renderPublicPage(path,url,env={}){
   const robots=index?"index,follow,max-image-preview:large":"noindex,nofollow,noarchive";
   const domain=url.origin;
   const canon=index?'<link rel="canonical" href="'+esc(domain+path)+'">':"";
-  const alternate=index&&path==="/"?'<link rel="alternate" hreflang="en" href="'+domain+'/"><link rel="alternate" hreflang="ro" href="'+domain+'/ro"><link rel="alternate" hreflang="x-default" href="'+domain+'/">':"";
+  const alternate=index&&(path==="/"||path==="/ro")?'<link rel="alternate" hreflang="en" href="'+domain+'/"><link rel="alternate" hreflang="ro" href="'+domain+'/ro"><link rel="alternate" hreflang="x-default" href="'+domain+'/">':"";
   const schema={"@context":"https://schema.org","@type":"SoftwareApplication",
     name:"BUSINESS CRISIS — The 09:17 Incident",applicationCategory:"BusinessApplication",
     operatingSystem:"Web",description:"Facilitated six-episode corporate team decision simulation.",url:domain+"/",inLanguage:["en","ro"]};
@@ -50,8 +50,10 @@ export function renderPublicPage(path,url,env={}){
   return {html,robots,indexable:index};
 }
 export function robotsText(origin,env={}){
-  if(!isPublishedOrigin(new URL(origin),env))return "User-agent: *\nDisallow: /\n";
-  return "User-agent: *\nAllow: /\nDisallow: /play\nDisallow: /join\nDisallow: /projector\nDisallow: /api/\nSitemap: "+origin+"/sitemap.xml\n";
+  // Let crawlers read X-Robots-Tag noindex on private HTML. Blocking these
+  // pages in robots.txt would prevent Google from seeing the noindex directive.
+  if(!isPublishedOrigin(new URL(origin),env))return "User-agent: *\nAllow: /\nDisallow: /api/\n";
+  return "User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: "+origin+"/sitemap.xml\n";
 }
 export function sitemapXml(origin,env={}){
   if(!isPublishedOrigin(new URL(origin),env))return null;

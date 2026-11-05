@@ -82,7 +82,7 @@ try {
     assert.match(page.response.headers.get("x-robots-tag"),/noindex/);
     assert.match(page.payload,/meta name="description"/);
   }
-  assert.match((await req("/robots.txt")).payload,/Disallow: \/$/m);
+  assert.match((await req("/robots.txt")).payload,/Allow: \/$/m);
   assert.equal((await req("/sitemap.xml")).response.status,404);
   for(const route of ["/play","/join","/projector","/?room=ABCD"]){
     const page=await req(route);
