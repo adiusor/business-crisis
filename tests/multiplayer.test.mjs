@@ -88,7 +88,7 @@ test("team-private aftershock is grounded in its ledger and withheld from oppone
  const impact=viewFor(room,alice.actor).privateTeam.lastImpact;
  const outcome=room.teams[0].economic.history[0];
  assert.equal(impact.round,1);
- assert.equal(impact.plan,"CONTAIN THE LEAK");
+ assert.equal(impact.plan,"VERIFY & SECURE");
  assert.equal(impact.fallout,outcome.fallout,"Story payoff must use committed scenario data");
  assert.equal(impact.roundSpent,26000,"Cost includes compulsory operating expense");
  assert.equal(impact.trustChange,10,"Trust delta is relative to the previous baseline");
