@@ -1,0 +1,80 @@
+name: The 09:17 Challenge — isolated multiplayer staging
+on:
+  push:
+    branches: ["feature/0917-corporate-challenge"]
+    paths:
+      - ".github/workflows/0917-full-staging.yml"
+      - "multiplayer/**"
+      - "src/content.js"
+      - "src/rules.js"
+      - "scripts/check-0917-staging.cjs"
+      - "scripts/smoke-0917-staging.sh"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: isolated-0917-challenge-staging
+  cancel-in-progress: false
+jobs:
+  deploy-isolated:
+    if: ${{ github.repository == 'adiusor/business-crisis' && github.ref == 'refs/heads/feature/0917-corporate-challenge' && vars.BC_STAGING_DEPLOY_ENABLED == 'YES' }}
+    runs-on: ubuntu-latest
+    environment: business-crisis-staging
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Hard boundary — original stage and production never touched
+        run: node scripts/check-0917-staging.cjs
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check rules, story, site and room authority
+        run: |
+          npm run test:rules
+          npm run test:storyline
+          npm run test:multiplayer
+          node --test tests/seo.test.mjs
+      - name: Build full new room worker without deployment
+        run: |
+          npx wrangler deploy --dry-run --config multiplayer/wrangler.0917.staging.jsonc --outdir /tmp/0917-challenge-staging-build
+      - name: Verify dedicated staging credentials without revealing values
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          STAGING_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+          CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: |
+          set -euo pipefail
+          [[ "${CLOUDFLARE_ACCOUNT_ID:-}" =~ ^[a-fA-F0-9]{32}$ ]] || { echo "::error::Missing Cloudflare account ID";exit 1; }
+          [[ -n "${STAGING_TOKEN:-}" ]] || { echo "::error::Missing dedicated staging deploy token";exit 1; }
+          [[ ${#CREATION_KEY} -ge 32 ]] || { echo "::error::Missing strong staging creation key";exit 1; }
+      - name: Deploy ONLY the unique 09:17 challenge Worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          node scripts/check-0917-staging.cjs
+          npx wrangler deploy --config multiplayer/wrangler.0917.staging.jsonc | tee "$RUNNER_TEMP/0917-deploy.log"
+          url="$(grep -Eo 'https://the-0917-challenge-staging\.[A-Za-z0-9-]+\.workers\.dev' "$RUNNER_TEMP/0917-deploy.log" | head -1 || true)"
+          [[ -n "$url" ]] || { echo "::error::No isolated 09:17 staging URL returned";exit 1; }
+          echo "CHALLENGE_STAGE_URL=$url" >> "$GITHUB_ENV"
+      - name: Set room creation key on the new Worker only
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.BC_STAGING_DEPLOY_TOKEN }}
+          STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$STAGING_CREATION_KEY" | npx wrangler secret put ROOM_CREATION_KEY --config multiplayer/wrangler.0917.staging.jsonc
+      - name: Live full-site and lobby smoke checks
+        env:
+          STAGING_CREATION_KEY: ${{ secrets.BC_STAGING_ROOM_CREATION_KEY }}
+        run: bash scripts/smoke-0917-staging.sh "$CHALLENGE_STAGE_URL"
+      - name: Record tested link and safety
+        run: |
+          echo "## The 09:17 Challenge — isolated multiplayer staging" >> "$GITHUB_STEP_SUMMARY"
+          echo "Full game + website: $CHALLENGE_STAGE_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "All four audience pages, Host, Join, protected room, lobby and QR verified." >> "$GITHUB_STEP_SUMMARY"
+          echo "No Business Crisis staging, main or Cloudflare production deployment changed." >> "$GITHUB_STEP_SUMMARY"
