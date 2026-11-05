@@ -1,0 +1,37 @@
+name: The 09:17 Challenge — focused story and report browser QA
+on:
+  push:
+    branches: ["feature/0917-corporate-challenge"]
+    paths:
+      - ".github/workflows/0917-browser-qa.yml"
+      - "tests/room-runtime.test.mjs"
+      - "multiplayer/client-script.txt"
+      - "multiplayer/room-core.mjs"
+      - "multiplayer/client-pdf.txt"
+      - "src/rules.js"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-story-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install local Worker and cross-browser test tools
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium webkit firefox
+      - name: Verify core story and scoring tests
+        run: node --test tests/storyline.test.cjs
+      - name: Verify private story, live timer, original host/join and PDF in Chromium
+        run: node tests/room-runtime.test.mjs
+      - name: Verify same story, report and privacy in Safari WebKit
+        run: BC_BROWSER=webkit node tests/room-runtime.test.mjs
+      - name: Verify same story, report and privacy in Firefox
+        run: BC_BROWSER=firefox node tests/room-runtime.test.mjs
+      - name: Conclude without uploading duplicate screenshot artifacts
+        run: echo "PASS if all three browser journeys, private story context and numeric report tests passed"
