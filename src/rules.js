@@ -3,9 +3,9 @@
 const DATA=g.BCContent;
 const RISK_KEYS=["legal","ops","workforce","customer","liquidity"];
 const ALLOCATIONS=[
-{id:"audit",name:"AUDIT & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
-{id:"capacity",name:"DELIVERY CAPACITY",delta:{ops:-8,workforce:-2},trust:1},
-{id:"people",name:"STAFF RECOVERY",delta:{workforce:-9,ops:-2},trust:1}
+{id:"audit",name:"ACCESSIBILITY & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
+{id:"capacity",name:"PILOT DELIVERY CAPACITY",delta:{ops:-8,workforce:-2},trust:1},
+{id:"people",name:"TEAM SUPPORT",delta:{workforce:-9,ops:-2},trust:1}
 ];
 const ESCALATION=[
 {},
@@ -52,70 +52,70 @@ return due;
 // These private, team-specific story bridges are driven by the actual previous
 // decision. They never alter the shared public evidence or grant scoring bonuses.
 const STORY_BRIDGES=[
- null,
- [
-  "Your verification trail is ready. Staff now want a clear explanation of what has—and has not—been decided.",
-  "The access restrictions reduced exposure, but the affected handover needs a practical staffing plan.",
-  "The client appreciated the early contact. Your people team still needs verified answers before the rumour spreads."
- ],
- [
-  "People have had a direct route to ask questions. The client now wants to see whether that openness translates into dependable action.",
-  "The shift was covered under the manager-led plan. Some colleagues still expect a chance to speak before the next milestone.",
-  "Paid support helped fill the rota. Finance has now asked the client team to account for the extra commitment."
- ],
- [
-  "Independent reviewers have agreed to milestones, but the newsroom will want a shorter explanation than the audit report.",
-  "The service-recovery commitments are on the table. Public messaging must not promise more than the funded schedule can deliver.",
-  "Delivery evidence is improving. A public statement still needs to acknowledge the people working behind those numbers."
- ],
- [
-  "The public record includes verified facts. The next test is whether operations can honour that confidence.",
-  "The company waited for verified facts. Operations now needs a specific recovery update before the silence becomes its own story.",
-  "Personal information stayed protected. Customers still expect service updates while the company negotiates what it can say."
- ],
- [
-  "The additional supplier has taken critical work. The board must decide how to fund the transition without exhausting its reserve.",
-  "Rested colleagues covered priority delivery. The board must account for the handover costs and for the clients whose work was moved.",
-  "The revised priorities protected capacity. The board must justify the narrower commitment to clients and employees."
- ]
+  null,
+  [
+    "Your evidence-first proposal is appreciated. Now the visitor and education teams want their practical suggestions included.",
+    "The three-site vision impressed the partner. Operations needs real staffing and venue evidence before anyone treats it as approved.",
+    "A focused first-site plan is affordable. Your team now needs to show how a smaller experience can still excite visitors."
+  ],
+  [
+    "Co-design surfaced an accessible offline option. The supplier choice should now protect that inclusive experience.",
+    "Named owners accelerated planning. The supplier needs to know whether the team has tested the visitor experience with staff.",
+    "Extra crew support created capacity and a future handover cost. Procurement must account for both."
+  ],
+  [
+    "The independently verified supplier route gave the partner stronger evidence. Public messages must reflect which locations are still conditional.",
+    "The fast-track agreement added delivery commitments. The public teaser must not turn a target into a guarantee.",
+    "The internal prototype demonstrates the core idea. The team still needs to explain which technical features are not fully tested."
+  ],
+  [
+    "The public update separated confirmed details from concept sketches. The demonstration must now validate the promises.",
+    "The team held back launch details. A successful dry run could supply the missing evidence; a failure requires a clear next update.",
+    "Visitors have helped refine the concept. The test needs to show which inclusive features actually work."
+  ],
+  [
+    "The funded backup supplier can support the experience, but the board must account for the future handover.",
+    "The offline-first version is robust. The board must decide whether to fund improvements or launch with fewer features.",
+    "The narrower pilot protects resources. The board must agree the smaller scope with its partner before presenting it as final."
+  ]
 ];
 const SIGNAL_MOMENTS=[
- [
-  "The fact-based update gives stakeholders a single verified point of reference.",
-  "The dated update creates a clear promise that stakeholders can check later.",
-  "Customers hear operational reassurance, while the control review still needs to prove the underlying facts."
- ],
- [
-  "Colleagues now have a direct channel for questions rather than relying on screenshots.",
-  "Supervisors receive a usable plan, but some employees may still want a direct conversation.",
-  "The proposed changes are paused for consultation, creating clarity but requiring careful legal and scheduling follow-through."
- ],
- [
-  "Procurement can compare concrete milestones rather than another generic assurance.",
-  "The recovery target is public; missed dates would create a financial and credibility burden.",
-  "The client receives a promise of evidence before another commitment is made."
- ],
- [
-  "The company corrects the record promptly, exposing it to further questions but reducing uncertainty.",
-  "Acknowledging concerns opens dialogue while leaving a few operational questions unanswered.",
-  "Colleagues hear from management first; customer reassurance will need a separate follow-up."
- ],
- [
-  "The milestone alert makes emerging problems visible early enough to plan around them.",
-  "The priority-service statement protects confidence but creates a need for stronger contingency verification.",
-  "The update waits for operational checks, leaving a brief communication gap but reducing unsupported promises."
- ],
- [
-  "The board names who owns each trade-off and how progress will be measured.",
-  "The accelerated public commitment raises expectations and adds a future cost of delivery.",
-  "The verified handover plan gives the next shift specific responsibilities to act on."
- ]
+  [
+    "The verified proposal tells the partner what has actually been tested, not simply imagined.",
+    "The three-location ambition is now public as a conditional goal, creating extra questions for delivery.",
+    "The first-site proposal is explicitly a pilot; a wider rollout remains subject to measurable results."
+  ],
+  [
+    "The delivery team is invited to shape the visitor experience as well as follow the timetable.",
+    "Named owners are accountable for current commitments and the next design review.",
+    "Additional staff support protects capacity, but the follow-up costs must be funded."
+  ],
+  [
+    "Procurement can check owners, evidence and dates instead of interpreting a broad assurance.",
+    "The faster route increases expectations and brings an explicit future milestone review cost.",
+    "Prototype verification comes before expansion, protecting accuracy at the expense of momentum."
+  ],
+  [
+    "Visitors now know which venues and dates remain conditional.",
+    "The public gets an invitation to contribute to design rather than an invented launch guarantee.",
+    "An access check is promised before the next announcement. That commitment must be honoured."
+  ],
+  [
+    "The partner receives verified prototype results, including the limitations.",
+    "The backup plan raises confidence but must be checked and funded after the meeting.",
+    "The team waits for additional site evidence; public expectations may continue rising."
+  ],
+  [
+    "The board can see exactly which commitments will be funded and which features will wait.",
+    "An accelerated expansion remains conditional on evidence and resources.",
+    "A verified first-site handover creates a measurable basis for future expansion."
+  ]
 ];
 const RISK_FOLLOWUP={
- legal:"Legal and compliance reviewers require documented controls before more commitments are made.",
- ops:"The operations lead warns that service continuity still depends on a stable handover.",
- workforce:"The people team is asking for rest, clear consultation and a workable staffing plan.",
- customer:"Client contacts still need a credible explanation before trusting the next milestone."
+  "legal": "Accessibility and contract approvals still need evidence before the pilot is advertised as ready.",
+  "ops": "The delivery lead needs a reliable venue and supplier contingency.",
+  "workforce": "The people team needs a sustainable work plan for staff and partners.",
+  "customer": "The partner needs a credible demonstration and honest scope before committing."
 };
 function storyContext(team,round){
  if(!team||!Array.isArray(team.history)||!Number.isInteger(round)||round<=0||round>=DATA.episodes.length)return null;
@@ -127,8 +127,8 @@ function storyContext(team,round){
   (source?.[prev.planIndex]||"Your previous decision is still shaping the company's options.");
  const pending=team.pending.reduce((sum,x)=>sum+x.cost,0);
  const pressures=[];
- if(team.cash<0)pressures.push("The response fund has a funding gap; another promise cannot be described as fully financed.");
- else if(team.cash<25000)pressures.push("There is less than £25,000 in the response reserve.");
+ if(team.cash<0)pressures.push("The 90-day reserve is overdrawn; the board cannot treat an unfunded pilot commitment as approved.");
+ else if(team.cash<25000)pressures.push("The shared 90-day project reserve has less than £25,000 available.");
  if(pending>0)pressures.push("£"+pending.toLocaleString("en-GB")+" of future commitments remain on the books.");
  if(team.trust<35)pressures.push("Stakeholder trust is fragile after your team's earlier choices.");
  const key=["legal","ops","workforce","customer"].sort((a,b)=>team.risks[b]-team.risks[a])[0];
@@ -142,7 +142,7 @@ function adaptiveFallout(team,round,plan,signal,signalIndex,due){
  if(team.cash<0){
    main="The team chose "+plan.name.toLowerCase()+", but the response now exceeds its £"+
      DATA.initialCash.toLocaleString("en-GB")+
-     " fund. Finance cannot authorise the unfunded portion as complete: the board must revise the scope or secure new finance.";
+     " reserve. Finance cannot authorise the unfunded portion as complete: the board must revise scope or secure new finance.";
  }
  const lines=[main,SIGNAL_MOMENTS[round]?.[signalIndex]||"The public message is now part of the company's record."];
  if(due.length){
@@ -151,7 +151,7 @@ function adaptiveFallout(team,round,plan,signal,signalIndex,due){
  }
  const pending=team.pending.reduce((sum,x)=>sum+x.cost,0);
  if(pending>0)lines.push("£"+pending.toLocaleString("en-GB")+" is still committed for future actions; this is not free cash.");
- if(team.cash>=0&&team.cash<25000)lines.push("Finance flags the reserve as too thin for another unplanned commitment.");
+ if(team.cash>=0&&team.cash<25000)lines.push("Finance flags the reserve as too thin for an additional unplanned pilot commitment.");
  if(team.trust<30)lines.push("The board asks for a direct, verified stakeholder conversation to rebuild trust.");
  return lines.join(" ");
 }
@@ -173,7 +173,7 @@ const due=startEpisode(team,round,variant);
 expense(team,round,plan.spend,plan.name,"strategy");
 if(alloc.amount>0){
 const route=ALLOCATIONS.find(x=>x.id===alloc.route),factor=alloc.amount/10000;
-expense(team,round,alloc.amount,"Discretionary response / "+route.name,"allocation");
+expense(team,round,alloc.amount,"Discretionary pilot investment / "+route.name,"allocation");
 const delta={};for(const k of Object.keys(route.delta))delta[k]=route.delta[k]*factor;
 addRisk(team,delta);
 team.trust=clamp(team.trust+route.trust*factor,0,100);
@@ -229,43 +229,43 @@ const scoreBreakdown={base:100,riskIndex:fmt(avg),riskPenalty:fmt(riskPenalty),
  operationsPenalty,reservePenalty,unrounded:fmt(unrounded),economicScore:score};
 let status="AT RISK";
 if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
-else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
+else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="BOARD_READY";
 else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
 const reasons=[];
-if(team.cash<0)reasons.push("Response spending exceeded the £260,000 fund.");
-else if(team.cash<25000)reasons.push("The remaining response reserve is thin.");
+if(team.cash<0)reasons.push("Project and operating spending exceeded the £260,000 reserve.");
+else if(team.cash<25000)reasons.push("The remaining 90-day reserve is thin.");
 if(unpaid>0)reasons.push("£"+unpaid.toLocaleString("en-GB")+" of contingent commitments remain.");
-if(risk.customer>65)reasons.push("Customer exposure remains elevated.");
+if(risk.customer>65)reasons.push("Partner confidence remains fragile.");
 if(risk.ops>65)reasons.push("Operational delivery remains fragile.");
-if(risk.workforce>65)reasons.push("Workforce capacity is under strain.");
-if(risk.legal>65)reasons.push("Legal and compliance issues remain unresolved.");
-if(team.trust>=70)reasons.push("Direct, credible communication helped preserve client confidence.");
+if(risk.workforce>65)reasons.push("Project staff capacity is under strain.");
+if(risk.legal>65)reasons.push("Accessibility and contractual checks remain unresolved.");
+if(team.trust>=70)reasons.push("Verified communication helped maintain partner confidence.");
 if(!reasons.length)reasons.push("The company retains sufficient cash and has contained the most serious exposures.");
 const strengths=[];
-if(risk.customer<=48)strengths.push("Customer confidence: exposure is under control in this simulation.");
-if(risk.ops<=55)strengths.push("Operational continuity: the delivery plan retained capacity.");
-if(risk.workforce<=55)strengths.push("Team sustainability: workforce pressures are comparatively contained.");
-if(risk.legal<=55)strengths.push("Governance: material legal exposure is comparatively contained.");
-if(team.cash>=50000)strengths.push("Resilience: at least £50,000 remains available for response.");
+if(risk.customer<=48)strengths.push("Partner confidence: the proposed delivery path has lower exposure in this simulation.");
+if(risk.ops<=55)strengths.push("Operational readiness: the pilot plan retained feasible capacity.");
+if(risk.workforce<=55)strengths.push("Team sustainability: project staffing pressures are comparatively contained.");
+if(risk.legal<=55)strengths.push("Governance: accessibility and contract exposure are comparatively contained.");
+if(team.cash>=50000)strengths.push("Resilience: at least £50,000 remains in the 90-day reserve.");
 if(team.trust>=70)strengths.push("Stakeholder communication: the trust index has recovered.");
 if(!strengths.length)strengths.push("The team recorded decisions and can now identify concrete improvements.");
 const nextSteps=[];
 if(team.cash<0)nextSteps.push("Resolve the unfunded response before offering new commitments.");
-else if(team.cash<25000)nextSteps.push("Restore the emergency response reserve.");
+else if(team.cash<25000)nextSteps.push("Restore the 90-day improvement reserve.");
 if(unpaid>=16000)nextSteps.push("Assign owners and funding to outstanding commitments.");
 if(risk.ops>60)nextSteps.push("Validate delivery capacity and staff handovers.");
-if(risk.workforce>60)nextSteps.push("Create a sustainable workforce recovery plan.");
-if(risk.customer>60)nextSteps.push("Show clients verified milestones rather than general reassurance.");
-if(risk.legal>60)nextSteps.push("Close unresolved legal and information-control actions.");
+if(risk.workforce>60)nextSteps.push("Protect staff and supplier capacity for the 90-day pilot.");
+if(risk.customer>60)nextSteps.push("Show the partner verified milestones before expanding scope.");
+if(risk.legal>60)nextSteps.push("Close unresolved accessibility and contractual checks.");
 if(nextSteps.length===0)nextSteps.push("Maintain the plan and monitor the next set of evidence-based milestones.");
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons,
  scoreBreakdown:scoreBreakdown,strengths:strengths.slice(0,3),nextSteps:nextSteps.slice(0,3)};
 }
 function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
-// Scores compare modelled performance. Championship means renewal readiness in the simulation, not a real signed contract.
+// Scores compare fictional plan-readiness. BOARD_READY is an internal simulation threshold, not a client award.
 function championshipResult(teams){
 const ranked=rankTeams(teams);
-const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
+const eligible=ranked.filter(x=>x.outcome.status==="BOARD_READY"&&x.team.cash>=0&&x.team.risks.ops<=56);
 const champion=eligible[0]||null;
 const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score&&x.team.cash===champion.team.cash):[];
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
