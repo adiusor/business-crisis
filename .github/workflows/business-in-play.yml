@@ -2,10 +2,10 @@ name: Business in Play experimental quality gates
 on:
   push:
     branches: ["feature/business-in-play-learning-v1"]
-    paths: ["learning/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
+    paths: ["learning/*.js", "learning/*.cjs", "learning/*.css", "learning/*.html", "learning/tests/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
   pull_request:
     branches: ["exploration/entertainment-first-audit"]
-    paths: ["learning/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
+    paths: ["learning/*.js", "learning/*.cjs", "learning/*.css", "learning/*.html", "learning/tests/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
   workflow_dispatch:
 permissions:
   contents: read
