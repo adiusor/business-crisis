@@ -347,6 +347,9 @@ try {
     await hostUI.locator("#create-teams").selectOption("2");
     await hostUI.locator("#create-form button.primary").click();
     await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
+    assert.equal(await hostUI.locator("#host-control-room .host-command-team").count(),2,
+      "The facilitator has a dedicated command centre");
+    assert.match(await hostUI.locator("#host-control-room").textContent(),/PREPARE THE ROOM/);
     const uiCode=(await hostUI.locator("#room-code").textContent()).trim();
     const hostUiToken=await hostUI.evaluate(code=>
       sessionStorage.getItem("bc-preview-session-"+code),uiCode);
@@ -389,6 +392,10 @@ try {
     const landingOverflow=await phoneA.evaluate(()=>
       document.documentElement.scrollWidth-innerWidth);
     assert.ok(landingOverflow<=1,"Editorial opening hero must fit the 320px join screen");
+    assert.equal(await phoneA.locator(".landing-city svg").count(),1,
+      "The original corporate cityscape appears on the entry screen");
+    assert.ok(await phoneA.locator(".landing-city").evaluate(el=>
+      el.getBoundingClientRect().height<=160),"Entry artwork is compact on 320px phones");
     assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE LEAK/);
     await phoneA.locator("#join-code").fill(uiCode.toLowerCase());
     await phoneA.locator("#join-code-form button.primary").click();
@@ -901,6 +908,9 @@ try {
     assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).count(),1);
     assert.equal(await reportHost.locator(".boardroom-award").count(),3);
     assert.equal(await reportHost.locator(".boardroom-award-winner").count(),3);
+    assert.equal(await reportHost.locator(".verdict-ring").count(),2,
+      "Two factually grounded pie-style graphics appear in the verdict");
+    assert.match(await reportHost.locator(".verdict-surprise").textContent(),/MOST EXPENSIVE CHAPTER/);
     const downloadPromise=reportHost.waitForEvent("download");
     await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).click();
     const downloaded=await downloadPromise;
