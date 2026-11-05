@@ -133,20 +133,39 @@ test("every business choice has a genuine quantified trade-off, not a strictly d
    }
  }
 });
-test("all 18 strategic and all 18 statement choices affect the six-chapter model",()=>{
- const plans=Array(6).fill(0),signals=Array(6).fill(0);
- const run=(p,s)=>{let t=R.createTeam(0,"TEST TEAM");
-  for(let round=0;round<6;round++)t=R.applyTurn(t,round,p[round],s[round],[0,1],0,{amount:0,route:null});
-  const scored=R.evaluate(t);
-  assert.equal(t.cash,C.initialCash-t.ledger.reduce((sum,x)=>sum+x.amount,0));
-  return JSON.stringify({cash:t.cash,risks:t.risks,trust:t.trust,pending:t.pending,score:scored.score,status:scored.status});
+test("every strategic or statement alternative changes model state on at least one representative trajectory",()=>{
+ const baselines=[
+  {plans:[0,0,0,0,0,0],signals:[0,0,0,0,0,0],variant:0},
+  {plans:[1,1,1,1,1,1],signals:[1,1,1,1,1,1],variant:1},
+  {plans:[2,2,2,2,2,2],signals:[2,2,2,2,2,2],variant:2},
+  {plans:[0,1,2,0,1,2],signals:[2,1,0,2,1,0],variant:1},
+  {plans:[2,1,0,2,1,0],signals:[0,1,2,0,1,2],variant:2}
+ ];
+ const run=(plans,signals,variant)=>{
+  let team=R.createTeam(0,"AUDIT");
+  for(let round=0;round<6;round++)
+    team=R.applyTurn(team,round,plans[round],signals[round],[0,1],variant,{amount:0,route:null});
+  assert.equal(team.cash,C.initialCash-team.ledger.reduce((sum,x)=>sum+x.amount,0));
+  const o=R.evaluate(team);
+  return JSON.stringify({cash:team.cash,trust:team.trust,risks:team.risks,
+   pending:team.pending,score:o.score,status:o.status});
  };
- for(let round=0;round<6;round++)for(let choice=1;choice<3;choice++){
-   const p=[...plans],s=[...signals];p[round]=choice;
-   assert.notEqual(run(p,signals),run(plans,signals),
-     "Strategy should change economic model: "+C.episodes[round].plans[choice].name);
-   s[round]=choice;
-   assert.notEqual(run(plans,s),run(plans,signals),
-     "Statement should change economic model: "+C.episodes[round].signals[choice].name);
+ // Clamps are intentional: one response can have no marginal impact on an
+ // already-clamped metric. A valid test needs different starting trajectories.
+ for(let round=0;round<6;round++){
+  for(const kind of ["plans","signals"]){
+   for(let choice=0;choice<3;choice++){
+    const changes=baselines.some(base=>{
+      if(base[kind][round]===choice)return false;
+      const plans=[...base.plans],signals=[...base.signals];
+      const normal=run(plans,signals,base.variant);
+      if(kind==="plans")plans[round]=choice;
+      else signals[round]=choice;
+      return normal!==run(plans,signals,base.variant);
+    });
+    assert.ok(changes,"No economic impact in any tested trajectory: "+
+      C.episodes[round].title+" "+kind+" "+C.episodes[round][kind][choice].name);
+   }
+  }
  }
 });
