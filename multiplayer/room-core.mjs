@@ -217,7 +217,7 @@ export function privateVoteStatus(room,player){
  const votes=t.votes||{};
  return {lockedVotes:members.filter(p=>votes[p.id]?.locked).length,
   totalMembers:members.length,
-  canVote:!player.departed&&(player.joinedRound??0)<=room.round,
+  canVote:room.phase==="advisers"&&!player.departed&&(player.joinedRound??0)<=room.round,
   myVote:votes[player.id]?.locked?clone(votes[player.id].ballot):null,
   runoff:t.runoff?clone(t.runoff):null};
 }
@@ -483,7 +483,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
  if(actor.role==="projector"){
   const episode=publicEpisode(room);
   return {viewer:{role:"projector"},code:room.code,phase:room.phase,round:room.round,
-   revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
+   revision:room.revision,usePrepPhase:!!room.usePrepPhase,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
     kicker:episode.kicker,brief:episode.brief,headline:episode.headline,question:episode.question,pressure:episode.pressure,evidence:episode.evidence}:null,
    lastRecap:publicRecap(room.lastRecap),nextPreview:nextPublicBrief(room),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),
@@ -496,7 +496,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
  }
  const player=actor.role==="player"?room.players.find(p=>!p.departed&&p.id===actor.playerId):null;
  requireState(actor.role==="host"||!!player&&!player.departed,401,"Unauthorized");
- const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
+ const shared={code:room.code,phase:room.phase,usePrepPhase:!!room.usePrepPhase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),
   lastRecap:publicRecap(room.lastRecap),nextPreview:nextPublicBrief(room),interventions:(room.interventions||[]).map(x=>({...x})),rosterEvents:(room.rosterEvents||[]).map(x=>({...x})),teamNameOptions:TEAM_NAME_POOL.slice(),
   players:room.players.filter(p=>!p.departed).map(p=>({nickname:p.nickname,teamIndex:p.teamIndex})),
