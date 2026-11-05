@@ -515,6 +515,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
  if(!player)return {...shared,viewer:{role:"host"}};
  const t=room.teams[player.teamIndex],eco=t.economic,episode=C.episodes[room.round];
  const sceneTwist=["prep","advisers"].includes(room.phase)?R.spotlightTwist(eco,room.round):null;
+ const deliveryChallenge=["prep","advisers"].includes(room.phase)?R.deliveryTest(eco,room.round):null;
  return {...shared,viewer:{role:"player",teamIndex:player.teamIndex,captain:t.captainId===player.id,nickname:player.nickname},
   privateTeam:{advisers:t.advisers.slice(),teamClock:teamClockFor(room,player.teamIndex,nowMs),
    voting:privateVoteStatus(room,player),voteResolution:t.voteResolution?{...t.voteResolution}:null,
@@ -524,5 +525,6 @@ export function viewFor(room,actor,nowMs=Date.now()){
    roundResults:t.roundResults.map(x=>({...x})),
     storyContext:["prep","advisers"].includes(room.phase)?R.storyContext(eco,room.round):null,
      spotlight:sceneTwist?{title:sceneTwist.title,text:sceneTwist.text}:null,
+     delivery:deliveryChallenge?{title:deliveryChallenge.title,text:deliveryChallenge.text,reserveBand:deliveryChallenge.reserveBand}:null,
     lastImpact:lastTeamImpact(eco)}};
 }

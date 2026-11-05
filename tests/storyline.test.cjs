@@ -269,3 +269,76 @@ test("Missed earlier response creates a distinct spotlight risk even on an episo
  assert.match(after.history[3].fallout,/EARLIER PROMISES UNDER THE SPOTLIGHT/);
  assert.equal(after.cash,C.initialCash-after.ledger.reduce((sum,x)=>sum+x.amount,0));
 });
+
+
+test("Episode 05 reacts to earlier supplier, staff, scope and reserve decisions",()=>{
+ const setup=(plans,signals=[0,0,0,0])=>{
+  let t=R.createTeam(0,"PROJECT SPARK");
+  for(let i=0;i<4;i++)t=R.applyTurn(t,i,plans[i],signals[i],[0,1],0,zero);
+  return t;
+ };
+ const routes=[
+  {plans:[1,0,1,0],id:"fast-track"},
+  {plans:[0,2,0,0],id:"supported-backup"},
+  {plans:[0,0,2,0],id:"staff-offline"},
+  {plans:[0,0,0,0],id:"verified-route"},
+  {plans:[2,0,1,0],id:"focused-route"},
+  {plans:[0,0,1,0],id:"single-point"},
+  {plans:[1,2,0,0],signals:[2,0,0,0],id:"reserve-squeeze"}
+ ];
+ const observed=[];
+ for(const entry of routes){
+  const initial=setup(entry.plans,entry.signals);
+  const snapshot=JSON.stringify(initial);
+  const event=R.deliveryTest(initial,4);
+  assert.equal(event.id,entry.id);
+  assert.ok(event.text.length>70);
+  assert.ok(event.result.length>70);
+  assert.ok(["strong","managed","tight"].includes(event.reserveBand));
+  assert.deepEqual(R.deliveryTest(initial,4),event,"Preview is deterministic");
+  assert.equal(JSON.stringify(initial),snapshot,"Preview is pure");
+  assert.equal(R.deliveryTest(initial,3),null,"Never charge at episode 04");
+  assert.equal(R.deliveryTest(initial,5),null,"Never charge again at episode 06");
+  const after=R.applyTurn(initial,4,0,0,[0,1],0,zero);
+  assert.equal(after.history[4].delivery.id,event.id);
+  assert.match(after.history[4].fallout,/THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS/);
+  assert.ok(after.history[4].fallout.includes(event.result));
+  assert.equal(after.cash,C.initialCash-after.ledger.reduce((sum,x)=>sum+x.amount,0));
+  assert.equal(after.nextRound,5);
+  observed.push(event.id);
+ }
+ assert.equal(new Set(observed).size,7);
+});
+
+test("The delivery test changes risk/trust but never invents an expense or an awarded contract",()=>{
+ let initial=R.createTeam(0,"PROJECT SPARK");
+ for(const p of [1,0,1,0])initial=R.applyTurn(initial,initial.nextRound,p,0,[0,1],0,zero);
+ const alternative=JSON.parse(JSON.stringify(initial));
+ alternative.history[0].planIndex=2;
+ alternative.history[2].planIndex=0;
+ const aEvent=R.deliveryTest(initial,4),bEvent=R.deliveryTest(alternative,4);
+ assert.notEqual(aEvent.id,bEvent.id);
+ // Compare with equal, non-saturated trust so the authored deltas are observable.
+ initial.trust=50; alternative.trust=50;
+ const a=R.applyTurn(initial,4,0,0,[0,1],0,zero);
+ const b=R.applyTurn(alternative,4,0,0,[0,1],0,zero);
+ assert.equal(a.cash,b.cash);
+ assert.equal(a.ledger.length,b.ledger.length);
+ assert.notDeepEqual(a.risks,b.risks);
+ assert.notEqual(a.trust,b.trust);
+ assert.equal(a.pending.reduce((t,x)=>t+x.cost,0),b.pending.reduce((t,x)=>t+x.cost,0));
+ assert.doesNotMatch(a.history[4].fallout,/has been awarded|contract signed|guaranteed cash/i);
+});
+
+test("A missed response still triggers the episode-five delivery test only once",()=>{
+ let t=R.createTeam(0,"PROJECT SPARK");
+ for(let i=0;i<4;i++)t=i===1?R.applyTimeout(t,i,0):R.applyTurn(t,i,0,0,[0,1],0,zero);
+ const event=R.deliveryTest(t,4);
+ assert.equal(event.id,"missing-owner");
+ assert.equal(event.trust,-2);
+ const timeout=R.applyTimeout(t,4,0);
+ assert.equal(timeout.history[4].delivery.id,event.id);
+ assert.equal(timeout.history[4].timedOut,true);
+ assert.match(timeout.history[4].fallout,/THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS/);
+ assert.equal(timeout.cash,C.initialCash-timeout.ledger.reduce((sum,x)=>sum+x.amount,0));
+});
