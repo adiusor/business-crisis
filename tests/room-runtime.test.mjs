@@ -907,8 +907,8 @@ try {
     // Story continuity should be actual UI content, private to its team's player.
     await phoneA.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
     await phoneB.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
-    assert.match(await phoneA.locator(".team-story-thread").textContent(),/verification trail/i);
-    assert.match(await phoneB.locator(".team-story-thread").textContent(),/access restrictions/i);
+    assert.match(await phoneA.locator(".team-story-thread").textContent(),/evidence-first proposal/i);
+    assert.match(await phoneB.locator(".team-story-thread").textContent(),/three-site vision/i);
     assert.equal(await hostUI.locator(".team-story-thread").count(),0,
       "Facilitator must not see individual team story bridges");
     assert.equal(await projected.locator(".team-story-thread").count(),0,
