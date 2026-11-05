@@ -63,3 +63,16 @@ test("commercial incident choices originate in canonical opening story",()=>{
  assert.match(renderPublicPage("/corporate-team-building-game",live,cfg).html,/id="try-a-decision"/);
  assert.doesNotMatch(renderPublicPage("/ro",live,cfg).html,/id="try-a-decision"/);
 });
+
+test("corporate challenge branding stays positive and coherent across each public page",()=>{
+ for(const path of PUBLIC_PATHS){
+  const copy=PAGES[path];
+  assert.match(copy.title,/THE 09:17 CHALLENGE/);
+  assert.doesNotMatch(copy.h,/crisis|disaster|nightmare/i);
+  assert.doesNotMatch(copy.title,/BUSINESS CRISIS/);
+ }
+ const home=renderPublicPage("/",live,cfg).html;
+ assert.match(home,/THE 09:17 CHALLENGE/);
+ assert.match(home,/HOST A PRIVATE GAME/);
+ assert.match(home,/JOIN A ROOM/);
+});
