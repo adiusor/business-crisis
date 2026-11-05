@@ -989,6 +989,11 @@ try {
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
       "Host gets optional facilitator questions without adding default reading");
     assert.equal(await reportHost.locator(".report-episode").count(),12);
+    assert.equal(await reportHost.locator(".compare-round").nth(4)
+      .locator(".report-fallout").filter({hasText:"THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS"}).count(),2,
+      "Each team's episode-five delivery payoff must refer to its actual earlier choices");
+    assert.equal(await finishedProjector.locator(".delivery-test").count(),0,
+      "Team-specific delivery fallout must not leak into the public projector");
     assert.equal(await reportHost.locator(".compare-round").nth(3)
       .locator(".report-fallout").filter({hasText:"EARLIER PROMISES UNDER THE SPOTLIGHT"}).count(),2,
       "Each team's episode-four consequence is causally linked to its earlier choices");
