@@ -94,7 +94,9 @@
       $("join-form").hidden = false;
       $("join-code-form").hidden = true;
       $("join-caption").textContent = data.phase==="advisers" ?
-        "GAME IN PROGRESS · Join immediately. Teams still preparing can take your vote now; otherwise you vote next episode." :
+        "GAME IN PROGRESS · Join immediately. You may vote this episode if the team's ballot is still open." :
+        data.phase==="prep"?
+        "UNTIMED TEAM PREPARATION · Join now. Read the public evidence, then vote when the host starts the decision clock.":
         "Choose your nickname and team. No account needed. Everyone votes each episode.";
       // A named, explicitly selected team is the default. Previously AUTO
       // appeared as the first option; people believed they had joined the
@@ -103,7 +105,8 @@
       target.replaceChildren();
       data.teams.forEach((team,index)=>{
         const status=data.phase==="advisers"?
-          (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):"";
+          (team.canVoteThisEpisode?" · VOTE NOW":" · VOTE NEXT EPISODE"):
+          data.phase==="prep"?" · PREPARING":"";
         const option=node("option",team.name+" · "+team.joined+" joined"+status);
         option.value=String(index);target.append(option);
       });
