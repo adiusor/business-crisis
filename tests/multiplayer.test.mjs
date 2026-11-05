@@ -1042,3 +1042,31 @@ test("a team cannot add an extra required voter with less than a minute remainin
 });
 
 test("automatic team names have no panic or disaster theme",()=>{assert.equal(TEAM_NAME_POOL.length,16);assert.equal(new Set(TEAM_NAME_POOL).size,16);assert.ok(TEAM_NAME_POOL.every(n=>!/PANIC|CRISIS|DAMAGE|LAST RESORT/i.test(n)));});
+
+test("adaptive story is team-private, choice-dependent and never leaks to host or projector during play",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,91);room=a.room;
+ const b=enter(room,"Bob",1,92);room=b.room;
+ room=act(room,host,"start");
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,a.actor,"lock_advisers");
+ room=act(room,b.actor,"select_advisers",{advisers:[2,3]});
+ room=act(room,b.actor,"submit_decision",{planIndex:1,signalIndex:2});
+ assert.ok(room.teams.every(t=>t.locked));
+ assert.notEqual(room.teams[0].economic.history[0].fallout,room.teams[1].economic.history[0].fallout);
+ room=act(room,host,"advance");
+ const av=viewFor(room,a.actor),bv=viewFor(room,b.actor);
+ const ah=av.privateTeam.storyContext,bh=bv.privateTeam.storyContext;
+ assert.ok(ah && bh);
+ assert.match(ah.lead,/verification trail/);
+ assert.match(bh.lead,/access restrictions/);
+ assert.notEqual(ah.lead,bh.lead);
+ assert.ok(av.privateTeam.lastImpact.fallout.includes("fact-based update"));
+ assert.ok(bv.privateTeam.lastImpact.fallout.includes("operational reassurance"));
+ for(const observer of [viewFor(room,host),viewFor(room,{role:"projector"})]){
+  assert.equal(Object.hasOwn(observer,"privateTeam"),false);
+  assert.doesNotMatch(JSON.stringify(observer),/verification trail|access restrictions/);
+ }
+ assert.doesNotMatch(JSON.stringify(av),/The access restrictions reduced exposure/);
+ assert.doesNotMatch(JSON.stringify(bv),/Your verification trail is ready/);
+});
