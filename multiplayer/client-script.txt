@@ -672,8 +672,9 @@
     // After locking a ballot, remove ALL voting controls. Only the two chosen
     // advisers and a concise status remain on this screen.
     if(mine.locked||voting.myVote||!voting.canVote){
-      target.append(node("div",mine.locked?"TEAM RESPONSE CONFIRMED":voting.myVote?
-        "YOUR VOTE IS SAVED":"JOINED MID-EPISODE · FIRST VOTE NEXT ROUND","vote-finished"));
+      target.append(node("div",!voting.canVote?
+        "JOINED MID-EPISODE · FIRST VOTE NEXT ROUND":mine.locked?
+        "TEAM RESPONSE CONFIRMED":"YOUR VOTE IS SAVED","vote-finished"));
       if(privateData.intelligence.length)target.append(renderChosenAdvisers(privateData));
       if(!voting.canVote)target.append(node("p",
         "You are with "+mine.name+". Follow this scene with your team; you can vote as soon as the host starts the next episode."));
