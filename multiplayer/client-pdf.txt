@@ -57,7 +57,7 @@ function frame(p,kicker,title,index){
 }
 function cover(v){
  const p=page();frame(p,"OFFICIAL SIMULATION RESULT","THE BOARDROOM VERDICT",1);
- const winner=v.hasChampion?v.champions.join(" / "):"NO CONFIRMED RENEWAL";
+ const winner=v.hasChampion?v.champions.join(" / "):"HIGHEST TEAM SCORE";
  p.rect(M,153,W-2*M,88,"#1b3b49");
  p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"HIGHEST TEAM SCORE",11,gold,"F2");
  p.lines(M+16,188,winner,W-2*M-32,18,paper,"F3",23);
@@ -84,7 +84,7 @@ function cover(v){
  p.txt(M+20,717,"FILED BEFORE 4:00",10,paper,"F2");
  p.txt(M+265,717,"LEADER'S TRUST / 100",10,paper,"F2");
  p.txt(M,769,"Based only on recorded team decisions. The score combines",10,muted);
- p.txt(M,784,"economics and time penalties; renewal has separate rules.",10,muted);
+ p.txt(M,784,"economics and time penalties; board-readiness has further conditions.",10,muted);
  pages.push(p);
 }
 function chapterFrame(v,index,continued){
