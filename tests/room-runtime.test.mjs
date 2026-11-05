@@ -591,7 +591,7 @@ try {
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     assert.equal(await phoneA.locator(".scene-directive").count(),1,
       "The live incident shows a distinctive, actionable dilemma");
-    assert.match(await phoneA.locator(".scene-question").textContent(),/verify\s*(?:&|and)\s*secure/i);
+    assert.match(await phoneA.locator(".scene-question").textContent(),/protect trust and keep the business moving/i);
     assert.equal(await phoneA.locator(".scene-fact").count(),3,
       "Every incident begins with three public, verifiable facts");
     assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
