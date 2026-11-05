@@ -58,7 +58,6 @@ const data={
       "brief": "At 09:17, a national partner invites your company to pitch Project Spark: a 90-day pilot turning under-used spaces into welcoming, interactive experiences for businesses, schools and communities. The board proposal is due at 17:30. Up to three locations are possible, but nothing has been awarded. Your company has a separate £260,000 ninety-day improvement reserve and an existing £240,000-per-year service contract. Neither guarantees revenue from Project Spark.",
       "headline": "A BIG IDEA. SIX DECISIONS. YOUR TEAM'S CALL.",
       "question": "What will you promise before the details have been tested?",
-      "teamPrompt": "Hear two different voices: how would each option protect the people already delivering other work?",
       "teamPrompt": "Which detail in the invitation is a fact, and which is still only an assumption? Agree on one thing you would verify first.",
       "pressure": "Excitement is real. So are the limits on money, staff time and proof.",
       "evidence": [
@@ -351,7 +350,8 @@ const data={
             }
           }
         }
-      ]
+      ],
+      "teamPrompt": "Hear two different voices: how would each option protect the people already delivering other work?"
     },
     {
       "id": "partner",
