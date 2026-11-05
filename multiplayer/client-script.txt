@@ -1296,6 +1296,8 @@
       const href = location.origin + "/projector?room=" + roomCode + "#access=" + response.projectorToken;
       $("projector-link").href = href;
       $("projector-link").hidden = false;
+      $("projector-url").value=href;
+      $("projector-url").hidden=false;
       $("copy-projector-link").hidden = false;
       notice("Projector access created. Copy this link, not the host room URL. Previous projector links have been revoked.");
     } catch (e) {error(e.message);}
@@ -1308,7 +1310,12 @@
   async function copyShareUrl(href){
     if(!href){notice("Generate the projector link from the host page first.");return;}
     try{await navigator.clipboard.writeText(href);notice("Read-only projector link copied. It opens on another browser or device.");}
-    catch(_){notice("Clipboard unavailable. Select and copy the complete link from your browser address bar.");}
+    catch(_){
+      if(!isProjector && $("projector-url").value===href){
+        $("projector-url").focus();$("projector-url").select();
+        notice("Clipboard blocked. The full projector URL is selected: press Cmd+C or Ctrl+C.");
+      } else notice("Clipboard unavailable. Select and copy the full link in the projector address bar.");
+    }
   }
   $("copy-projector-link").addEventListener("click",()=>copyShareUrl($("projector-link").href));
   $("copy-projector-view").addEventListener("click",()=>copyShareUrl(shareProjectorUrl()));

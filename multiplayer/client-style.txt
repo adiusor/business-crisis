@@ -1069,3 +1069,10 @@ body:not(.projector-mode) .evidence-item summary:hover{background:#183340}
  .projector-mode:not(.in-game):not(.game-complete) .game-rules[open] .rule-card p{
   font-size:15px}
 }
+
+/* Clipboard fallback on host: never ask the organiser to copy the host URL. */
+.projector-access #projector-url{display:block;width:100%;margin-top:10px;
+ color:#f4e7d8;background:#0d2736;border:1px solid #738f9c;
+ font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;
+ letter-spacing:0;line-height:1.5}
+.projector-access #projector-url[hidden]{display:none}

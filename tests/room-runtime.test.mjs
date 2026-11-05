@@ -396,6 +396,8 @@ try {
     assert.equal(await hostUI.locator("#copy-projector-link").isVisible(),true,
       "Host receives an obvious transferable link control");
     const projectorHref=await hostUI.locator("#projector-link").getAttribute("href");
+    assert.equal(await hostUI.locator("#projector-url").inputValue(),projectorHref,
+      "Host has a selectable full link if a clipboard permission is denied");
     assert.match(projectorHref,/\/projector\?room=[2-9A-HJ-NP-Z]{4}#access=[a-f0-9]{64}$/);
     const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
     projected.on("pageerror",err=>browserErrors.push(err.message));
