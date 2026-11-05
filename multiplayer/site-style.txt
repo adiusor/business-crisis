@@ -27,3 +27,35 @@
 .demo-fallout small{color:#9cb2bd}
 @media(max-width:900px){.demo-grid{grid-template-columns:1fr;gap:28px}}
 @media(max-width:700px){.demo-sample{padding:60px 0}.demo-panel{padding:16px}.demo-intro{font-size:16px}.demo-choice summary{padding:15px}}
+
+/* Project Spark: a committed first decision, not an answer-reveal accordion. */
+.demo-evidence-list{display:grid;gap:9px;margin-top:20px}
+.demo-evidence{border:1px solid #466474;background:#102a39}
+.demo-evidence summary{display:flex;gap:14px;padding:12px 15px;align-items:center;cursor:pointer;font-size:13px}
+.demo-evidence summary span{color:var(--gold);font-weight:800}
+.demo-evidence summary strong{font-size:13px}
+.demo-evidence p{margin:0;border-top:1px solid #3b5a69;padding:12px 16px;color:#dae5e8;font-size:13px;line-height:1.55}
+.demo-choices{border:0;margin:0;padding:0}
+.demo-choices legend{color:#e4b992;letter-spacing:.11em;font-size:10px;font-weight:800;margin-bottom:12px}
+.demo-choice{display:flex;align-items:center;gap:15px;padding:15px 14px;cursor:pointer;min-height:70px}
+.demo-choice:focus-within,.demo-evidence summary:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.demo-choice:has(input:checked){border-color:var(--gold);background:#224858}
+.demo-choice input[type="radio"]{width:18px;height:18px;flex:none;accent-color:#e4b992;margin:0}
+.demo-choice-number{font-size:12px;color:var(--gold);font-weight:800}
+.demo-choice-copy{display:flex;flex-direction:column;flex:1;gap:2px;min-width:0}
+.demo-choice-copy strong{font-size:13px;letter-spacing:.045em;line-height:1.4}
+.demo-choice-copy small{font-size:12px;color:#bdd0d8}
+.demo-choice-check{width:18px;height:18px;border:1px solid #8dabb7;border-radius:50%;flex:none}
+.demo-choice:has(input:checked) .demo-choice-check{border:5px solid var(--gold)}
+.demo-commit{width:100%;margin-top:16px;border:0;cursor:pointer}
+.demo-outcome{margin-top:18px;padding:22px;border:1px solid #a5c3a5;background:#13342f}
+.demo-outcome:focus{outline:2px solid var(--gold);outline-offset:3px}
+.demo-outcome[hidden],.demo-result[hidden],.demo-commit[hidden]{display:none!important}
+.demo-result>p:not(.eyebrow){font-size:15px;line-height:1.6}
+.demo-result-cost{border-top:1px solid #587e72;padding-top:12px;color:#e4f0e8}
+.demo-result-cost strong{color:#f4c995}
+.demo-result-note{color:#b0cfc4!important;font-size:12px!important;margin-top:12px}
+.demo-after-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.demo-after-actions .btn{font-size:10px;flex:1}
+.demo-after-actions button{color:#f6ede2;background:transparent;cursor:pointer}
+@media(max-width:700px){.demo-evidence-list{margin-bottom:20px}.demo-choice{padding:14px 10px}.demo-outcome{padding:17px}.demo-after-actions{flex-direction:column}.demo-after-actions .btn{width:100%}}
