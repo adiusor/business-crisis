@@ -22,6 +22,13 @@ A seeded sample of **4,000 randomly selected choice sets after the fixes** (incl
 
 Some trade-offs are illustrative rather than empirically validated. The six chapter structure is coherent at a high level, but a human facilitator must still test whether the confidential-email premise, two exhausted specialists, contractual renewal timing, and repeated choices feel natural, exciting and understandable. An experiment has not established enjoyment, clarity, learning outcomes or host-led 25-phone capacity.
 
+## Additional technical and narrative limitations
+
+- **Liquidity modifier overwritten:** `R.recalcLiquidity` recalculates `team.risks.liquidity` from `cash - pending` after applying episode, plan and delayed risk deltas. Thus the last episode's configured `ESCALATION[5].liquidity: +5` does **not** survive, nor would any direct liquidity penalty on a due commitment. Actual cash spent and unpaid commitments still affect liquidity through coverage. Decide deliberately whether liquidity is solely a derived metric (remove misleading direct modifiers) or also supports a separate, persistent stress premium (change engine and retune), rather than silently assuming configured deltas all count.
+- **Narrative consequences are primarily fixed text:** `R.applyTurn` stores the selected plan's fixed `fallout` text. Cash, trust, risk and final renewal status depend on past choices, but the immediate story prose is not branched on insolvency, prior decisions or stakeholder history. It may, for example, describe the board funding an improvement after the team's simulated budget has gone negative. This is not proof that the underlying economics are wrong; it is a genuine narrative continuity / immersion risk. Add bounded, explainable state-sensitive fallouts before claiming dynamically coherent stories.
+- **Information is not a hidden score bonus:** choosing two advisers changes the evidence available, not the numeric scoring directly. Make this clear to participants so they do not expect character bonuses.
+- **No real-player difficulty calibration:** the weighted formula and championship thresholds are invented game rules, not scientifically validated business outcomes or academic assessment measures. Test how often real first-time teams qualify and whether losing feels constructive.
+
 ## Review and release
 
 This review is intentionally on `audit/0917-scoring-coherence`, **not the live 09:17 staging Worker**, because people may be inside existing rooms. The old Business Crisis staging, 09:17 staging and Cloudflare production are not modified by this audit. Merge only after the new tests are green, the current live game ends, and the organiser elects to publish the updated story.
