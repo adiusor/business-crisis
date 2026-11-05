@@ -93,3 +93,24 @@ test("unverified assurances and operational fatigue entail risk rather than free
  const close=C.episodes[5];
  assert.ok(close.signals.find(x=>x.name==="BUILD MOMENTUM").delay.cost>0);
 });
+
+
+test("The 09:17 Challenge presents three defensible strategic options per scene, not cartoon villains",()=>{
+ const disallowed=/PULL THE PLUG|THREATEN ACTION|PROMISE EVERYTHING|SIGN THE GUARANTEE|NO IMPACT/;
+ const names=C.episodes.flatMap(e=>[...e.plans.map(p=>p.name),...e.signals.map(x=>x.name)]);
+ assert.ok(names.every(name=>!disallowed.test(name)));
+ assert.equal(new Set(names).size,names.length,"Every decision and statement should be distinguishable");
+ assert.match(C.episodes[0].question,/trust/i);
+ assert.match(C.episodes[1].question,/engage/i);
+ assert.match(C.episodes[2].question,/confidence/i);
+ assert.match(C.episodes[4].question,/supporting/i);
+ assert.match(C.episodes[5].question,/invest/i);
+ const boundaries=C.episodes[3].plans[2];
+ assert.equal(boundaries.name,"PROTECT CONFIDENTIALITY");
+ assert.ok(boundaries.delta.legal<0 && boundaries.delta.customer>0,
+  "Privacy protection improves legal exposure but has a credible communication trade-off");
+ const assurance=C.episodes[0].signals[2];
+ assert.equal(assurance.name,"SERVICE ASSURANCE");
+ assert.ok(assurance.delay.cost>0 && assurance.delta.legal>0,
+  "An optimistic assurance has a bounded contingent cost, not a free bonus");
+});
