@@ -17,6 +17,11 @@ for(const cfg of [challenge,legacy,original]){
  }
 }
 const workflow=fs.readFileSync(".github/workflows/0917-full-staging.yml","utf8");
+const pushTrigger=workflow.split("  push:")[1]?.split("  workflow_dispatch:")[0]||"";
+assert.ok(pushTrigger.includes('branches: ["feature/0917-corporate-challenge"]'),
+  "Release verification must run on the authorised staging branch");
+assert.ok(!pushTrigger.includes("paths:"),
+  "Path filters can silently suppress explicit release commits; verify every push instead");
 for(const token of [
 'branches: ["feature/0917-corporate-challenge"]',
 "vars.BC_STAGING_DEPLOY_ENABLED == 'YES'",
@@ -26,6 +31,23 @@ for(const token of [
 "environment: business-crisis-staging"]){
  assert.ok(workflow.includes(token),"Missing staging deployment guard: "+token);
 }
+// A successful feature-branch push must NOT automatically overwrite a live
+// physical playtest. The release marker belongs to the latest commit message,
+// never a PR description or an old commit somewhere in the branch history.
+const releaseGuard=workflow.split("\n").find(line=>line.startsWith("    if: ${{ "));
+assert.ok(releaseGuard,"Missing the deploy-isolated job-level release gate");
+for(const token of [
+"github.repository == 'adiusor/business-crisis'",
+"github.ref == 'refs/heads/feature/0917-corporate-challenge'",
+"vars.BC_STAGING_DEPLOY_ENABLED == 'YES'",
+"github.event_name == 'workflow_dispatch'",
+"github.event_name == 'push'",
+"contains(github.event.head_commit.message, '[release-0917-staging]')"
+]){
+ assert.ok(releaseGuard.includes(token),"Missing explicit staging release condition: "+token);
+}
+assert.ok(workflow.includes("needs: verify-release-policy"),"Deployment must wait for the release-policy verification job");
+assert.ok(workflow.includes("run: node scripts/check-0917-staging.cjs"),"Release policy must be checked on every staging-branch push");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.staging.jsonc"),"Legacy staging may not be redeployed");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.jsonc"),"Original preview may not be deployed");
 assert.ok(!workflow.includes("secrets.CLOUDFLARE_API_TOKEN"),"Never substitute unrelated credential");

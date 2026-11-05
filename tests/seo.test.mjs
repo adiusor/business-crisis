@@ -1,5 +1,6 @@
 import "../src/content.js";
 import test from "node:test";
+import {execFileSync} from "node:child_process";
 import assert from "node:assert/strict";
 import {PUBLIC_PATHS,PAGES,renderPublicPage,isPublishedOrigin,robotsText,sitemapXml} from "../multiplayer/site.mjs";
 const preview=new URL("https://business-crisis-rooms-staging.example.workers.dev/");
@@ -78,3 +79,9 @@ test("corporate challenge branding stays positive and coherent across each publi
 });
 
 test("original site navigation and joining instructions remain intact after the rebrand",()=>{const home=renderPublicPage("/",preview,{}).html;for(const path of ["/corporate-team-building-game","/virtual-team-building","/leadership-team-building","/for-facilitators"]){assert.ok(PAGES[path]);assert.ok(home.includes('href="'+path+'"'));}assert.match(home,/How does someone choose or get assigned/);assert.match(home,/4-character code or QR/);assert.match(home,/HOST A PRIVATE GAME/);assert.match(home,/JOIN A ROOM/);});
+
+
+test("only explicitly released 09:17 commits may deploy to the dedicated staging Worker",()=>{
+ const output=execFileSync(process.execPath,["scripts/check-0917-staging.cjs"],{encoding:"utf8"});
+ assert.match(output,/PASS: Distinct Workers\.dev-only 09:17 deployment/);
+});
