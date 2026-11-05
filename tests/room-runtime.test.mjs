@@ -357,11 +357,23 @@ try {
     const hostUI = await browser.newPage({viewport: {width: 1440, height: 900}, reducedMotion: "reduce"});
     const phoneA = await browser.newPage({viewport: {width: 320, height: 720}, reducedMotion: "reduce"});
     const phoneB = await browser.newPage({viewport: {width: 390, height: 820}, reducedMotion: "reduce"});
-    const browserErrors = [];
-    for (const page of [hostUI, phoneA, phoneB])
-      page.on("pageerror", err => browserErrors.push(err.message));
+    const browserErrors = [], lobbyNetworkFailures = [];
+    const observePage=(page,label)=>{
+      page.on("pageerror",err=>browserErrors.push(
+        label+" @ "+page.url().replace(/#.*$/,"")+" ("+
+        (page.isClosed()?"closed":"open")+"): "+err.message));
+      // Diagnostic only: failed lobby fetches are NOT ignored or excused
+      // when they also cause a JavaScript pageerror. Attribute by tab.
+      page.on("requestfailed",request=>{
+        if(/\/api\/rooms\/[2-9A-HJ-NP-Z]{4}\/lobby$/.test(request.url()))
+          lobbyNetworkFailures.push(label+": "+String(request.failure()?.errorText||"unknown"));
+      });
+    };
+    observePage(hostUI,"HOST 1440");
+    observePage(phoneA,"PHONE A 320");
+    observePage(phoneB,"PHONE B 390");
     const commercial=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
-    commercial.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(commercial,"COMMERCIAL 390");
     await commercial.goto(base+"/",{waitUntil:"load"});
     assert.equal(await commercial.locator(".hero a[href=\"/play\"]").count(),1,"Host entry is easy to find");
     assert.equal(await commercial.locator(".hero a[href=\"/join\"]").count(),1,"Player entry is separate");
@@ -389,7 +401,7 @@ try {
     // Safari/macOS sometimes duplicates a tab and inherits its session
     // storage. A joining link must still show player registration, not host.
     const clonedHost=await browser.newPage({viewport:{width:1280,height:800}});
-    clonedHost.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(clonedHost,"CLONED HOST TAB");
     await clonedHost.addInitScript(({code,token})=>{
       sessionStorage.setItem("bc-preview-session-"+code,token);
     },{code:uiCode,token:hostUiToken});
@@ -492,7 +504,7 @@ try {
       "Host has a selectable full link if a clipboard permission is denied");
     assert.match(projectorHref,/\/projector\?room=[2-9A-HJ-NP-Z]{4}#access=[a-f0-9]{64}$/);
     const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
-    projected.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(projected,"PROJECTOR 1280");
     await projected.goto(projectorHref,{waitUntil:"load"});
     await projected.locator("#room-screen").waitFor({state:"visible",timeout:12000});
     assert.equal(await projected.locator("#viewer-mode").isVisible(),true);
@@ -504,7 +516,7 @@ try {
     assert.equal(projected.url(),projectorHref,"Opening a projector must preserve the shareable URL");
     const freshProjector=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:"reduce"});
     const freshDisplay=await freshProjector.newPage();
-    freshDisplay.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(freshDisplay,"FRESH PROJECTOR");
     await freshDisplay.goto(projected.url(),{waitUntil:"load"});
     await freshDisplay.locator("#room-screen").waitFor({state:"visible",timeout:12000});
     assert.equal(await freshDisplay.locator("#viewer-mode").isVisible(),true,
@@ -848,7 +860,7 @@ try {
     // electorate, vote window or locked decisions. All connected roles get a
     // short named presence notification; projector still has no private votes.
     const lateUI=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
-    lateUI.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(lateUI,"LATE PLAYER 390");
     await lateUI.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
     await lateUI.locator("#join-form").waitFor({state:"visible",timeout:10000});
     assert.match(await lateUI.locator("#join-caption").textContent(),/GAME IN PROGRESS/);
@@ -871,8 +883,21 @@ try {
     assert.equal(await hostUI.locator("#host-share").isVisible(),true,"Host can invite late entrants");
     assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
     assert.equal(await hostUI.locator("#room-code").isVisible(),false,"Room code hidden after start");
-    // Network loss while a team is waiting must not lose its saved session.
+    // Network loss must not invalidate a player's token or reset a locked
+    // ballot. Verify Safari's actual visible offline-to-live transition.
+    const bobTokenBefore=await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode);
+    const bobRevisionBefore=Number(await phoneB.locator("#room-screen").getAttribute("data-revision"));
+    assert.match(bobTokenBefore,/^[a-f0-9]{64}$/);
+    assert.equal(await phoneB.locator(".vote-finished").count(),1,
+      "Bob's already-submitted vote remains locked before disconnection");
     await phoneB.context().setOffline(true);
+    await phoneB.waitForFunction(()=>
+      document.querySelector("#connection")?.textContent?.includes("OFFLINE"),
+      null,{timeout:8000});
+    assert.equal(await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode),bobTokenBefore,
+      "Offline transition must not clear the player's credentials");
     await hostUI.locator("#host-ready-dialog").waitFor({state:"visible",timeout:10000});
     assert.equal(await hostUI.locator("#ready-next").evaluate(el=>document.activeElement===el),true,
       "The host-ready modal must move keyboard focus onto the next-episode action");
@@ -885,6 +910,13 @@ try {
     await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
+    await phoneB.waitForFunction(before=>
+      document.querySelector("#connection")?.textContent==="LIVE SYNC"&&
+      Number(document.querySelector("#room-screen")?.dataset.revision)>before,
+      bobRevisionBefore,{timeout:15000});
+    assert.equal(await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode),bobTokenBefore,
+      "Reconnection must reuse the same saved player identity");
     await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
@@ -934,7 +966,7 @@ try {
     await projected.screenshot({path:path.join(root,screenshotDir,"07-projector-1280.png"),fullPage:true});
     // A complete room can render and export a stand-alone human-readable report.
     const reportHost=await browser.newPage({viewport:{width:1366,height:900},acceptDownloads:true});
-    reportHost.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(reportHost,"REPORT HOST");
     await reportHost.addInitScript(({code,token})=>{
       sessionStorage.setItem("bc-preview-session-"+code,token);
     },{code:roomCode,token:hostToken});
@@ -1008,7 +1040,8 @@ try {
     assert.doesNotMatch(pdfContent,new RegExp(hostToken));
     assert.doesNotMatch(pdfContent,new RegExp(roomCode));
     assert.ok(pdfBytes.length>10000,"PDF must contain actual graphical and textual content");
-    assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
+    assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors. " +
+      "Failed lobby requests by named tab: "+JSON.stringify(lobbyNetworkFailures));
   } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
     qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
