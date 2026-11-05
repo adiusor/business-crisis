@@ -611,6 +611,17 @@
     }
     box.append(grid);return box;
   }
+  function renderTeamStoryThread(ctx){
+    const box=node("details",null,"team-story-thread");
+    box.setAttribute("aria-label","Private continuity from your team's previous decision");
+    const summary=node("summary",null,"team-story-summary");
+    summary.append(node("small","YOUR TEAM'S STORY CONTINUES"),
+      node("strong","LAST TIME / "+ctx.fromPlan));
+    box.append(summary);
+    box.append(node("p",ctx.lead));
+    if(ctx.pressure)box.append(node("p",ctx.pressure,"story-pressure"));
+    return box;
+  }
   function renderPlayerActions(force = false) {
     const target = $("player-actions");
     target.hidden = state.viewer.role !== "player";
@@ -622,7 +633,7 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.lastImpact,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voting?.myVote,privateData.voting?.runoff,
       privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
@@ -664,6 +675,7 @@
       target.append(node("p", "The boardroom verdict and your team's decision history appear below."));
       return;
     }
+    if(privateData.storyContext)target.append(renderTeamStoryThread(privateData.storyContext));
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null,canVote:true};
     // After locking a ballot, remove ALL voting controls. Only the two chosen
     // advisers and a concise status remain on this screen.
@@ -1103,6 +1115,37 @@
       const deepDive=node("details",null,"report-advanced");
       deepDive.append(node("summary","VIEW TEAM PERFORMANCE / CASH & RISKS"));
       deepDive.append(metrics,renderCashTrajectory(team));
+      if(team.scoreBreakdown){
+        const b=team.scoreBreakdown;
+        const detail=node("section",null,"report-numeric-breakdown");
+        detail.append(node("h5","THE MATH BEHIND THIS TEAM'S SCORE"));
+        for(const [label,value] of [
+          ["Starting score",b.base],["Weighted risk deduction", "-"+b.riskPenalty],
+          ["Trust adjustment",(b.trustEffect>=0?"+":"")+b.trustEffect],
+          ["Liquidity deduction","-"+b.liquidityPenalty],
+          ["Future commitments deduction","-"+b.commitmentPenalty],
+          ["Negative cash deduction","-"+b.cashPenalty],
+          ["Customer/operations/reserve deductions","-"+(b.customerPenalty+b.operationsPenalty+b.reservePenalty)],
+          ["Rounded economic score",b.economicScore],
+          ["Time penalties","-"+team.timingPenalty],
+          ["Final reported score",team.score]
+        ]){
+          const line=node("p",null,"report-calculation-row");
+          line.append(node("span",label),node("strong",String(value)));
+          detail.append(line);
+        }
+        deepDive.append(detail);
+      }
+      for(const [heading,items] of [
+        ["WHAT THIS TEAM PROTECTED",team.strengths],
+        ["A CONSTRUCTIVE NEXT MOVE",team.nextSteps]
+      ]){
+        if(!Array.isArray(items)||!items.length)continue;
+        const group=node("section",null,"report-learning-notes");
+        group.append(node("h5",heading));
+        for(const item of items)group.append(node("p",item));
+        deepDive.append(group);
+      }
       if (team.reasons.length) {
         const reasons=node("div",null,"report-reasons");
         reasons.append(node("h5","WHY THIS OUTCOME"));
