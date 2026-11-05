@@ -413,7 +413,7 @@ try {
     assert.equal(await phoneA.locator("#rules-host-note").isVisible(),false);
     const rulesOverflow=await phoneA.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
     assert.ok(rulesOverflow<=1,"Rules must not overflow a 320px phone: "+rulesOverflow);
-    await (await import("node:fs/promises")).mkdir(path.join(root,"screenshots"),{recursive:true});
+    await (await import("node:fs/promises")).mkdir(path.join(root,screenshotDir),{recursive:true});
     await phoneA.screenshot({path:path.join(root,screenshotDir,"08-briefing-phone-320.png"),fullPage:true});
     await phoneA.locator("#game-rules summary").click();
     assert.equal(await phoneA.locator("#game-rules").evaluate(el=>el.open),false);
