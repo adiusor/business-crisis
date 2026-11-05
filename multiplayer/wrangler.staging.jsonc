@@ -1,0 +1,32 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "business-crisis-rooms-staging",
+  "main": "./worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CRISIS_ROOMS",
+        "class_name": "CrisisRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "room-v1",
+      "new_sqlite_classes": [
+        "CrisisRoom"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "**/*.html",
+        "**/*.txt"
+      ]
+    }
+  ]
+}

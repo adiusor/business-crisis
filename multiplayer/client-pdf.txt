@@ -1,0 +1,163 @@
+"use strict";
+/* Self-contained PDF dossier. The report contains only the final public
+   verdict: no player identifiers, credentials, email or network calls. */
+((g)=>{
+const W=595,H=842,M=40,enc=new TextEncoder();
+const ink="#172f3b",night="#102735",paper="#f5f4ef",gold="#dca475",mint="#70b9ab",muted="#526b75";
+const clean=x=>String(x??"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^\x20-\x7e]/g,"?").replace(/\s+/g," ").trim();
+const esc=x=>clean(x).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+const rgb=hex=>hex.match(/[0-9a-f]{2}/gi).map(x=>(parseInt(x,16)/255).toFixed(3)).join(" ");
+const cash=x=>"GBP "+Math.round(Number(x)||0).toLocaleString("en-GB");
+const pages=[];
+function page(){
+ const out=[],fill=hex=>rgb(hex)+" rg";
+ const rect=(x,y,w,h,col)=>out.push("q "+fill(col)+" "+x+" "+(H-y-h)+" "+w+" "+h+" re f Q");
+ const txt=(x,y,value,size=12,col=ink,font="F1")=>out.push("BT /"+font+" "+size+" Tf "+fill(col)+" 1 0 0 1 "+x+" "+(H-y-size)+" Tm ("+esc(value)+") Tj ET");
+ const wrap=(s,width,size=12)=>{
+   const max=Math.max(12,Math.floor(width/(size*.52))),parts=clean(s).split(/\s+/),result=[];
+   let current="";
+   for(const word of parts){
+     if((current+" "+word).trim().length>max&&current){result.push(current);current="";}
+     if(word.length>max){
+       if(current){result.push(current);current="";}
+       for(let i=0;i<word.length;i+=max)result.push(word.slice(i,i+max));
+     }else current=(current+" "+word).trim();
+   }
+   if(current)result.push(current);
+   return result.length?result:[""];
+ };
+ const lines=(x,y,s,width,size=12,col=ink,font="F1",leading=size*1.4)=>{
+   const v=wrap(s,width,size);v.forEach((t,i)=>txt(x,y+i*leading,t,size,col,font));
+   return y+v.length*leading;
+ };
+ const disc=(x,cy,r,col,angle=2*Math.PI)=>{
+   let cmd="q "+fill(col)+" "+x+" "+(H-cy)+" m ";
+   const n=48;
+   for(let i=0;i<=n;i++){
+     const t=-Math.PI/2+(i/n)*angle;
+     cmd+=(x+r*Math.cos(t)).toFixed(2)+" "+(H-cy+r*Math.sin(t)).toFixed(2)+" l ";
+   }
+   out.push(cmd+"h f Q");
+ };
+ const ring=(x,cy,r,ratio,col)=>{
+   disc(x,cy,r,"#3c5560");disc(x,cy,r,col,Math.max(0,Math.min(1,ratio))*2*Math.PI);
+   // A filled-centre cover makes the ratio readable from far away.
+   disc(x,cy,r*.61,night);
+ };
+ return {out,rect,txt,wrap,lines,ring};
+}
+function frame(p,kicker,title,index){
+ p.rect(0,0,W,134,night);p.rect(0,0,9,H,gold);
+ p.txt(M,22,"BUSINESS CRISIS  /  THE 09:17 INCIDENT",9,gold,"F2");
+ p.txt(M,49,kicker,10,"#bfd1d2","F2");
+ p.txt(M,69,title,25,paper,"F3");
+ p.rect(0,H-44,W,44,night);
+ p.txt(M,H-29,"THE BOARDROOM DOSSIER  /  PRIVATE OFFLINE COPY",9,"#bdd0d0");
+ p.txt(W-71,H-29,""+index,11,gold,"F2");
+}
+function cover(v){
+ const p=page();frame(p,"OFFICIAL SIMULATION RESULT","THE BOARDROOM VERDICT",1);
+ const winner=v.hasChampion?v.champions.join(" / "):"NO CONFIRMED RENEWAL";
+ p.rect(M,153,W-2*M,88,"#1b3b49");
+ p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"THE BOARD DID NOT RENEW",11,gold,"F2");
+ p.lines(M+16,188,winner,W-2*M-32,18,paper,"F3",23);
+ p.txt(M,263,"FINAL TEAM RANKINGS",12,ink,"F2");
+ let top=287;
+ v.ranked.forEach((team,i)=>{
+   p.rect(M,top,W-2*M,56,i===0?"#dcece7":"#e4ebec");
+   p.rect(M,top,5,56,i===0?mint:gold);
+   p.txt(M+15,top+8,String(i+1).padStart(2,"0"),17,muted,"F2");
+   p.txt(M+54,top+6,team.name,13,ink,"F2");
+   p.txt(M+54,top+28,team.status+"  /  "+cash(team.cash)+" cash",10,muted);
+   p.txt(W-M-58,top+11,team.score+"",25,ink,"F2");
+   top+=64;
+ });
+ const decisions=v.ranked.flatMap(t=>t.decisions||[]);
+ const completed=decisions.filter(d=>!d.timedOut).length;
+ const total=decisions.length,trust=v.ranked[0].trust;
+ p.rect(M,556,W-2*M,199,night);
+ p.txt(M+15,570,"CRISIS SNAPSHOT / FACTS FROM THIS SESSION",11,gold,"F2");
+ p.ring(M+104,658,44,total?completed/total:0,mint);
+ p.ring(M+351,658,44,trust/100,gold);
+ p.txt(M+79,645,total?Math.round(completed/total*100)+"%":"0%",18,paper,"F2");
+ p.txt(M+337,645,trust+"",19,paper,"F2");
+ p.txt(M+20,717,"FILED BEFORE 4:00",10,paper,"F2");
+ p.txt(M+265,717,"LEADER'S TRUST / 100",10,paper,"F2");
+ p.txt(M,769,"Based only on recorded team decisions. The score combines",10,muted);
+ p.txt(M,784,"economics and time penalties; renewal has separate rules.",10,muted);
+ pages.push(p);
+}
+function chapterFrame(v,index,continued){
+ const p=page(),episode=v.ranked[0]?.decisions?.[index]?.episode||"THE INCIDENT";
+ frame(p,"EPISODE "+String(index+1).padStart(2,"0")+
+    (continued?" / CONTINUED":" / TEAM-BY-TEAM COMPARISON"),episode,pages.length+1);
+ p.txt(M,149,"WHAT EACH TEAM CHOSE / WHAT FOLLOWED",11,ink,"F2");
+ return p;
+}
+function cardHeight(p,d){
+ const width=W-2*M-30;
+ return Math.max(110,51+
+  p.wrap("STRATEGY / "+(d?.plan||"NO RESPONSE"),width,11).length*15+
+  p.wrap("STATEMENT / "+(d?.signal||"NO RESPONSE"),width,10.5).length*14+
+  p.wrap(d?.fallout||"No consequence was recorded.",width,10).length*14);
+}
+function drawCard(p,top,team,d){
+ const height=cardHeight(p,d);
+ p.rect(M,top,W-2*M,height,"#e6eded");
+ p.rect(M,top,5,height,d?.timedOut?"#bd7163":gold);
+ p.txt(M+15,top+8,team.name+"  /  "+team.status,12,ink,"F2");
+ p.txt(W-M-139,top+9,"SPENT "+cash(d?.spent||0),9,muted,"F2");
+ let y=top+31,width=W-2*M-30;
+ y=p.lines(M+15,y,"STRATEGY / "+(d?.plan||"NO RESPONSE"),width,11,ink,"F2",15);
+ y=p.lines(M+15,y,"STATEMENT / "+(d?.signal||"NO RESPONSE"),width,10.5,muted,"F1",14)+4;
+ p.rect(M+15,y,W-2*M-30,1,"#c1cecf");y+=7;
+ p.lines(M+15,y,d?.fallout||"No consequence was recorded.",width,10,ink,"F1",14);
+ return height;
+}
+function chapter(v,index){
+ let p=chapterFrame(v,index,false),top=176;
+ for(const team of v.ranked){
+   const decision=team.decisions[index],height=cardHeight(p,decision);
+   if(top+height>H-69){
+     pages.push(p);p=chapterFrame(v,index,true);top=176;
+   }
+   drawCard(p,top,team,decision);top+=height+12;
+ }
+ pages.push(p);
+}
+function build(verdict){
+ if(!verdict||!Array.isArray(verdict.ranked)||verdict.ranked.length<1)
+   throw Error("No completed results are available");
+ pages.length=0;cover(verdict);
+ for(let i=0;i<6;i++)chapter(verdict,i);
+ const objects=[],add=x=>{objects.push(x);return objects.length};
+ const root=add(""),parent=add("");
+ add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+ add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+ add("<< /Type /Font /Subtype /Type1 /BaseFont /Times-Bold >>");
+ const kids=[];
+ for(const p of pages){
+   const content=p.out.join("\n")+"\n";
+   const body=add("<< /Length "+enc.encode(content).length+
+     " >>\nstream\n"+content+"endstream");
+   kids.push(add("<< /Type /Page /Parent "+parent+
+     " 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R"+
+     " /F2 4 0 R /F3 5 0 R >> >> /Contents "+body+" 0 R >>"));
+ }
+ objects[root-1]="<< /Type /Catalog /Pages "+parent+" 0 R >>";
+ objects[parent-1]="<< /Type /Pages /Kids ["+kids.map(x=>x+" 0 R").join(" ")+
+   "] /Count "+kids.length+" >>";
+ let raw="%PDF-1.4\n",offs=[0];
+ for(let i=0;i<objects.length;i++){
+   offs.push(enc.encode(raw).length);
+   raw+=(i+1)+" 0 obj\n"+objects[i]+"\nendobj\n";
+ }
+ const xref=enc.encode(raw).length;
+ raw+="xref\n0 "+(objects.length+1)+"\n0000000000 65535 f \n";
+ for(let i=1;i<offs.length;i++)raw+=String(offs[i]).padStart(10,"0")+" 00000 n \n";
+ raw+="trailer\n<< /Size "+(objects.length+1)+" /Root "+root+
+   " 0 R >>\nstartxref\n"+xref+"\n%%EOF";
+ return enc.encode(raw);
+}
+g.BCReportPDF=Object.freeze({build});
+})(window);

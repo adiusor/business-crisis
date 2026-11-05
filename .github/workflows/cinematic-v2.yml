@@ -1,0 +1,71 @@
+name: Cinematic v2 quality gates
+on:
+  pull_request:
+    paths: ["src/**", "multiplayer/**", "tests/**", "index.html", "scripts/**", "package.json", ".github/workflows/cinematic-v2.yml", ".github/workflows/business-crisis-staging.yml"]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  gameplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify reproducible standalone build
+        run: |
+          cp index.html /tmp/index-before.html
+          node scripts/build.cjs
+          cmp index.html /tmp/index-before.html
+      - name: Check JavaScript syntax
+        run: |
+          node --check src/content.js
+          node --check src/rules.js
+          node --check src/art.js
+          node --check src/app.js
+          node --check multiplayer/room-core.mjs
+          node --check multiplayer/worker.mjs
+          node --check multiplayer/site.mjs
+          node --check tests/multiplayer.test.mjs
+      - name: Test economic engine and 1200 seeded sessions
+        run: node tests/rules.test.cjs
+      - name: Audit six episodes and consequence coherence
+        run: node --test tests/storyline.test.cjs
+      - name: Verify global SEO pages, canonical URLs and staging noindex
+        run: node --test tests/seo.test.mjs
+      - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
+        run: |
+          node --test tests/multiplayer.test.mjs
+          node -e "JSON.parse(require('node:fs').readFileSync('multiplayer/wrangler.jsonc', 'utf8'))"
+      - name: Install browser runner
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium webkit firefox
+      - name: Bundle isolated Cloudflare Worker (dry-run only, no deploy)
+        run: npm run check:room-bundle
+      - name: Check staging shell syntax
+        run: bash -n scripts/smoke-staging.sh
+      - name: Verify staging isolation and no production domains
+        run: npm run check:staging-isolation
+      - name: Dry-run named staging Worker bundle (no deploy)
+        run: npm run check:staging-bundle
+      - name: Exercise local Worker HTTP, QR and live WebSocket room sync (no deploy)
+        run: node tests/room-runtime.test.mjs
+      - name: Cross-browser Safari WebKit room journey (late join, voting, projector and finale)
+        run: BC_BROWSER=webkit node tests/room-runtime.test.mjs
+      - name: Cross-browser Firefox room journey (late join, voting, projector and finale)
+        run: BC_BROWSER=firefox node tests/room-runtime.test.mjs
+      - name: Play 2-, 3- and 4-team games in Chromium
+        run: node tests/browser.mjs
+      - name: Upload actual browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cinematic-v2-browser-screenshots
+          path: screenshots/
+          if-no-files-found: ignore
