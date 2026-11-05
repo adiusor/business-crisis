@@ -6,7 +6,7 @@ const R=require("../src/rules.js"),C=globalThis.BCContent;
 let seed=0x9172026;
 function next(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
 const N=5000;
-const count={RENEWED:0,CONDITIONAL:0,"AT RISK":0,LOST:0};
+const count={BOARD_READY:0,CONDITIONAL:0,"AT RISK":0,LOST:0};
 let cappedTrust=0,negativeCash=0,ledgerErrors=0;
 const perRound=Array.from({length:6},()=>({trustCap:0,spent:0}));
 const sample=[];
