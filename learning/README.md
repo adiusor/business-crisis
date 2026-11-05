@@ -4,6 +4,16 @@
 **Original story:** Opening Night, set at fictional FIELDWORK HOUSE.  
 **Status:** source and self-contained browser preview, not an externally hosted public product.
 
+## Hosted experimental preview (verified 5 November 2026)
+These pages are served from a **separate Vercel staging deployment**, not Cloudflare production or the existing Business Crisis Worker.
+
+- [Open the experimental marketing site](https://business-in-play-experimental-h3v2pb5ww-adiusor-6916.vercel.app/)
+- [Play Opening Night directly — no login or room code](https://business-in-play-experimental-h3v2pb5ww-adiusor-6916.vercel.app/preview.html)
+- [View the Romanian-market overview](https://business-in-play-experimental-h3v2pb5ww-adiusor-6916.vercel.app/ro.html)
+- [External HTTP proof (all seven pages, noindex)](https://github.com/adiusor/business-crisis/actions/runs/42038286550)
+
+The published deployment is a pinned version of the experimental website; future GitHub commits do not automatically update it. Run a new isolated deploy and HTTP probe to keep it current. This is **shared-device**, not the separate-phone multiplayer experience.
+
 ## Fastest way to play (no room code needed)
 1. Open [the standalone Opening Night HTML file](./preview.html) in GitHub.
 2. Use **Download raw file** (down-arrow) on GitHub. Save `preview.html` to your computer.
