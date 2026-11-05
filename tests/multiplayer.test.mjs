@@ -1302,3 +1302,116 @@ test("late arrivals join untimed preparation without altering the clock or priva
  assert.equal(room.teams[0].economic.history.length,1);
  assert.equal(room.startedAtMs,at,"No late join resets the server clock");
 });
+
+
+test("Episode-04 callbacks are derived from each team's choices and remain team-private",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const bob=enter(room,"Bob",1,2);room=bob.room;
+ room=act(room,host,"start");
+ const aPlans=[1,1,1],aStatements=[1,0,0];
+ const bPlans=[2,1,0],bStatements=[2,0,0];
+ for(let round=0;round<3;round++){
+  room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+  room=act(room,bob.actor,"select_advisers",{advisers:[1,5]});
+  room=act(room,alice.actor,"lock_advisers",{planIndex:aPlans[round],signalIndex:aStatements[round]});
+  room=act(room,bob.actor,"lock_advisers",{planIndex:bPlans[round],signalIndex:bStatements[round]});
+  room=act(room,host,"advance");
+ }
+ assert.equal(room.round,3);
+ const aView=viewFor(room,alice.actor),bView=viewFor(room,bob.actor);
+ assert.equal(aView.privateTeam.spotlight.title,"THREE SITES, ONE QUESTION");
+ assert.equal(bView.privateTeam.spotlight.title,"ONE SITE, THREE QUESTIONS");
+ assert.match(aView.privateTeam.spotlight.text,/faster supplier route/);
+ assert.match(bView.privateTeam.spotlight.text,/first-site pilot/);
+ const hostView=viewFor(room,host),projector=viewFor(room,{role:"projector"});
+ for(const other of [hostView,projector,bView]){
+  assert.doesNotMatch(JSON.stringify(other),/THREE SITES, ONE QUESTION/,
+   "The opponent, host and projector must never receive Alice's private consequence");
+ }
+ for(const other of [hostView,projector,aView]){
+  assert.doesNotMatch(JSON.stringify(other),/ONE SITE, THREE QUESTIONS/,
+   "The opponent, host and projector must never receive Bob's private consequence");
+ }
+ assert.equal(Object.hasOwn(hostView,"privateTeam"),false);
+ assert.equal(Object.hasOwn(projector,"privateTeam"),false);
+ assert.equal(aView.episode.title,bView.episode.title,"The common scene must remain fair");
+ assert.deepEqual(aView.episode.evidence,bView.episode.evidence,
+  "Public evidence remains identical regardless of earlier choices");
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+ room=act(room,bob.actor,"select_advisers",{advisers:[1,5]});
+ room=act(room,alice.actor,"lock_advisers",{planIndex:0,signalIndex:0});
+ room=act(room,bob.actor,"lock_advisers",{planIndex:0,signalIndex:0});
+ const aHistory=room.teams[0].economic.history[3],bHistory=room.teams[1].economic.history[3];
+ assert.equal(aHistory.spotlight.id,"ambition-fast");
+ assert.equal(bHistory.spotlight.id,"focused");
+ assert.match(viewFor(room,alice.actor).privateTeam.lastImpact.fallout,/EARLIER PROMISES UNDER THE SPOTLIGHT/);
+ assert.match(viewFor(room,bob.actor).privateTeam.lastImpact.fallout,/EARLIER PROMISES UNDER THE SPOTLIGHT/);
+ for(const other of [viewFor(room,host),viewFor(room,{role:"projector"})])
+  assert.doesNotMatch(JSON.stringify(other),/EARLIER PROMISES UNDER THE SPOTLIGHT/);
+});
+
+test("Scene-04 private prompt rendering is isolated from the projector and not an extra ballot",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const script=readFileSync(new URL("../multiplayer/client-script.txt",import.meta.url),"utf8");
+ const style=readFileSync(new URL("../multiplayer/client-style.txt",import.meta.url),"utf8");
+ assert.match(script,/function renderSpotlightTwist\(twist\)/);
+ assert.match(script,/privateData\.spotlight/);
+ assert.match(script,/TEAM-SPECIFIC CONSEQUENCE/);
+ assert.match(style,/\.spotlight-twist/);
+ assert.match(style,/\.projector-mode \.spotlight-twist\{display:none\}/);
+ assert.doesNotMatch(script,/spotlight\.delta|spotlight\.trust/);
+});
+
+
+test("Episode-five delivery callbacks are personal, true to past decisions and absent from other teams",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,1);room=alice.room;
+ const bob=enter(room,"Bob",1,2);room=bob.room;
+ room=act(room,host,"start");
+ const plansA=[1,0,1,0],plansB=[0,2,0,0];
+ for(let round=0;round<4;round++){
+  room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+  room=act(room,bob.actor,"select_advisers",{advisers:[1,5]});
+  room=act(room,alice.actor,"lock_advisers",{planIndex:plansA[round],signalIndex:0});
+  room=act(room,bob.actor,"lock_advisers",{planIndex:plansB[round],signalIndex:0});
+  room=act(room,host,"advance");
+ }
+ assert.equal(room.round,4);
+ const a=viewFor(room,alice.actor),b=viewFor(room,bob.actor);
+ assert.equal(a.privateTeam.delivery.title,"THE FAST TRACK HITS A ROADBLOCK");
+ assert.equal(b.privateTeam.delivery.title,"THE CREW IS ALREADY PREPARED");
+ assert.ok(["strong","managed","tight"].includes(a.privateTeam.delivery.reserveBand));
+ assert.deepEqual(a.episode,b.episode,"All teams get identical public evidence and options");
+ for(const v of [viewFor(room,host),viewFor(room,{role:"projector"}),b]){
+  assert.doesNotMatch(JSON.stringify(v),/THE FAST TRACK HITS A ROADBLOCK/,
+   "Other teams, host and projector must never learn Alice's private delivery twist");
+ }
+ for(const v of [viewFor(room,host),viewFor(room,{role:"projector"}),a]){
+  assert.doesNotMatch(JSON.stringify(v),/THE CREW IS ALREADY PREPARED/,
+   "Other teams, host and projector must never learn Bob's private delivery twist");
+ }
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,4]});
+ room=act(room,bob.actor,"select_advisers",{advisers:[1,5]});
+ room=act(room,alice.actor,"lock_advisers",{planIndex:0,signalIndex:0});
+ room=act(room,bob.actor,"lock_advisers",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].economic.history[4].delivery.id,"fast-track");
+ assert.equal(room.teams[1].economic.history[4].delivery.id,"supported-backup");
+ assert.match(viewFor(room,alice.actor).privateTeam.lastImpact.fallout,
+  /THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS/);
+ for(const v of [viewFor(room,host),viewFor(room,{role:"projector"})]){
+  assert.equal(Object.hasOwn(v,"privateTeam"),false);
+  assert.doesNotMatch(JSON.stringify(v),/THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS/);
+ }
+});
+
+test("Private episode-five callout has no server ballot side effects and is hidden on projector",async()=>{
+ const {readFileSync}=await import("node:fs");
+ const script=readFileSync(new URL("../multiplayer/client-script.txt",import.meta.url),"utf8");
+ const styles=readFileSync(new URL("../multiplayer/client-style.txt",import.meta.url),"utf8");
+ assert.match(script,/function renderDeliveryTest\(challenge\)/);
+ assert.match(script,/privateData\.delivery/);
+ assert.match(script,/YOUR DELIVERY READINESS/);
+ assert.match(styles,/\.projector-mode \.delivery-test\{display:none\}/);
+ assert.doesNotMatch(script,/delivery\.delta|delivery\.trust/);
+});

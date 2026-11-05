@@ -13,6 +13,9 @@
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
   let roomCode = validRoomCode(codeFromUrl) ? codeFromUrl : "";
   let credential = null;
+  // Ignore HTTP responses begun under a token that has since been revoked,
+  // replaced or discarded. A delayed Safari fetch must not resurrect a room.
+  let sessionEpoch = 0;
   let state = null;
   let socket = null;
   let retryHandle = null;
@@ -72,15 +75,22 @@
     return payload;
   }
   function saveSession(token) {
+    sessionEpoch++;
     try { sessionStorage.setItem(roleKey(roomCode), token); } catch (_) { /* non-persistent preview */ }
     credential = token;
   }
   function dropSession() {
+    sessionEpoch++;
     try { sessionStorage.removeItem(roleKey(roomCode)); } catch (_) {}
     credential = null;
   }
   async function getState() {
-    return request("/api/rooms/" + roomCode + "/state", {headers: {authorization: "Bearer " + credential}});
+    const epoch=sessionEpoch,token=credential,code=roomCode;
+    if(!token)throw Object.assign(new Error("Session no longer active"),{staleSession:true});
+    const result=await request("/api/rooms/" + code + "/state", {headers: {authorization: "Bearer " + token}});
+    if(epoch!==sessionEpoch||token!==credential||code!==roomCode)
+      throw Object.assign(new Error("Old session response ignored"),{staleSession:true});
+    return result;
   }
   async function lobby() {
     if (!roomCode) { show("create"); return; }
@@ -427,6 +437,12 @@
       dilemma.append(node("span","Find the strongest trade-off — not a perfect answer.","scene-pressure"));
       copy.append(dilemma);
     }
+    if(e.teamPrompt && state.viewer.role!=="projector"){
+      const talk=node("aside",null,"scene-team-prompt");
+      talk.append(node("small","TALK IT THROUGH · BEFORE YOU VOTE"));
+      talk.append(node("p",e.teamPrompt));
+      copy.append(talk);
+    }
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
     const progress=node("ol",null,"episode-progress");
@@ -604,6 +620,27 @@
     wrap.append(select);
     return wrap;
   }
+  function renderSpotlightTwist(twist) {
+    const panel=node("aside",null,"spotlight-twist");
+    panel.setAttribute("role","note");
+    panel.setAttribute("aria-label","Your team's previous decisions meet the public teaser");
+    const eyebrow=node("small","EPISODE 04 / YOUR TEAM'S EARLIER PROMISES");
+    const headline=node("strong",twist.title,"spotlight-twist-title");
+    panel.append(eyebrow,headline,node("p",twist.text));
+    panel.append(node("small","THIS IS A TEAM-SPECIFIC CONSEQUENCE · NOT A NEW VOTING OPTION"));
+    return panel;
+  }
+  function renderDeliveryTest(challenge) {
+    const panel=node("aside",null,"delivery-test");
+    panel.setAttribute("role","note");
+    panel.setAttribute("aria-label","Your team's earlier resources determine how it can respond to the failed venue test");
+    panel.append(node("small","EPISODE 05 / YOUR DELIVERY READINESS"));
+    panel.append(node("strong",challenge.title,"delivery-test-title"));
+    panel.append(node("p",challenge.text));
+    const bands={strong:"RESERVE COVERAGE / STRONG",managed:"RESERVE COVERAGE / MANAGED",tight:"RESERVE COVERAGE / TIGHT"};
+    panel.append(node("small",bands[challenge.reserveBand]||"RESERVE COVERAGE / CHECK"));
+    return panel;
+  }
   function renderTeamAftershock(impact) {
     // Read the full consequence when a decision locks; collapse the old file
     // next episode so a three-minute ballot stays ahead of retrospective reading.
@@ -757,7 +794,7 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.spotlight,privateData.delivery,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
       state.nextPreview?.number,
       privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
@@ -801,6 +838,8 @@
       return;
     }
     if(privateData.storyContext)target.append(renderTeamStoryThread(privateData.storyContext));
+    if(privateData.spotlight)target.append(renderSpotlightTwist(privateData.spotlight));
+    if(privateData.delivery)target.append(renderDeliveryTest(privateData.delivery));
     if(state.phase==="prep"){
       if(privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
       target.append(renderPrivateExposure(privateData.economic));
@@ -1646,7 +1685,8 @@
     }
   }
   function setConnection(online) {
-    $("connection").textContent = online ? "LIVE SYNC" : "RECONNECTING";
+    $("connection").textContent = online ? "LIVE SYNC" :
+      navigator.onLine ? "RECONNECTING" : "OFFLINE · RECONNECT TO CONTINUE";
     $("connection").classList.toggle("live", online);
   }
   function stopAccess(message) {
@@ -1697,9 +1737,10 @@
           if (!credential || !navigator.onLine) return;
           try {showRoom((await getState()).state);}
           catch (e) {
+            if(e.staleSession)return;
             if (e.httpStatus === 401 || e.httpStatus === 410) {stopAccess(e.message);return;}
           }
-          connect();
+          if(credential&&navigator.onLine)connect();
         }, retryDelay);
         retryDelay = Math.min(retryDelay * 2, 15000);
       });
@@ -1713,6 +1754,7 @@
       if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type: "snapshot"}));
       else connect();
     } catch (e) {
+      if(e.staleSession)return;
       if (e.httpStatus === 401 || e.httpStatus === 410) stopAccess(e.message);
       else setConnection(false);
     }
@@ -1730,6 +1772,7 @@
       showRoom(restored);
       connect();
     } catch (e) {
+      if(e.staleSession)return;
       if (e.httpStatus === 401 || e.httpStatus === 410) { stopAccess(e.message); return; }
       setConnection(false); error("Cannot restore room yet: " + e.message);
     }
@@ -1882,7 +1925,11 @@
     }catch(e){error(e.message);}
   });
   window.addEventListener("online", () => {setConnection(false);refreshConnection();});
-  window.addEventListener("offline", () => setConnection(false));
+  window.addEventListener("offline", () => {
+    // Keep the room session and any private, server-locked ballot. Only the
+    // transient transport is disconnected; reconnect uses the same token.
+    setConnection(false);
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshConnection();
   });
