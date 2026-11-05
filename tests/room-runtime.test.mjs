@@ -328,11 +328,13 @@ try {
 
   // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
   // The same complete room journey runs in Chromium and Safari's WebKit engine.
-  const browserName=process.env.BC_BROWSER==="webkit"?"webkit":"chromium";
+  const requestedBrowser=process.env.BC_BROWSER||"chromium";
+  const browserName=["chromium","webkit","firefox"].includes(requestedBrowser)?
+    requestedBrowser:"chromium";
   const engines=await import("playwright");
   const browser=await engines[browserName].launch({headless:true,
     ...(browserName==="chromium"?{args:["--no-sandbox"]}:{})});
-  const screenshotDir=browserName==="webkit"?"screenshots/webkit":"screenshots";
+  const screenshotDir=browserName==="chromium"?"screenshots":"screenshots/"+browserName;
   try {
     const hostUI = await browser.newPage({viewport: {width: 1440, height: 900}, reducedMotion: "reduce"});
     const phoneA = await browser.newPage({viewport: {width: 320, height: 720}, reducedMotion: "reduce"});
