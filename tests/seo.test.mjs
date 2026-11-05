@@ -1,3 +1,4 @@
+import "../src/content.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {PUBLIC_PATHS,PAGES,renderPublicPage,isPublishedOrigin,robotsText,sitemapXml} from "../multiplayer/site.mjs";
@@ -43,4 +44,18 @@ test("sitemap excludes all private game paths and staging publishes none",()=>{
  assert.doesNotMatch(robotsText(live.origin,cfg),/Disallow: \/join/);
  assert.match(robotsText(live.origin,cfg),/Disallow: \/api\//);
  assert.equal((xml.match(/<loc>/g)||[]).length,PUBLIC_PATHS.length-2);
+});
+
+test("commercial incident choices originate in canonical opening story",()=>{
+ const first=globalThis.BCContent.episodes[0];
+ const page=renderPublicPage("/",live,cfg).html;
+ assert.match(page,/id="try-a-decision"/);
+ assert.equal((page.match(/class="demo-choice"/g)||[]).length,3);
+ for(const option of first.plans){
+   assert.ok(page.includes(option.name));
+   assert.ok(page.includes(option.fallout));
+   assert.ok(page.includes("£"+(first.base+option.spend).toLocaleString("en-GB")));
+ }
+ assert.match(renderPublicPage("/corporate-team-building-game",live,cfg).html,/id="try-a-decision"/);
+ assert.doesNotMatch(renderPublicPage("/ro",live,cfg).html,/id="try-a-decision"/);
 });

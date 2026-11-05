@@ -360,6 +360,16 @@ try {
     const browserErrors = [];
     for (const page of [hostUI, phoneA, phoneB])
       page.on("pageerror", err => browserErrors.push(err.message));
+    const commercial=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
+    commercial.on("pageerror",err=>browserErrors.push(err.message));
+    await commercial.goto(base+"/",{waitUntil:"load"});
+    assert.equal(await commercial.locator(".demo-choice").count(),3);
+    await commercial.locator(".demo-choice").nth(1).locator("summary").click();
+    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/Access is cut/);
+    assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
+      "Commercial page mobile overflow");
+    await commercial.close();
+
     await hostUI.goto(base+"/play", {waitUntil: "load"});
     await hostUI.locator("#create-key").fill(creationKey);
     await hostUI.locator("#create-teams").selectOption("2");

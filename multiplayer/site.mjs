@@ -1,3 +1,4 @@
+import "../src/content.js";
 // Server-rendered commercial pages. Keep the room UI and its tokens out of search.
 export const PAGES=Object.freeze({
 "/":{lang:"en",title:"Business Simulation Team Building Game | BUSINESS CRISIS",desc:"Six-episode corporate crisis simulation for in-person and remote teams. Make difficult decisions, compete and review the consequences.",k:"business simulation team building",h:"One crisis. Six decisions. Every choice has consequences.",intro:"At 09:17, a confidential memo leaks. Your company is in crisis. Rival teams face the same evidence, weigh conflicting advice and decide what happens next.",why:"More than an icebreaker",body:"BUSINESS CRISIS is a browser-based corporate simulation designed to bring group judgement, strategy and real discussion into the same room.",cards:[["A connected story","Six episodes unfold from the same fictional incident, with financial and reputational consequences."],["Everybody has a vote","Each eligible player submits a private ballot towards one collective team response."],["A boardroom verdict","Compare final scores, critical decisions and downloadable PDF results."]],faq:[["How many teams can participate?","The current game supports two to four teams. Event capacity is still being validated."],["Can we play remotely?","Participants can join on their own browsers. A facilitator still runs the experience and can share the separate projector view over a video meeting."]]},
@@ -22,6 +23,21 @@ const card=([a,b])=>'<article class="tile"><span class="tile-mark">↗</span><h3
 const steps=[["01","ENTER","The host opens a room and invites 2–4 teams."],["02","BRIEF","Captains choose two advisers for the episode."],["03","DECIDE","Players vote privately on a collective response."],["04","DEBRIEF","Review six episodes and the final boardroom verdict."]];
 const one=([n,a,b])=>'<li><span>'+n+'</span><h3>'+esc(a)+'</h3><p>'+esc(b)+'</p></li>';
 const faq=([a,b])=>'<details><summary>'+esc(a)+'</summary><p>'+esc(b)+'</p></details>';
+
+function openingDemo(){
+ const ep=globalThis.BCContent.episodes[0];
+ const price=n=>"£"+n.toLocaleString("en-GB");
+ const plans=ep.plans.map((p,i)=>
+  '<details class="demo-choice"><summary><span>0'+(i+1)+'</span><strong>'+esc(p.name)+'</strong><span aria-hidden="true">+</span></summary>'+
+  '<div class="demo-fallout"><p>'+esc(p.desc)+'</p><p class="eyebrow">ACTUAL GAME CONSEQUENCE</p><p>'+esc(p.fallout)+'</p>'+
+  '<p><strong>Immediate episode spending: '+price(ep.base+p.spend)+'</strong></p><small>Excludes public statements, future liabilities and later episodes.</small></div></details>').join("");
+ return '<section class="demo-sample" id="try-a-decision"><div class="wrap demo-grid"><div><p class="eyebrow">INTERACTIVE GAME SAMPLE / EPISODE 01</p>'+
+  '<h2>A confidential memo leaks. What is your first move?</h2><p class="demo-intro">'+esc(ep.brief)+'</p>'+
+  '<p class="demo-note">Choose a response to reveal the real story consequence. This is a single-choice preview, not the full multiplayer result.</p></div>'+
+  '<div class="demo-panel"><div class="demo-toolbar"><span>INCIDENT / 09:17</span><span>01 / 06</span></div>'+
+  '<h3>'+esc(ep.question)+'</h3><div class="demo-choices">'+plans+'</div></div></div></section>';
+}
+
 const nav=[["THE GAME","/corporate-team-building-game"],["REMOTE TEAMS","/virtual-team-building"],["LEADERSHIP","/leadership-team-building"],["FOR FACILITATORS","/for-facilitators"]];
 export function renderPublicPage(path,url,env={}){
   const p=PAGES[path];if(!p)return null;
@@ -42,6 +58,7 @@ export function renderPublicPage(path,url,env={}){
     '<main><section class="hero wrap"><div class="hero-copy"><p class="eyebrow">'+esc(p.k)+'</p><h1>'+esc(p.h)+'</h1><p class="large">'+esc(p.intro)+'</p><div class="actions"><a class="btn main" href="#how-it-works">'+(p.lang==="ro"?"DESCOPERĂ JOCUL":"SEE HOW IT WORKS")+' ↗</a><a class="btn outline" href="/demo">'+(p.lang==="ro"?"DEMO":"DEMO INFORMATION")+'</a></div><div class="stats"><span><strong>06</strong> EPISODES</span><span><strong>02–04</strong> TEAMS</span><span><strong>01</strong> VERDICT</span></div></div>'+
     '<div class="visual"><svg viewBox="0 0 650 550" role="img" aria-label="Illustration of illuminated corporate office towers" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#294957"/><stop offset="1" stop-color="#0c1b2a"/></linearGradient></defs><rect width="650" height="550" fill="url(#g)"/><circle cx="488" cy="98" r="70" fill="#ad8062" opacity=".14"/><path d="M0 430L120 389V245L220 206V410L272 382V110L430 55V392L472 355V202L610 157V448L650 425V550H0Z" fill="#18384a" stroke="#6c8b93" stroke-opacity=".65" stroke-width="2"/><g stroke="#85a5ac" stroke-opacity=".4" stroke-width="7"><path d="M297 153L405 116M297 210L405 173M297 267L405 230M297 324L405 287M495 241L585 218M495 298L585 275M495 355L585 332M138 283L200 263M138 338L200 318"/></g></svg><div class="incident"><div>CONFIDENTIAL / INCIDENT REPORT</div><strong>09:17 <small>ALERT</small></strong><p>A confidential memo was leaked. What does your team do first?</p><div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i></div><span>ILLUSTRATIVE INTERFACE / NOT LIVE GAME DATA</span></div></div></section>'+
     '<div class="strip"><span>STRATEGIC CHOICES</span><span>CONFIDENTIAL ADVICE</span><span>INDIVIDUAL VOTING</span><span>SHARED CONSEQUENCES</span></div>'+
+    (path==="/"||path==="/corporate-team-building-game"?openingDemo():"")+
     '<section class="section wrap"><div class="heading"><p class="eyebrow">'+esc(p.why)+'</p><h2>'+esc(p.why)+'.</h2><p>'+esc(p.body)+'</p></div><div class="tiles">'+p.cards.map(card).join("")+'</div></section>'+
     '<section class="section second" id="how-it-works"><div class="wrap"><div class="heading"><p class="eyebrow">THE FORMAT</p><h2>Six connected episodes. One boardroom verdict.</h2><p>Facilitated gameplay, two to four teams and decisions that shape what comes next.</p></div><ol class="steps">'+steps.map(one).join("")+'</ol></div></section>'+
     '<section class="section wrap faq-section"><div><p class="eyebrow">QUESTIONS & ANSWERS</p><h2>Know what is in the room.</h2><p class="soft">The current release is an isolated staging playtest. Prices, capacity and commercial availability are still being verified.</p></div><div class="faqs">'+p.faq.map(faq).join("")+'</div></section>'+
