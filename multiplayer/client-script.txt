@@ -1120,6 +1120,60 @@
       awardGrid.append(card);
     }
     awards.append(awardGrid);sheet.append(awards);
+    // Two honest pie-style indicators, plus the most expensive chapter:
+    // every value comes directly from the authoritative final verdict.
+    const allDecisions=verdict.ranked.flatMap(team=>team.decisions);
+    const answered=allDecisions.filter(d=>!d.timedOut).length;
+    const totalDecisions=allDecisions.length;
+    const bestTrust=Math.max(...verdict.ranked.map(t=>t.trust));
+    const episodeSpend=Array.from({length:6},(_,i)=>
+      verdict.ranked.reduce((sum,t)=>sum+(Number(t.decisions[i]?.spent)||0),0));
+    const expensive=Math.max(...episodeSpend);
+    const expensiveRound=episodeSpend.indexOf(expensive);
+    const stats=node("section",null,"verdict-facts");
+    stats.append(node("h3","THE CRISIS, IN TWO CHARTS AND ONE SURPRISE","report-section-title"));
+    const statGrid=node("div",null,"verdict-facts-grid");
+    const ringStat=(headline,value,detail,numerator,denominator,accent)=>{
+      const article=node("article",null,"verdict-fact");
+      const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+      svg.setAttribute("viewBox","0 0 128 128");
+      svg.setAttribute("role","img");
+      svg.setAttribute("aria-label",headline+": "+numerator+" of "+denominator);
+      svg.classList.add("verdict-ring");
+      const circumference=2*Math.PI*48;
+      const ratio=Math.max(0,Math.min(1,denominator?numerator/denominator:0));
+      for(const [stroke,dash] of [["#dce5e7",circumference],[accent,circumference*ratio]]){
+        const circle=document.createElementNS("http://www.w3.org/2000/svg","circle");
+        circle.setAttribute("cx","64");circle.setAttribute("cy","64");circle.setAttribute("r","48");
+        circle.setAttribute("fill","none");circle.setAttribute("stroke",stroke);
+        circle.setAttribute("stroke-width","14");circle.setAttribute("stroke-linecap","butt");
+        circle.setAttribute("transform","rotate(-90 64 64)");
+        circle.setAttribute("stroke-dasharray",dash+" "+circumference);
+        svg.append(circle);
+      }
+      const centre=document.createElementNS("http://www.w3.org/2000/svg","text");
+      centre.setAttribute("x","64");centre.setAttribute("y","71");centre.setAttribute("text-anchor","middle");
+      centre.setAttribute("fill","#17303d");centre.setAttribute("font-size","21");
+      centre.setAttribute("font-weight","850");centre.textContent=value;
+      svg.append(centre);
+      article.append(svg);
+      const copy=node("div");
+      copy.append(node("strong",headline),node("p",detail));
+      article.append(copy);return article;
+    };
+    statGrid.append(ringStat("THE CLOCK WON HOW MANY TIMES?",
+      (totalDecisions-answered)+"",answered+" of "+totalDecisions+
+      " team responses beat the hard deadline.",totalDecisions-answered,totalDecisions,"#be796d"));
+    statGrid.append(ringStat("THE BEST TRUST INDEX",
+      bestTrust+"/100","Highest client trust remaining after six episodes. This is an index, not a probability.",
+      bestTrust,100,"#397f79"));
+    const surprise=node("article",null,"verdict-fact verdict-surprise");
+    surprise.append(node("small","MOST EXPENSIVE CHAPTER"));
+    surprise.append(node("strong",cash(expensive),"verdict-surprise-amount"));
+    surprise.append(node("p",(verdict.ranked[0]?.decisions[expensiveRound]?.episode||
+      "Episode "+(expensiveRound+1))+
+      " burned the most response cash across all teams combined."));
+    statGrid.append(surprise);stats.append(statGrid);sheet.append(stats);
     // A six-chapter head-to-head comparison, default collapsed for teambuilding.
     // The underlying facts are the final server verdict, never a fabricated chart.
     const trail=node("details",null,"decision-trail");
