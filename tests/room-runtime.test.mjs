@@ -334,6 +334,26 @@ try {
     await hostUI.locator("#create-teams").selectOption("2");
     await hostUI.locator("#create-form button.primary").click();
     await hostUI.locator("#room-screen").waitFor({state: "visible", timeout: 12000});
+    // Safari/macOS sometimes duplicates a tab and inherits its session
+    // storage. A joining link must still show player registration, not host.
+    const clonedHost=await browser.newPage({viewport:{width:1280,height:800}});
+    clonedHost.on("pageerror",err=>browserErrors.push(err.message));
+    await clonedHost.addInitScript(({code,token})=>{
+      sessionStorage.setItem("bc-preview-session-"+code,token);
+    },{code:uiCode,token:hostToken});
+    await clonedHost.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
+    await clonedHost.locator("#join-form").waitFor({state:"visible",timeout:12000});
+    assert.equal(await clonedHost.locator("#host-actions").isVisible(),false,
+      "A Safari tab with inherited host session must remain a player invitation");
+    await clonedHost.close();
+    const [playTab]=await Promise.all([
+      hostUI.context().waitForEvent("page"),
+      hostUI.locator("#host-play-link").click()
+    ]);
+    await playTab.locator("#join-form").waitFor({state:"visible",timeout:12000});
+    assert.equal(await playTab.locator("#host-actions").isVisible(),false,
+      "Play-as-player link opens an independent team registration");
+    await playTab.close();
     assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),true,
       "Host's pre-game briefing opens by default");
     assert.equal(await hostUI.locator("#game-rules .rule-card").count(),6);

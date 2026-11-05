@@ -1416,7 +1416,15 @@
   }
   async function authenticateSession() {
     try {
-      showRoom((await getState()).state);
+      const restored=(await getState()).state;
+      // Some browsers duplicate sessionStorage when a room tab is copied.
+      // /join is always an invitation to play, never a shortcut back into
+      // the host console. If a host credential was inherited, discard the
+      // clone only in this tab and show the normal join form.
+      if(location.pathname==="/join"&&restored.viewer.role==="host"){
+        dropSession();await lobby();return;
+      }
+      showRoom(restored);
       connect();
     } catch (e) {
       if (e.httpStatus === 401 || e.httpStatus === 410) { stopAccess(e.message); return; }
