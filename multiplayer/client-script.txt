@@ -610,6 +610,16 @@
     wrap.append(select);
     return wrap;
   }
+  function renderSpotlightTwist(twist) {
+    const panel=node("aside",null,"spotlight-twist");
+    panel.setAttribute("role","note");
+    panel.setAttribute("aria-label","Your team's previous decisions meet the public teaser");
+    const eyebrow=node("small","EPISODE 04 / YOUR TEAM'S EARLIER PROMISES");
+    const headline=node("strong",twist.title,"spotlight-twist-title");
+    panel.append(eyebrow,headline,node("p",twist.text));
+    panel.append(node("small","THIS IS A TEAM-SPECIFIC CONSEQUENCE · NOT A NEW VOTING OPTION"));
+    return panel;
+  }
   function renderTeamAftershock(impact) {
     // Read the full consequence when a decision locks; collapse the old file
     // next episode so a three-minute ballot stays ahead of retrospective reading.
@@ -763,7 +773,7 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.spotlight,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
       state.nextPreview?.number,
       privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
@@ -807,6 +817,7 @@
       return;
     }
     if(privateData.storyContext)target.append(renderTeamStoryThread(privateData.storyContext));
+    if(privateData.spotlight)target.append(renderSpotlightTwist(privateData.spotlight));
     if(state.phase==="prep"){
       if(privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
       target.append(renderPrivateExposure(privateData.economic));

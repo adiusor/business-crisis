@@ -989,6 +989,11 @@ try {
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
       "Host gets optional facilitator questions without adding default reading");
     assert.equal(await reportHost.locator(".report-episode").count(),12);
+    assert.equal(await reportHost.locator(".compare-round").nth(3)
+      .locator(".report-fallout").filter({hasText:"EARLIER PROMISES UNDER THE SPOTLIGHT"}).count(),2,
+      "Each team's episode-four consequence is causally linked to its earlier choices");
+    assert.equal(await finishedProjector.locator(".spotlight-twist").count(),0,
+      "The projector never exposes a private episode-four prompt");
     assert.equal(await reportHost.locator(".decision-trail").evaluate(el=>el.open),false,
       "The teambuilding scoreboard starts with the outcome, not 12 paragraphs");
     assert.equal(await reportHost.locator(".compare-round").count(),6);

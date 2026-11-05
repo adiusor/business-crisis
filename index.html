@@ -1237,6 +1237,58 @@ const RISK_FOLLOWUP={
   "workforce": "The people team needs a sustainable work plan for staff and partners.",
   "customer": "The partner needs a credible demonstration and honest scope before committing."
 };
+// Scene 04 is one shared public teaser, but it tests each team's OWN recorded
+// commitments. This is a deterministic fictional pressure, never a secret vote
+// bonus. Only the same team's participants may view the personalised callout.
+function spotlightTwist(team,round){
+ if(round!==3||!team||!Array.isArray(team.history)||team.history.length<3)return null;
+ const [first,people,supplier]=team.history;
+ if([first,people,supplier].some(h=>h.timedOut)){
+  return {id:"unanswered",title:"UNANSWERED PROMISES",
+   text:"Your team left at least one earlier decision unresolved. The public teaser has arrived, and the partner asks who can verify the dates and accessibility claims.",
+   result:"Unanswered earlier decisions increased scrutiny of public claims and partner readiness.",
+   delta:{legal:3,customer:3},trust:-2};
+ }
+ const ambitious=first.planIndex===1||first.signalIndex===1;
+ const fast=supplier.planIndex===1;
+ if(ambitious&&fast){
+  return {id:"ambition-fast",title:"THREE SITES, ONE QUESTION",
+   text:"Your team explored a three-site pilot and chose a faster supplier route. The public now reads the teaser as a confirmed multi-site opening, although venue approval and accessibility tests remain pending.",
+   result:"Earlier three-site ambition and fast-track delivery raised partner and public-claims exposure when the teaser spread.",
+   delta:{legal:5,customer:4,ops:2},trust:-2};
+ }
+ if(ambitious){
+  return {id:"ambition",title:"EXPECTATIONS ARE GROWING",
+   text:"Your earlier proposal explored three locations. Visitors now expect all three to open, even though the concept was conditional and site approvals are still outstanding.",
+   result:"The public interpreted your ambitious but conditional proposal too broadly, increasing verification pressure.",
+   delta:{legal:3,customer:2},trust:-1};
+ }
+ const focused=first.planIndex===2||first.signalIndex===2;
+ if(focused){
+  return {id:"focused",title:"ONE SITE, THREE QUESTIONS",
+   text:"Your team framed Project Spark as a first-site pilot with expansion gates. The teaser shows three possible spaces. Now the partner wants confirmation that one launch site is the only approved starting point.",
+   result:"Your earlier first-site scope limited claims exposure, but the larger public concept still needed partner clarification.",
+   delta:{legal:-2,customer:3},trust:1};
+ }
+ if(people.planIndex===0&&supplier.planIndex===0){
+  return {id:"co-designed",title:"THE TEAM SAW THIS COMING",
+   text:"Your staff workshop identified an accessible offline option, and your supplier choice included independent verification. The public is asking questions your team has already prepared to investigate.",
+   result:"Earlier co-design and verification reduced people and public-claims exposure under the spotlight.",
+   delta:{legal:-2,workforce:-2},trust:2};
+ }
+ return {id:"unverified",title:"THE DETAILS ARE STILL OPEN",
+  text:"The teaser has created demand, but the team still needs to verify site dates, accessibility and visitor expectations. No Project Spark pilot has been awarded.",
+  result:"The public's questions increased partner scrutiny; the plan remains conditional.",
+  delta:{customer:2},trust:0};
+}
+function applySpotlightTwist(team,round){
+ const twist=spotlightTwist(team,round);
+ if(twist){
+  addRisk(team,twist.delta);
+  team.trust=clamp(team.trust+twist.trust,0,100);
+ }
+ return twist;
+}
 function storyContext(team,round){
  if(!team||!Array.isArray(team.history)||!Number.isInteger(round)||round<=0||round>=DATA.episodes.length)return null;
  const prev=team.history[round-1];
@@ -1255,7 +1307,7 @@ function storyContext(team,round){
  if(team.risks[key]>68)pressures.push(RISK_FOLLOWUP[key]);
  return {previousRound:round,fromPlan:prev.plan,lead:lead,pressure:pressures.slice(0,2).join(" ")};
 }
-function adaptiveFallout(team,round,plan,signal,signalIndex,due){
+function adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight){
  let main=plan.fallout;
  // A prewritten success line must never claim an action was fully funded
  // after the cumulative fund has already turned negative.
@@ -1265,6 +1317,7 @@ function adaptiveFallout(team,round,plan,signal,signalIndex,due){
      " reserve. Finance cannot authorise the unfunded portion as complete: the board must revise scope or secure new finance.";
  }
  const lines=[main,SIGNAL_MOMENTS[round]?.[signalIndex]||"The public message is now part of the company's record."];
+ if(spotlight)lines.unshift("EARLIER PROMISES UNDER THE SPOTLIGHT: "+spotlight.result);
  if(due.length){
    const paid=due.reduce((sum,x)=>sum+x.cost,0);
    lines.push("Earlier promises have now cost £"+paid.toLocaleString("en-GB")+" in this chapter.");
@@ -1290,6 +1343,7 @@ assert(alloc.amount===0||([2,4].includes(round)&&ALLOCATIONS.some(x=>x.id===allo
 const team=deepCopy(input),plan=episode.plans[planIndex],signal=episode.signals[signalIndex];
 const leadIn=storyContext(team,round);
 const due=startEpisode(team,round,variant);
+const spotlight=applySpotlightTwist(team,round);
 expense(team,round,plan.spend,plan.name,"strategy");
 if(alloc.amount>0){
 const route=ALLOCATIONS.find(x=>x.id===alloc.route),factor=alloc.amount/10000;
@@ -1304,7 +1358,7 @@ if(plan.delay)team.pending.push({id:"plan-"+(round+1),due:plan.delay.due,cost:pl
 if(signal.delay)team.pending.push({id:"signal-"+(round+1),due:signal.delay.due,cost:signal.delay.cost,label:signal.delay.label,delta:deepCopy(signal.delay.delta||{})});
 recalcLiquidity(team);
 const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.amount,0);
-team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,leadIn:leadIn?leadIn.lead:null,fallout:adaptiveFallout(team,round,plan,signal,signalIndex,due),roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
+team.history.push({round:round+1,episode:episode.title,time:episode.time,plan:plan.name,planIndex:planIndex,signal:signal.name,signalIndex:signalIndex,advisers:advisers.slice(),allocation:alloc.amount?{amount:alloc.amount,route:alloc.route}:null,leadIn:leadIn?leadIn.lead:null,fallout:adaptiveFallout(team,round,plan,signal,signalIndex,due,spotlight),spotlight:spotlight?{id:spotlight.id,title:spotlight.title,result:spotlight.result}:null,roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
 team.nextRound++;
 return team;
 }
@@ -1315,6 +1369,7 @@ assert(Number.isInteger(round)&&round>=0&&round<DATA.episodes.length,"Invalid ep
 assert(input.nextRound===round,"Episode already committed or out of order");
 assert(Number.isInteger(variant)&&variant>=0&&variant<DATA.variants.length,"Invalid common scenario variant");
 const team=deepCopy(input),episode=DATA.episodes[round],leadIn=storyContext(team,round),due=startEpisode(team,round,variant);
+const spotlight=applySpotlightTwist(team,round);
 addRisk(team,{legal:4,ops:8,workforce:5,customer:10});
 team.trust=clamp(team.trust-10,0,100);
 recalcLiquidity(team);
@@ -1322,7 +1377,8 @@ const roundSpent=team.ledger.filter(x=>x.round===round+1).reduce((sum,x)=>sum+x.
 team.history.push({round:round+1,episode:episode.title,time:episode.time,
 plan:"NO RESPONSE",planIndex:null,signal:"NO PUBLIC STATEMENT",signalIndex:null,
 advisers:[],allocation:null,timedOut:true,leadIn:leadIn?leadIn.lead:null,
-fallout:"No strategic response was authorised before the deadline. Mandatory costs continued and unresolved exposures deteriorated.",
+fallout:(spotlight?"EARLIER PROMISES UNDER THE SPOTLIGHT: "+spotlight.result+" ":"")+"No strategic response was authorised before the deadline. Mandatory costs continued and unresolved exposures deteriorated.",
+spotlight:spotlight?{id:spotlight.id,title:spotlight.title,result:spotlight.result}:null,
 roundSpent:roundSpent,paidDeferred:due.map(x=>x.label),cash:team.cash,trust:team.trust,
 risks:deepCopy(team.risks),pendingLiability:team.pending.reduce((sum,x)=>sum+x.cost,0)});
 team.nextRound++;
@@ -1391,7 +1447,7 @@ const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
 }
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,storyContext:storyContext,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,storyContext:storyContext,spotlightTwist:spotlightTwist,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);
 
