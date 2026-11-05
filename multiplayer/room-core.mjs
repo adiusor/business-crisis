@@ -240,7 +240,7 @@ export function publicRecap(recap){
 export function publicEpisode(room){
  if(room.phase!=="advisers")return null;
  const e=C.episodes[room.round];
- return {number:e.number,time:e.time,title:e.title,kicker:e.kicker,brief:e.brief,headline:e.headline,
+ return {number:e.number,time:e.time,title:e.title,kicker:e.kicker,brief:e.brief,headline:e.headline,question:e.question,pressure:e.pressure,
   evidence:e.evidence.map(x=>({type:x.type,time:x.time,title:x.title,body:x.body,clue:x.clue})),
   plans:e.plans.map(p=>({name:p.name,verb:p.verb,desc:p.desc,benefits:p.benefits.slice(),cost:p.cost,
    spend:p.spend,tag:p.tag})),
@@ -417,7 +417,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
   return {viewer:{role:"projector"},code:room.code,phase:room.phase,round:room.round,
    revision:room.revision,expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),
    episode:episode?{number:episode.number,time:episode.time,title:episode.title,
-    kicker:episode.kicker,brief:episode.brief,headline:episode.headline,evidence:episode.evidence}:null,
+    kicker:episode.kicker,brief:episode.brief,headline:episode.headline,question:episode.question,pressure:episode.pressure,evidence:episode.evidence}:null,
    lastRecap:publicRecap(room.lastRecap),interventions:(room.interventions||[]).map(x=>({...x})),
    teams:room.teams.map((t,i)=>({name:t.name,joined:room.players.filter(p=>p.teamIndex===i).length,ready:!!t.captainId,locked:t.locked,
     timedOut:t.timedOut,penaltyPoints:t.penaltyPoints,roundPenalty:t.roundPenalty,

@@ -30,6 +30,9 @@
   let draftRunoffOrdinal = 0;
   let playerRenderKey = null;
   let hostManageOpen = false;
+  let exposureOpen = null;
+  let decisionNear = false;
+  let voteSending = false;
   const roleKey = code => "bc-preview-session-" + code + (isProjector ? "-projector" : "");
   function node(tag, text, className) {
     const el = document.createElement(tag);
@@ -340,6 +343,13 @@
     copy.append(node("p",e.kicker,"scene-kicker"));
     copy.append(node("h3",e.title));
     copy.append(node("strong",e.headline||e.kicker,"scene-headline"));
+    if(e.question){
+      const dilemma=node("aside",null,"scene-directive");
+      dilemma.append(node("small","THE DECISION"));
+      dilemma.append(node("p",e.question,"scene-question"));
+      if(e.pressure)dilemma.append(node("span",e.pressure,"scene-pressure"));
+      copy.append(dilemma);
+    }
     copy.append(renderPublicFacts(number));
     hero.append(copy,sceneArtwork(number));box.append(hero);
     const progress=node("ol",null,"episode-progress");
@@ -411,12 +421,19 @@
   }
 
   function renderPrivateExposure(economic) {
-    const panel=node("section",null,"exposure-panel");
+    // On phones the case ledger is a compact disclosure: players reach their
+    // decision sooner without losing access to any live server-calculated risk.
+    const panel=node("details",null,"exposure-panel");
     panel.setAttribute("aria-label","Private team financial and risk picture");
-    const head=node("div",null,"exposure-heading");
-    head.append(node("span","YOUR TEAM / LIVE EXPOSURE"));
-    head.append(node("small","RISK INDEX · LOWER IS BETTER"));
-    panel.append(head);
+    panel.open=exposureOpen===null ?
+      (window.matchMedia ? window.matchMedia("(min-width: 700px)").matches : true) : exposureOpen;
+    panel.addEventListener("toggle",()=>{exposureOpen=panel.open;});
+    const summary=node("summary",null,"exposure-summary");
+    summary.append(node("span","YOUR TEAM / LIVE EXPOSURE"),
+      node("strong","£"+economic.cash.toLocaleString("en-GB")+" CASH · "+economic.trust+"/100 TRUST"),
+      node("small","VIEW FUNDS, COMMITMENTS & RISK INDICES"));
+    panel.append(summary);
+    const body=node("div",null,"exposure-body");
     const metrics=node("div",null,"exposure-metrics");
     for(const [label,value,kind] of [
       ["RESPONSE CASH","£"+economic.cash.toLocaleString("en-GB"),"cash"],
@@ -426,7 +443,7 @@
       const item=node("div",null,"exposure-metric "+kind);
       item.append(node("small",label),node("strong",value));metrics.append(item);
     }
-    panel.append(metrics);
+    body.append(metrics);
     const list=node("div",null,"exposure-risk-list");
     for(const [key,label] of [
       ["legal","LEGAL"],["ops","OPERATIONS"],["workforce","PEOPLE"],["customer","CLIENT"]
@@ -440,7 +457,7 @@
       fill.style.width=Math.max(0,Math.min(100,value))+"%";
       track.append(fill);entry.append(caption,track);list.append(entry);
     }
-    panel.append(list);return panel;
+    body.append(list);panel.append(body);return panel;
   }
   let nextSelectId = 0;
   function labelledSelect(labelText, options, value, onChange, className = "decision-select") {
@@ -562,8 +579,8 @@
       return;
     }
     const voting = privateData.voting || {lockedVotes:0,totalMembers:mine.joined,myVote:null,runoff:null};
-    target.append(renderPrivateExposure(privateData.economic));
     if (privateData.lastImpact) target.append(renderTeamAftershock(privateData.lastImpact));
+    target.append(renderPrivateExposure(privateData.economic));
     const progress = node("div", null, "ballot-progress");
     const voteHeadline=node("strong", mine.locked ?
       (mine.timedOut ? "DEADLINE MISSED" : "TEAM DECISION LOCKED · CLOCK STOPPED") :
@@ -726,10 +743,22 @@
     const allowed = !voting.runoff || voting.runoff.choices.some(x=>
       x.planIndex===draftPlan&&x.signalIndex===draftSignal&&
       x.allocation.amount===allocation.amount&&x.allocation.route===allocation.route);
-    target.append(button("LOCK MY VOTE",async()=>{
+    const submit=button(voteSending?"SENDING YOUR VOTE…":"LOCK MY VOTE",async()=>{
+      // Rapid double taps must never send two separate ballots.
+      if(voteSending)return;
+      voteSending=true;submit.disabled=true;submit.textContent="SENDING YOUR VOTE…";
+      submit.setAttribute("aria-busy","true");
       try{await action({type:"lock_vote",planIndex:draftPlan,signalIndex:draftSignal,allocation});}
       catch(e){error(e.message);}
-    },"primary submit-game",draftPlan===null||draftSignal===null||!allowed));
+      finally{
+        voteSending=false;
+        if(submit.isConnected&&!state.privateTeam?.voting?.myVote){
+          submit.disabled=false;submit.textContent="LOCK MY VOTE";
+          submit.removeAttribute("aria-busy");
+        }
+      }
+    },"primary submit-game",voteSending||draftPlan===null||draftSignal===null||!allowed);
+    target.append(submit);
     target.append(node("p","Your individual ballot is final unless there is a tie. A runoff is private to your team and uses the same uninterrupted deadline."));
   }
   function renderHostRoster(target){
@@ -967,6 +996,21 @@
     target.append(actions);
   }
 
+  function renderDecisionDock(){
+    const dock=$("decision-dock");
+    if(!state||state.viewer.role!=="player"||state.phase!=="advisers"){
+      dock.hidden=true;return;
+    }
+    const team=state.teams[state.viewer.teamIndex],personal=state.privateTeam;
+    const waiting=!!personal?.voting?.myVote;
+    dock.hidden=!!team?.locked||waiting||decisionNear;
+    if(dock.hidden)return;
+    const label=personal?.voting?.runoff?"CAST YOUR RUNOFF VOTE":
+      personal?.advisers?.length!==2?(state.viewer.captain?"CHOOSE TWO ADVISERS":"WAIT FOR YOUR CAPTAIN"):
+      "MAKE YOUR TEAM DECISION";
+    $("decision-dock-label").textContent=label;
+    dock.setAttribute("aria-label","Jump to "+label.toLowerCase());
+  }
   function showRoom(next) {
     if(!next || next.code !== roomCode)return;
     if(state && state.code===next.code && next.revision < state.revision)return;
@@ -976,6 +1020,8 @@
     if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
       playerRenderKey = null;
       draftRound = state.round;
+      exposureOpen = null;
+      voteSending = false;
       draftPicks = null;
       draftPlan = null; draftSignal = null; draftAmount = 0; draftRoute = null;
       draftRunoffOrdinal = 0;
@@ -996,6 +1042,7 @@
     document.body.classList.toggle("player-view", state.viewer.role === "player");
     document.body.classList.toggle("in-game", state.phase === "advisers");
     document.body.classList.toggle("game-complete", state.phase === "complete");
+    document.body.dataset.episode = state.phase === "advisers" ? String(state.round + 1) : "";
     $("viewer-mode").hidden = !projection;
     $("projector-invite").hidden = !projection || state.phase !== "lobby";
     // Open the six-point briefing on first entry; keep an individual's
@@ -1024,7 +1071,7 @@
       $("join-qr").src = "/api/rooms/" + state.code + "/qr";
     }
     renderEpisode(); renderRecap(); renderTeams(); renderReadyNotice(); renderFacilitatorLog(); renderProjectorTicker(); renderRename(); renderPlayerActions(); renderHostActions(); renderResults();
-    tick();
+    renderDecisionDock();tick();
   }
   function tick() {
     if (!state || state.phase !== "advisers" || !state.clock) {
@@ -1042,6 +1089,7 @@
     const seconds = Math.ceil(remain / 1000);
     $("timer").textContent = String(Math.floor(seconds / 60)).padStart(2, "0") +
       ":" + String(seconds % 60).padStart(2, "0");
+    $("decision-dock-clock").textContent=$("timer").textContent;
     $("timer-phase").textContent = stopped ? "TEAM CLOCK STOPPED / RESPONSE LOCKED" :
       finished || now >= clock.closesAt ? "TIME EXPIRED" :
       grace ? "RESERVE MINUTE / −5 PTS" : "STANDARD TIME / 3 MIN";
@@ -1257,6 +1305,14 @@
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) refreshConnection();
   });
+  if("IntersectionObserver" in window){
+    const observer=new IntersectionObserver(entries=>{
+      // Do not cover the decision form with a floating shortcut once it is in view.
+      decisionNear=!!entries[0]?.isIntersecting;
+      renderDecisionDock();
+    },{rootMargin:"0px 0px -35% 0px"});
+    observer.observe($("player-actions"));
+  }
   setInterval(tick, 250); // Only updates the local visual clock; deadlines are server-owned.
   if (roomCode) {
     if (isProjector) {

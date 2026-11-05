@@ -16,10 +16,12 @@ test("the six incident chapters form one time-ordered, evidence-led story",()=>{
  assert.equal(new Set(C.episodes.map(e=>e.title)).size,6);
  for(const [i,e] of C.episodes.entries()){
   assert.equal(e.number,String(i+1).padStart(2,"0"));
-  for(const field of ["title","kicker","brief","headline"]){
+  for(const field of ["title","kicker","brief","headline","question","pressure"]){
    assert.equal(typeof e[field],"string");
    assert.ok(e[field].trim().length>=(field==="title"?5:10),e.id+" "+field);
   }
+  assert.match(e.question,/\?/,"A chapter must pose a real dilemma, not a generic KPI statement");
+  assert.ok(e.pressure.length<=135,"Pressure copy must remain scannable during a timed round");
   assert.equal(e.evidence.length,3,"Exactly three source exhibits per chapter");
   assert.equal(e.advice.length,6,"Every one of the six advisers has narrative intelligence");
   assert.equal(e.plans.length,3,"Three strategies are essential to team choice");

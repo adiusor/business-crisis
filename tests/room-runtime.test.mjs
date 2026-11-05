@@ -469,6 +469,9 @@ try {
 
     assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
+    assert.equal(await phoneA.locator(".scene-directive").count(),1,
+      "The live incident shows a distinctive, actionable dilemma");
+    assert.match(await phoneA.locator(".scene-question").textContent(),/contain the leak/i);
     assert.equal(await phoneA.locator(".scene-fact").count(),3,
       "Every incident begins with three public, verifiable facts");
     assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
@@ -509,6 +512,20 @@ try {
     await phoneA.locator(".briefing-details summary").click();
     assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/600 employees/);
     assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
+    assert.equal(await phoneA.locator(".exposure-panel").evaluate(el=>el.open),false,
+      "Finance panel defaults to compact disclosure on a 320px phone");
+    await phoneA.locator(".exposure-summary").click();
+    assert.equal(await phoneA.locator(".exposure-panel").evaluate(el=>el.open),true);
+    await phoneA.locator(".exposure-summary").click();
+    await phoneA.evaluate(()=>scrollTo(0,0));
+    await phoneA.waitForFunction(()=>!document.querySelector("#decision-dock")?.hidden,
+      null,{timeout:5000});
+    assert.equal(await phoneA.locator("#decision-dock").isVisible(),true,
+      "Players have a persistent route to their action despite long evidence");
+    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/CHOOSE TWO ADVISERS/);
+    await phoneA.locator("#decision-dock").click();
+    assert.ok(await phoneA.locator("#player-actions").evaluate(el=>el.getBoundingClientRect().top<innerHeight),
+      "Decision dock actually navigates to the actionable form");
 
     await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
     await projected.locator("#projector-ticker").waitFor({state:"visible",timeout:12000});
@@ -517,6 +534,11 @@ try {
     assert.equal(await projected.locator("#team-list").isVisible(),false,
       "Projector ticker replaces below-the-fold duplicate roster");
     assert.equal(await projected.locator(".evidence-item").count(),3);
+    assert.equal(await projected.locator(".scene-directive").count(),1);
+    assert.equal(await projected.locator(".scene-directive").isVisible(),false,
+      "Compact 720p projection prioritises source exhibits over optional player guidance");
+    assert.equal(await projected.locator("#decision-dock").isVisible(),false,
+      "The projector never displays personal player controls");
     assert.equal(await projected.locator(".scene-fact").count(),3,
       "Projected incident facts accompany the illustrations");
     assert.ok(await projected.locator(".scene-fact dd").first().evaluate(el=>
