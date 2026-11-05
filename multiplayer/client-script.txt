@@ -24,6 +24,8 @@
   const expandedStrategies = new Set();
   let expandedIntel = false;
   let expandedRecap = false;
+  let preBriefOpen = null;
+  const previewEvidenceOpen = new Set();
   let draftRound = -1;
   let draftPlan = null, draftSignal = null, draftAmount = 0, draftRoute = null;
   let draftRunoffOrdinal = 0;
@@ -487,7 +489,43 @@
   function renderRecap() {
     const box = $("round-recap");
     box.replaceChildren();
-    box.hidden = !state.lastRecap;
+    box.hidden = !state.lastRecap && !state.nextPreview;
+    box.classList.toggle("has-prebrief",!!state.nextPreview);
+    // The host decides when to start the next shared clock. This preview only
+    // contains public episode evidence and never reveals advice, ballots or cash.
+    if(state.nextPreview){
+      const ep=state.nextPreview;
+      const pre=node("details",null,"prebrief-details");
+      pre.open=preBriefOpen===null?state.phase!=="lobby":preBriefOpen;
+      pre.addEventListener("toggle",()=>{preBriefOpen=pre.open;});
+      const lead=node("summary",null,"prebrief-summary");
+      lead.append(node("span","UNTIMED / READ BEFORE THE CLOCK"),
+        node("strong","EPISODE "+ep.number+" · "+ep.title),
+        node("small","Public evidence only. No advisers, votes or countdown until the host starts."));
+      pre.append(lead);
+      const body=node("div",null,"prebrief-body");
+      body.append(node("p",ep.brief,"prebrief-intro"),
+        node("strong",ep.question,"prebrief-question"));
+      const evidence=node("div",null,"prebrief-evidence");
+      ep.evidence.forEach((item,i)=>{
+        const key=ep.number+"-"+i;
+        const exhibit=node("details",null,"prebrief-exhibit");
+        exhibit.open=previewEvidenceOpen.has(key);
+        exhibit.addEventListener("toggle",()=>{
+          if(exhibit.open)previewEvidenceOpen.add(key);
+          else previewEvidenceOpen.delete(key);
+        });
+        const summary=node("summary",null,"prebrief-exhibit-title");
+        summary.append(node("small",item.type+" / "+item.time),
+          node("strong",item.title),node("span",item.clue));
+        exhibit.append(summary,node("p",item.body,"prebrief-source"));
+        evidence.append(exhibit);
+      });
+      body.append(evidence,node("p",
+        "Discuss what the evidence means. The captain chooses two private advisers only after the host starts the timed episode.",
+        "prebrief-note"));
+      pre.append(body);box.append(pre);
+    }
     if (!state.lastRecap) return;
     const details=node("details",null,"recap-details");
     details.open=expandedRecap;
@@ -591,7 +629,50 @@
       report.append(node("p","PREVIOUS PROMISES PAID THIS EPISODE: "+
         impact.paidDeferred.join("; "),"aftershock-deferred"));
     }
+    if(Number.isFinite(impact.cash)){
+      report.append(node("p",impact.cash<0?
+        "FUNDING POSITION AT EPISODE CLOSE: £"+Math.abs(impact.cash).toLocaleString("en-GB")+
+          " below zero; further promises are not already funded.":
+        "RESPONSE CASH AT EPISODE CLOSE: £"+impact.cash.toLocaleString("en-GB")+
+          ". Future commitments shown above are still obligations, not available cash.",
+        "aftershock-context-line"));
+    }
+    if(impact.risks&&impact.riskChange){
+      const exposure=[["legal","Legal"],["ops","Operations"],["workforce","Workforce"],["customer","Customer"]];
+      const rising=exposure.filter(([key])=>impact.riskChange[key]>0).sort((a,b)=>
+        impact.riskChange[b[0]]-impact.riskChange[a[0]])[0];
+      const falling=exposure.filter(([key])=>impact.riskChange[key]<0).sort((a,b)=>
+        impact.riskChange[a[0]]-impact.riskChange[b[0]])[0];
+      const statements=[];
+      if(falling)statements.push(falling[1]+" exposure fell "+Math.abs(impact.riskChange[falling[0]])+
+        " points to "+impact.risks[falling[0]]+".");
+      if(rising)statements.push(rising[1]+" exposure rose "+impact.riskChange[rising[0]]+
+        " points to "+impact.risks[rising[0]]+".");
+      if(impact.risks.workforce>=68)statements.push("Workforce exposure remains high; capacity promises need care.");
+      if(impact.trust<35)statements.push("Client trust is below 35/100; further assurances need evidence.");
+      if(statements.length)report.append(node("p",
+        "MEASURED AFTER THIS EPISODE: "+statements.join(" ")+" Changes include automatic episode pressures and previous commitments.",
+        "aftershock-context-line"));
+    }
     return report;
+  }
+  function renderVoteResolution(info){
+    if(!info)return null;
+    const block=node("div",null,"vote-resolution");
+    block.append(node("strong","HOW YOUR TEAM REACHED THIS RESPONSE"));
+    const count=info.votes+" OF "+info.total+" BALLOTS";
+    const explanation=info.method==="unanimous"?
+      count+" matched the same complete response — unanimous.":
+      info.method==="majority"?
+      count+" supported the winning complete response — an absolute majority.":
+      info.method==="plurality"?
+      count+" supported the winning complete response — the largest tally, not an absolute majority.":
+      info.method==="runoff"?
+      count+" supported the winning package in the private runoff.":
+      info.method==="captain_cast"?
+      "The private runoff ended tied. The captain's runoff ballot determined the response.":
+      "The deadline passed with no resolved team response.";
+    block.append(node("p",explanation));return block;
   }
   function renderChosenAdvisers(privateData){
     const box=node("section",null,"chosen-advisers");
@@ -633,7 +714,8 @@
     const snapshotKey=JSON.stringify([
       state.phase,state.round,state.viewer.teamIndex,state.viewer.captain,
       mine.locked,mine.timedOut,privateData.advisers,privateData.intelligence,
-      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voting?.myVote,privateData.voting?.runoff,
+      privateData.economic,privateData.lastImpact,privateData.storyContext,privateData.voteResolution,privateData.voting?.myVote,privateData.voting?.runoff,
+      state.nextPreview?.number,
       privateData.voting?.canVote,adviserEditOpen,
       state.phase==="lobby"?state.teams.map(t=>[t.name,t.joined]):null
     ]);
@@ -688,7 +770,10 @@
         "You are with "+mine.name+". Follow this scene with your team; you can vote as soon as the host starts the next episode."));
       else if(voting.myVote&&!mine.locked)target.append(node("p",
         "Your answer is locked. Other teammates are still deciding; you do not need to do anything else."));
+      if(mine.locked&&privateData.voteResolution)target.append(renderVoteResolution(privateData.voteResolution));
       if(mine.locked&&privateData.lastImpact)target.append(renderTeamAftershock(privateData.lastImpact));
+      if(mine.locked&&state.nextPreview)target.append(node("p",
+        "THE NEXT EPISODE IS READY: open the untimed public briefing above before your host starts the next clock.","prebrief-note"));
       return;
     }
     if (privateData.lastImpact) target.append(renderTeamAftershock(privateData.lastImpact));
@@ -702,7 +787,7 @@
     progress.append(node("p", mine.locked ?
       (mine.timedOut ? "The four-minute deadline ended without a winning team decision. Mandatory costs and business consequences still apply." :
       "Your team's proposal has been chosen. Your clock is frozen. Other teams may still be deciding.") :
-      "Only vote progress is shown before the team decides. The most popular complete proposal wins; a tie triggers a private revote."));
+      "Only vote progress is public until everyone votes. The highest-tally matching complete proposal wins (not necessarily a majority). Tied leaders enter a private runoff."));
     target.append(progress);
 
     if (state.viewer.captain && !voting.runoff &&
@@ -760,7 +845,8 @@
     const ep = state.episode;
     if (voting.runoff) {
       target.append(node("h3", "PRIVATE TEAM DEBATE / TIE BREAK", "section-label"));
-      target.append(node("p", "Tie. Debate the two closest proposals, then everyone votes again while the clock runs. If the revote is also tied, the captain's ballot decides."));
+      target.append(node("p", voting.runoff.tiedProposals+" equally supported complete proposals ("+
+        voting.runoff.tiedSupport+" votes each). The two closest packages by strategy, statement and investment reached this private runoff; a distance tie uses original join order. Debate them now. If the revote ties, the captain's runoff ballot decides. The clock continues."));
       voting.runoff.choices.forEach((proposal, i) => {
         const plan = ep.plans[proposal.planIndex], statement = ep.signals[proposal.signalIndex];
         const selected = draftPlan === proposal.planIndex && draftSignal === proposal.signalIndex &&
@@ -974,7 +1060,7 @@
     if (target.hidden) return;
     if (state.phase === "lobby") {
       const ready = state.teams.every(t => t.ready);
-      target.append(node("p", "Read the six RULES OF ENGAGEMENT aloud before starting. Share the QR link so everyone joins a team."));
+      target.append(node("p", "Read the six RULES OF ENGAGEMENT aloud. Invite everyone to open the untimed public EPISODE 01 preview below before you start the three-minute window."));
       target.append(button("START THE FIRST 3-MINUTE WINDOW",
         () => action({type: "start"}).catch(e => error(e.message)), "primary", !ready));
       if (!ready) target.append(node("p", "Every team must have a participant before the first episode."));
@@ -984,7 +1070,9 @@
       target.append(button(state.round===5?"REVEAL THE BOARDROOM VERDICT":"START NEXT EPISODE",
         ()=>action({type:"advance"}).catch(e=>error(e.message)),"primary",!ready));
       if (!ready) target.append(node("p", "Teams still deciding or debating. Each team freezes its own clock after everyone votes and a winning proposal is confirmed."));
-      else target.append(node("p", "ALL TEAMS FINISHED. You can start the next episode now."));
+      else target.append(node("p", state.round===5?
+        "ALL TEAMS FINISHED. Reveal the boardroom verdict when ready.":
+        "ALL TEAMS FINISHED. Ask participants to open the untimed next-episode briefing before starting the next clock."));
     } else target.append(node("p","All six episodes have completed. The economic verdict is available below."));
     renderHostRoster(target);
   }
@@ -1327,7 +1415,10 @@
     if(!next || next.code !== roomCode)return;
     if(state && state.code===next.code && next.revision < state.revision)return;
     const prevRound = state?.round, prevCode=state?.code, prevPhase=state?.phase;
+    const previousPreviewNumber=state?.nextPreview?.number;
     state = next;
+    if(previousPreviewNumber!==state.nextPreview?.number)
+      preBriefOpen=state.phase==="advisers"&&!!state.nextPreview&&state.viewer.role!=="projector";
     clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
     if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
       playerRenderKey = null;

@@ -1369,3 +1369,44 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
 .report-calculation-row strong{font-variant-numeric:tabular-nums;white-space:nowrap}
 .report-learning-notes p{font-size:14px;line-height:1.45}
 @media(max-width:540px){.team-story-thread summary{padding:11px}.report-calculation-row{font-size:12px}}
+
+/* 09:17 gameplay: a readable, untimed public evidence preview between rounds. */
+.prebrief-details{border:1px solid #5e8190;background:#102935;margin:0 0 14px;overflow:hidden}
+.prebrief-summary{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;cursor:pointer;padding:15px 18px;list-style:none}
+.prebrief-summary::-webkit-details-marker{display:none}
+.prebrief-summary>span{font-size:11px;font-weight:900;letter-spacing:.1em;color:#f4c28e}
+.prebrief-summary strong{display:block;flex-basis:100%;font-size:clamp(18px,2.2vw,27px);color:#f7f6f0;line-height:1.16}
+.prebrief-summary small{display:block;flex-basis:100%;font-size:12px;color:#b7cfd6;line-height:1.5}
+.prebrief-summary:focus-visible,.prebrief-exhibit-title:focus-visible{outline:2px solid #ffd090;outline-offset:-2px}
+.prebrief-body{border-top:1px solid #426371;padding:17px 20px}
+.prebrief-intro{font-size:15px!important;line-height:1.6!important;color:#e1eaf0!important}
+.prebrief-question{display:block;font-size:18px;line-height:1.35;color:#ffce95;margin:12px 0 18px}
+.prebrief-evidence{display:grid;gap:10px}
+.prebrief-exhibit{border:1px solid #3c5969;background:#0a1e29}
+.prebrief-exhibit-title{cursor:pointer;list-style:none;display:grid;gap:5px;padding:12px 14px}
+.prebrief-exhibit-title::-webkit-details-marker{display:none}
+.prebrief-exhibit-title small{font-size:11px;color:#e7bc88}
+.prebrief-exhibit-title strong{font-size:15px;color:#f7f5ed}
+.prebrief-exhibit-title span{font-size:13px;color:#bcd7df}
+.prebrief-source{margin:0 14px 14px!important;padding-top:10px;border-top:1px solid #355363}
+.prebrief-note{font-size:12px!important;line-height:1.55!important;color:#a9c7d0!important}
+.vote-resolution{padding:12px 15px;margin:12px 0;border-left:3px solid #91d6c4;background:#132f36}
+.vote-resolution strong{font-size:12px;letter-spacing:.07em;color:#afe8d7}
+.vote-resolution p{font-size:14px;margin:6px 0 0;line-height:1.5;color:#e3eeea}
+.aftershock-context-line{padding:12px 14px;border:1px solid #426373;background:#112935;font-size:13px!important;line-height:1.6!important}
+@media(max-width:540px){
+ .prebrief-summary{padding:13px 14px}
+ .prebrief-body{padding:12px 13px}
+ .prebrief-question{font-size:16px}
+ .prebrief-exhibit-title{padding:12px}
+}
+
+/* The projector can reveal a public upcoming briefing once all teams finish,
+   while the normal live projector omits between-round recap clutter. */
+body.projector-mode.in-game #round-recap.has-prebrief{display:block!important}
+body.projector-mode.in-game .prebrief-details{margin:6px 0 12px}
+body.projector-mode.in-game .prebrief-summary{padding:12px 16px}
+
+/* Projector lobby must fit its join QR, rules and team cards at 1280 × 720.
+   The public first-episode preview stays available on host/player screens. */
+body.projector-mode:not(.in-game) #round-recap{display:none!important}
