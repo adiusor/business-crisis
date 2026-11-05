@@ -947,6 +947,12 @@
       $("host-actions").scrollIntoView({behavior:"smooth",block:"center"});
     },"secondary"));
     target.append(foot);
+    const formats=node("details",null,"host-format-guide");
+    formats.append(node("summary","RUN THIS IN AN OFFICE OR WITH FULLY REMOTE TEAMS"));
+    formats.append(node("p","IN PERSON: Put the separate read-only projector link on the big screen. Players join the room QR on their own devices and talk at team tables."));
+    formats.append(node("p","ONLINE: Share the read-only projector screen in Zoom, Teams or Meet. Give each team a breakout room; every participant uses the same join link, and you control when each episode starts."));
+    formats.append(node("p","A facilitator is required for this version. Remote players are supported by the same shared room; self-running mode has not been tested or enabled."));
+    target.append(formats);
   }
   function renderHostActions() {
     const target = $("host-actions");
