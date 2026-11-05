@@ -235,6 +235,16 @@ export class CrisisRoom extends DurableObject {
         const [client, server] = Object.values(pair);
         this.ctx.acceptWebSocket(server);
         server.serializeAttachment({role:"pending",createdAtMs:Date.now()});
+        // Local runtimes can defer alarms while a connection is held open.
+        // The short in-memory watchdog handles active instances; DO alarms
+        // remain the durable fallback after hibernation or process restart.
+        setTimeout(()=>{
+          try {
+            const attachment=server.deserializeAttachment();
+            if(attachment?.role==="pending")
+              server.close(1008,"Authentication timed out");
+          } catch(_){ /* already closed or DO recycled */ }
+        },WS_AUTH_TIMEOUT_MS+250);
         await this.schedule(room);
         return new Response(null, {status: 101, webSocket: client});
       }
