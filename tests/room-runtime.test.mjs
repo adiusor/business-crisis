@@ -369,7 +369,7 @@ try {
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
     await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/sensitive access route is closed/i);
+    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/three-site concept draws attention/i);
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -608,15 +608,15 @@ try {
     assert.equal(await hostUI.locator(".roster-entry button.roster-remove:disabled").count(),2,
       "Facilitator may not remove a team's only member during a live round");
 
-    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
+    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE INVITATION|OPPORTUNITY/);
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     assert.equal(await phoneA.locator(".scene-directive").count(),1,
       "The live incident shows a distinctive, actionable dilemma");
-    assert.match(await phoneA.locator(".scene-question").textContent(),/protect trust and keep the business moving/i);
+    assert.match(await phoneA.locator(".scene-question").textContent(),/promise before the details have been tested/i);
     assert.equal(await phoneA.locator(".scene-fact").count(),3,
       "Every incident begins with three public, verifiable facts");
     assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
-      ["600","3","UNKNOWN"],"The opening incident never pretends to know the sender");
+      ["09:17","90 DAYS","3"],"The opening fact-strip identifies the pilot opportunity");
     const editorial=await phoneA.evaluate(()=>{
       const body=getComputedStyle(document.body),
         facts=[...document.querySelectorAll(".scene-fact dd")],
@@ -666,9 +666,9 @@ try {
     assert.equal(await phoneA.locator("body.in-game").count(),1);
     await phoneA.locator(".evidence-item summary").first().click();
     assert.equal(await phoneA.locator(".evidence-item[open]").count(),1);
-    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Subject: RESTRUCTURING/);
+    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Project Spark seeks a credible/);
     await phoneA.locator(".briefing-details summary").click();
-    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/600 employees/);
+    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/Project Spark/);
     assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
     assert.equal(await phoneA.locator(".exposure-panel").evaluate(el=>el.open),false,
       "Finance panel defaults to compact disclosure on a 320px phone");
@@ -693,7 +693,7 @@ try {
     assert.ok(await phoneA.locator("#player-actions").evaluate(el=>el.getBoundingClientRect().top<innerHeight),
       "Decision dock actually navigates to the actionable form");
 
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE INVITATION"));
     await projected.locator("#projector-ticker").waitFor({state:"visible",timeout:12000});
     assert.equal(await projected.locator(".ticker-team").count(),2);
     assert.equal(await projected.locator(".ticker-clock").count(),2);
@@ -832,7 +832,7 @@ try {
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "Two chosen advisers remain after the ballot locks");
     assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
-    assert.match(await phoneA.locator(".aftershock-report").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/DESIGN THE PROOF/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
     assert.equal(await phoneB.locator(".aftershock-report").count(),1,
@@ -885,7 +885,7 @@ try {
     await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
-    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
     await lateUI.waitForFunction(()=>document.querySelector(".vote-finished")===null,
@@ -896,13 +896,13 @@ try {
       document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie LEFT"),
       null,{timeout:12000});
     assert.equal(await hostUI.locator("#host-roster").count(),0);
-    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
       "Each episode uses the matching cinematic illustration");
     assert.deepEqual(await phoneB.locator(".scene-fact dd").allTextContents(),
-      ["40","2","AT RISK"],"The workforce incident only displays facts from its evidence");
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      ["600","1","NEW"],"The staff-capacity episode displays facts consistent with the story");
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     // Story continuity should be actual UI content, private to its team's player.
     await phoneA.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
@@ -919,9 +919,9 @@ try {
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
       "Previous consequence folds away so it does not delay the next timed vote");
-    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/VERIFY & SECURE/);
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/DESIGN THE PROOF/);
     await phoneA.locator(".aftershock-summary").click();
-    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/client receives/i);
+    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/partner welcomes/i);
     await phoneA.locator(".recap-details summary").click();
     const publicAftershock=await phoneA.locator("#round-recap").innerText();
     assert.match(publicAftershock,/RESPONSE COST/);
@@ -964,8 +964,8 @@ try {
       "Both teams should get documented strengths and constructive next steps");
 
     assert.equal(await reportHost.locator(".report-epilogue").count(),1,
-      "Final report acknowledges that the sender is not identified");
-    assert.match(await reportHost.locator(".report-epilogue").innerText(),/not been identified/);
+      "Final report does not fabricate a partner award");
+    assert.match(await reportHost.locator(".report-epilogue").innerText(),/no pilot was awarded|do not claim that a pilot was awarded/i);
     assert.equal(await reportHost.locator(".cash-trajectory svg").count(),2,
       "Final report shows actual response fund trajectory for each team");
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
