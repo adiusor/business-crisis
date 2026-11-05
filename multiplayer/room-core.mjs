@@ -239,7 +239,7 @@ export function finalVerdict(room){
  requireState(room.phase==="complete"&&room.teams.every(t=>t.economic.nextRound===6),409,"The final verdict is not ready");
  const ranked=room.teams.map((t,i)=>{
   const outcome=R.evaluate(t.economic),score=R.clamp(outcome.score-t.penaltyPoints,0,100);
-  const eligible=outcome.status==="RENEWED"&&t.economic.cash>=0&&t.economic.risks.ops<=56;
+  const eligible=outcome.status==="BOARD_READY"&&t.economic.cash>=0&&t.economic.risks.ops<=56;
   return {id:i,name:t.name,rawScore:outcome.score,timingPenalty:t.penaltyPoints,score,
    status:outcome.status,eligible,cash:t.economic.cash,trust:t.economic.trust,
    unpaid:outcome.unpaid,avgRisk:outcome.avgRisk,reasons:outcome.reasons.slice(),
@@ -253,7 +253,7 @@ export function finalVerdict(room){
  const joint=champion?eligible.filter(x=>x.score===champion.score&&x.cash===champion.cash):[];
  return {ranked,leader:ranked[0].name,champions:joint.map(x=>x.name),
   championScore:champion?champion.score:null,hasChampion:!!champion,
-  scoringNote:"Final score = max(0, economic score − time penalties). Late answers cost 5 and missed deadlines cost 12 points each. Score ties break on remaining cash; exact score-and-cash ties share the title. Contract renewal, solvent funds and viable operations remain championship requirements."};
+  scoringNote:"Final score = max(0, economic score − time penalties). Late answers cost 5 and missed deadlines cost 12 points each. Score ties break on remaining cash; exact score-and-cash ties share the title. The fictional pilot must be board-ready, fundable and operationally viable; no contract award is implied."};
 }
 // Mid-game recaps disclose commitments and spend, not competitors' remaining
 // cash or trust. Full economic outcomes become public after the final verdict.
