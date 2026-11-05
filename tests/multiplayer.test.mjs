@@ -88,7 +88,7 @@ test("team-private aftershock is grounded in its ledger and withheld from oppone
  const impact=viewFor(room,alice.actor).privateTeam.lastImpact;
  const outcome=room.teams[0].economic.history[0];
  assert.equal(impact.round,1);
- assert.equal(impact.plan,"VERIFY & SECURE");
+ assert.equal(impact.plan,"DESIGN THE PROOF");
  assert.equal(impact.fallout,outcome.fallout,"Story payoff must use committed scenario data");
  assert.equal(impact.roundSpent,26000,"Cost includes compulsory operating expense");
  assert.equal(impact.trustChange,10,"Trust delta is relative to the previous baseline");
@@ -1062,17 +1062,17 @@ test("adaptive story is team-private, choice-dependent and never leaks to host o
  const av=viewFor(room,a.actor),bv=viewFor(room,b.actor);
  const ah=av.privateTeam.storyContext,bh=bv.privateTeam.storyContext;
  assert.ok(ah && bh);
- assert.match(ah.lead,/verification trail/);
- assert.match(bh.lead,/access restrictions/);
+ assert.match(ah.lead,/evidence-first proposal/);
+ assert.match(bh.lead,/three-site vision/);
  assert.notEqual(ah.lead,bh.lead);
- assert.ok(av.privateTeam.lastImpact.fallout.includes("fact-based update"));
- assert.ok(bv.privateTeam.lastImpact.fallout.includes("operational reassurance"));
+ assert.ok(av.privateTeam.lastImpact.fallout.includes("verified proposal"));
+ assert.ok(bv.privateTeam.lastImpact.fallout.includes("first-site proposal"));
  for(const observer of [viewFor(room,host),viewFor(room,{role:"projector"})]){
   assert.equal(Object.hasOwn(observer,"privateTeam"),false);
-  assert.doesNotMatch(JSON.stringify(observer),/verification trail|access restrictions/);
+  assert.doesNotMatch(JSON.stringify(observer),/evidence-first proposal|three-site vision/);
  }
- assert.doesNotMatch(JSON.stringify(av),/The access restrictions reduced exposure/);
- assert.doesNotMatch(JSON.stringify(bv),/Your verification trail is ready/);
+ assert.doesNotMatch(JSON.stringify(av),/The three-site vision impressed/);
+ assert.doesNotMatch(JSON.stringify(bv),/Your evidence-first proposal is appreciated/);
 });
 
 
