@@ -393,6 +393,8 @@ try {
     // Host can issue a projection link without revealing their own host bearer token.
     await hostUI.locator("#rotate-projector").click();
     await hostUI.locator("#projector-link").waitFor({state:"visible"});
+    assert.equal(await hostUI.locator("#copy-projector-link").isVisible(),true,
+      "Host receives an obvious transferable link control");
     const projectorHref=await hostUI.locator("#projector-link").getAttribute("href");
     assert.match(projectorHref,/\/projector\?room=[2-9A-HJ-NP-Z]{4}#access=[a-f0-9]{64}$/);
     const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
@@ -403,14 +405,38 @@ try {
     assert.equal(await projected.locator("#host-actions").isVisible(),false);
     assert.equal(await projected.locator("#player-actions").isVisible(),false);
     assert.equal(await projected.locator("#captain-tools").isVisible(),false);
-    assert.equal(new URL(projected.url()).hash,"","Projector fragment credential cleared from browser URL");
+    assert.equal(new URL(projected.url()).hash,"#access="+new URL(projectorHref).hash.slice(8),
+      "Projector retains a transferable read-only URL when copied from the address bar");
+    assert.equal(projected.url(),projectorHref,"Opening a projector must preserve the shareable URL");
+    const freshProjector=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:"reduce"});
+    const freshDisplay=await freshProjector.newPage();
+    freshDisplay.on("pageerror",err=>browserErrors.push(err.message));
+    await freshDisplay.goto(projected.url(),{waitUntil:"load"});
+    await freshDisplay.locator("#room-screen").waitFor({state:"visible",timeout:12000});
+    assert.equal(await freshDisplay.locator("#viewer-mode").isVisible(),true,
+      "Pasting the projected address into a brand new session must work");
+    assert.equal(await freshDisplay.locator("#host-actions").isVisible(),false,
+      "A copied projector URL must never convey host permissions");
+    await freshProjector.close();
     assert.equal((await projected.locator("#team-list").innerText()).includes("Mobile Alice"),false,
       "Player nicknames cannot reach projection display");
     assert.deepEqual(await projected.locator(".team small").allTextContents(),
       ["2 PLAYERS JOINED","0 PLAYERS JOINED"],"Projector displays public counts from server, not hidden nicknames");
     assert.equal(await projected.locator("#projector-invite").isVisible(),true);
+    assert.equal(await projected.locator("#game-rules").evaluate(el=>el.open),false,
+      "Projector lobby initially shows the important QR and team information, not six dense rules");
+    const lobbyFit=await projected.evaluate(()=>{
+      const invite=document.querySelector("#projector-invite").getBoundingClientRect(),
+        teams=document.querySelector("#team-list").getBoundingClientRect();
+      return {height:innerHeight,scroll:document.documentElement.scrollHeight,
+        qrBottom:invite.bottom,teamsBottom:teams.bottom};
+    });
+    assert.ok(lobbyFit.scroll<=lobbyFit.height+2 && lobbyFit.teamsBottom<=lobbyFit.height-8,
+      "1280x720 projector lobby must show QR and all teams without document scroll: "+JSON.stringify(lobbyFit));
+    await projected.locator("#game-rules summary").click();
     assert.equal(await projected.locator("#game-rules").evaluate(el=>el.open),true,
-      "Projector displays the full briefing while players join");
+      "Projector rules remain available as an optional on-screen briefing");
+    await projected.locator("#game-rules summary").click();
     assert.equal(await projected.locator("#game-rules .rule-card").count(),6);
     assert.equal(await projected.locator("#projector-intervention").isVisible(),true,
       "Recent facilitator changes are visible on the public projector");
@@ -512,6 +538,14 @@ try {
     assert.equal(await phoneA.locator(".scene-film svg").count(),1,
       "Each cinematic incident contains its original illustration layer");
     assert.equal(await phoneA.locator(".episode-progress li").count(),6);
+    assert.equal(await phoneA.locator(".evidence-folder").evaluate(el=>el.open),false,
+      "Phone starts with a concise evidence index instead of three long cards");
+    const initialDecisionOffset=await phoneA.locator("#player-actions").evaluate(el=>
+      Math.round(el.getBoundingClientRect().top+scrollY));
+    assert.ok(initialDecisionOffset<1600,
+      "On a 320px phone the action must remain easy to reach: "+initialDecisionOffset);
+    await phoneA.locator(".evidence-folder-summary").click();
+    assert.equal(await phoneA.locator(".evidence-folder").evaluate(el=>el.open),true);
     assert.equal(await phoneA.locator(".evidence-item[open]").count(),0);
     assert.equal(await phoneA.locator(".briefing-details[open]").count(),0);
     assert.equal(await phoneA.locator("body.in-game").count(),1);
@@ -564,6 +598,25 @@ try {
     assert.ok(stage.proofBottom<=stage.viewport-8,
       "All three evidence summaries must fit inside a real 720p projector viewport: "+
       JSON.stringify(stage));
+    const stageFit=await projected.evaluate(()=>{
+      const cards=[...document.querySelectorAll(".evidence-item summary")].map(x=>
+        x.getBoundingClientRect());
+      return {innerHeight,scroll:document.documentElement.scrollHeight,
+        bodyScroll:document.body.scrollHeight,
+        visible:cards.every(x=>x.bottom<=innerHeight-8&&x.top>=0)};
+    });
+    assert.ok(stageFit.visible && stageFit.scroll<=stageFit.innerHeight+2,
+      "Full projected scene and source leads must fit without vertical scroll: "+JSON.stringify(stageFit));
+    await projected.locator(".evidence-item summary").first().click();
+    assert.equal(await projected.locator(".evidence-item[open] .dismiss-exhibit").isVisible(),true,
+      "Full evidence opens in a bounded, closable projector overlay");
+    const overlayFit=await projected.locator(".evidence-item[open]").evaluate(el=>{
+      const r=el.getBoundingClientRect();return r.top>=0 && r.bottom<=innerHeight+1;
+    });
+    assert.equal(overlayFit,true,"Expanded evidence must never push past the display");
+    await projected.keyboard.press("Escape");
+    assert.equal(await projected.locator(".evidence-item[open]").count(),0,
+      "Escape restores the single-screen incident");
     await projected.screenshot({path:path.join(root,"screenshots","12-projection-actual-720p.png"),
       fullPage:false});
     await phoneA.screenshot({path:path.join(root,"screenshots","10-design-v4-player-320.png"),fullPage:true});
@@ -674,6 +727,15 @@ try {
     },{code:roomCode,token:hostToken});
     await reportHost.goto(base+"/?room="+roomCode,{waitUntil:"load"});
     await reportHost.locator("#boardroom-report").waitFor({state:"visible",timeout:12000});
+    await projected.locator(".projection-verdict").waitFor({state:"visible",timeout:12000});
+    assert.equal(await projected.locator(".projection-rank").count(),2,
+      "The final projector uses concise public team rankings rather than the long report");
+    const verdictFit=await projected.evaluate(()=>{
+      const r=document.querySelector(".projection-verdict").getBoundingClientRect();
+      return {height:innerHeight,scroll:document.documentElement.scrollHeight,bottom:r.bottom};
+    });
+    assert.ok(verdictFit.scroll<=verdictFit.height+2 && verdictFit.bottom<=verdictFit.height-7,
+      "The final board vote must fit on 720p without scroll: "+JSON.stringify(verdictFit));
     assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
     assert.equal(await reportHost.locator(".report-team").count(),2);
     assert.equal(await reportHost.locator(".report-epilogue").count(),1,
