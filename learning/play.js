@@ -100,27 +100,43 @@ function play(){
  if(active<0||active>=session.teams.length){screen="team";return teamPicker();}
  const t=session.teams[active],ep=C.episodes[session.round],beat=X[ep.id];
  const previous=B.interlude(t.economic.history,session.round);
- const echo=previous?'<div class="notes"><p class="eyebrow">AN EARLIER DECISION RETURNS · '+esc(previous.plan)+'</p><p>'+esc(previous.text)+'</p><p class="small subtle">That earlier choice has already changed your cash ledger, trust, risk and outstanding commitments.</p></div>':"";
- const cards=C.advisers.map((a,i)=>'<button class="choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
+ const echo=previous?'<details class="case-dossier consequence"><summary>Earlier decision: '+esc(previous.plan)+' · See the consequences</summary><p>'+esc(previous.text)+'</p><p class="small subtle">Its cost, trust and risk effects are already part of your team state.</p></details>':"";
  const selections=draft.advisers.length;
- const dossier=draft.revealed?'<div class="notes" aria-label="Confidential adviser notes"><p class="eyebrow">TWO PRIVATE TEAM PERSPECTIVES</p>'+draft.advisers.map(i=>'<p><b>'+esc(C.advisers[i].name)+':</b> '+esc(ep.advice[i])+'</p>').join("")+'</div>':"";
- const decisions=draft.revealed?'<h3>Choose one strategy</h3><div class="grid3">'+ep.plans.map((x,i)=>
-  '<button type="button" class="choice" data-action="plan" data-index="'+i+'" aria-pressed="'+(i===draft.plan)+'"><span class="eyebrow">ROUTE 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.desc)+'</small><small>'+x.benefits.map(esc).join(" · ")+'</small><small class="cost">'+money(x.spend)+' · '+esc(x.cost)+'</small></button>').join("")+'</div>'+
- '<h3>'+esc(beat.label)+'</h3><p class="subtle">'+esc(beat.spotlight)+'</p><div class="grid3">'+ep.signals.map((x,i)=>
-  '<button type="button" class="choice" data-action="signal" data-index="'+i+'" aria-pressed="'+(i===draft.signal)+'"><span class="eyebrow">STATEMENT 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.line)+'</small></button>').join("")+'</div>'+
+ const adviserCards=C.advisers.map((a,i)=>'<button class="choice adviser-choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
+ const gallery=draft.revealed?'<div class="selected-advisers"><p class="small">Selected: '+draft.advisers.map(i=>esc(C.advisers[i].name)).join(" &amp; ")+'</p><button type="button" class="secondary" data-action="change-advisers">CHANGE SOURCES</button></div>':
+ '<div class="adviser-grid">'+adviserCards+'</div><p class="status" role="status">'+selections+' of 2 selected. '+(selections===2?"Both perspectives selected.":"Select two different advisers.")+'</p>'+
+ '<div class="row gap"><button type="button" class="primary" data-action="reveal" '+(selections!==2?"disabled":"")+'>OPEN TWO PRIVATE BRIEFS</button><button type="button" class="secondary" data-action="back-teams">BACK TO TEAMS</button></div>';
+ const dossier=draft.revealed?'<div class="intel-dossier" aria-label="Confidential adviser notes"><span class="eyebrow">THE TWO PERSPECTIVES YOU CHOSE</span>'+
+ draft.advisers.map(i=>'<div class="intel-note"><strong>'+esc(C.advisers[i].name)+'</strong><p>'+esc(ep.advice[i])+'</p></div>').join("")+'</div>':"";
+ const decisions=draft.revealed?'<section class="decision-board" id="decision-board"><p class="eyebrow">02 / THE STRATEGY</p><h2>Make the call.</h2>'+
+ '<p class="small subtle">No option is free. Read the benefit and the cost before committing.</p>'+
+ '<div class="plan-options">'+ep.plans.map((x,i)=>
+ '<button type="button" class="choice plan-choice" data-action="plan" data-index="'+i+'" aria-pressed="'+(i===draft.plan)+'"><span class="eyebrow">ROUTE 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.desc)+'</small><small class="cost">'+money(x.spend)+' · '+esc(x.cost)+'</small></button>').join("")+'</div>'+
+ '<div class="decision-voice"><h3>'+esc(beat.label)+'</h3><p class="small subtle">'+esc(beat.spotlight)+'</p><div class="signal-options">'+ep.signals.map((x,i)=>
+ '<button type="button" class="choice signal-choice" data-action="signal" data-index="'+i+'" aria-pressed="'+(i===draft.signal)+'"><span class="eyebrow">MESSAGE 0'+(i+1)+'</span><strong>'+esc(x.name)+'</strong><small>'+esc(x.line)+'</small></button>').join("")+'</div></div>'+
  investmentMarkup()+
- '<div class="row gap"><button type="button" class="primary" data-action="lock" '+(draft.plan<0||draft.signal<0||(draft.allocation?.amount>0&&!draft.allocation?.route)?"disabled":"")+'>LOCK '+esc(t.name)+' RESPONSE</button><button type="button" class="secondary" data-action="change-advisers">CHANGE ADVISERS</button></div>':"";
- return top()+'<section class="section"><div class="row"><span class="eyebrow">TEAM '+(active+1)+': '+esc(t.name)+'</span><span class="time">'+esc(ep.time)+'</span><span class="chip">'+money(t.economic.cash)+' REMAINING</span></div>'+
- '<h1 class="title">'+esc(ep.title)+'</h1><p class="lead">'+esc(ep.brief)+'</p>'+
- '<div class="two"><div><p class="eyebrow">THE EVIDENCE / OPEN ANY SOURCE</p>'+itemExhibits(ep)+'</div>'+
- '<div class="panel"><p class="eyebrow">YOUR DECISION</p><h3>'+esc(ep.question)+'</h3><p>'+esc(ep.pressure)+'</p>'+
- '<div class="metric"><span>Available event fund</span><strong>'+money(t.economic.cash)+'</strong></div>'+
- '<div class="metric"><span>Annual sponsorship</span><strong>NOT CASH</strong></div>'+
- (session.mode!=="social"?'<p class="hint"><b>Learning focus:</b> '+esc(ep.learning.topic)+'. '+esc(ep.learning.pearsonLO)+'</p>':"")+
- '</div></div>'+echo+collaboration(ep)+'<h3>Consult exactly two perspectives</h3><p class="subtle">Select the advice you believe will change your decision. You cannot open every briefing.</p>'+
- '<div class="grid3">'+cards+'</div><p class="status">'+selections+' of 2 selected. '+(draft.revealed?"Briefings revealed.":"Change your selection before revealing.")+'</p>'+
- (!draft.revealed?'<div class="row gap"><button class="primary" data-action="reveal" '+(selections!==2?"disabled":"")+'>REVEAL TWO BRIEFINGS</button><button class="secondary" data-action="back-teams">BACK TO TEAMS</button></div>':"")+
- dossier+decisions+'</section>';
+ '<div class="commit-dock"><div><span class="eyebrow">FINALISE TEAM DECISION</span><p class="small">One strategy, one public response'+([2,4].includes(session.round)?", and optional investment":"")+'.</p></div>'+
+ '<button type="button" class="primary" data-action="lock" '+(draft.plan<0||draft.signal<0||(draft.allocation?.amount>0&&!draft.allocation?.route)?"disabled":"")+'>LOCK '+esc(t.name)+' RESPONSE</button></div></section>':"";
+ const teaser=ep.evidence.map((x,i)=>'<span class="evidence-chip">'+esc(x.type)+'</span>').join("");
+ return top()+'<section class="section scene-screen"><div class="scene-stage">'+
+ '<div class="scene-copy"><div class="row scene-meta"><span class="eyebrow">TEAM '+(active+1)+' / '+esc(t.name)+'</span><span class="time">'+esc(ep.time)+'</span></div>'+
+ '<p class="eyebrow">FIELDWORK HOUSE · SCENE '+(session.round+1)+' / 06</p>'+
+ '<h1 class="title">'+esc(ep.title)+'</h1>'+
+ '<p class="scene-headline">'+esc(ep.headline)+'</p>'+
+ '<p class="scene-question">'+esc(ep.question)+'</p>'+
+ '<div class="scene-fund"><span>CASH AVAILABLE</span><strong>'+money(t.economic.cash)+'</strong></div>'+
+ '</div><div class="scene-media">'+g.BCLearningArt.svg(ep.id)+'</div></div>'+
+ '<nav class="scene-jump" aria-label="Scene actions"><a href="#consult">SELECT YOUR TWO ADVISERS ↓</a><a href="#case-file">READ THE EVIDENCE</a></nav>'+
+ '<div class="evidence-strip"><strong>AVAILABLE SOURCES</strong>'+teaser+'</div>'+
+ '<details class="case-dossier" id="case-file"><summary>Read the complete incident briefing &amp; evidence</summary>'+
+ '<p class="brief">'+esc(ep.brief)+'</p>'+itemExhibits(ep)+
+ '<div class="hint"><b>Working decision:</b> '+esc(ep.question)+' '+esc(ep.pressure)+'</div>'+
+ (session.mode!=="social"?'<p class="small"><b>Learning link:</b> '+esc(ep.learning.topic)+' · '+esc(ep.learning.pearsonLO)+'</p>':"")+
+ '</details>'+echo+
+ '<details class="case-dossier" aria-label="Team collaboration challenge"><summary>'+esc(beat.act)+' · A 60-second role challenge</summary>'+collaboration(ep)+'</details>'+
+ '<section id="consult" class="consult-panel"><div class="consult-head"><div><p class="eyebrow">01 / CHOOSE YOUR INTELLIGENCE</p><h2>Two voices. One decision.</h2></div><p class="small subtle">Pick exactly two of six advisers. Their confidential information stays with this team.</p></div>'+
+ gallery+dossier+'</section>'+
+ decisions+'</section>';
 }
 function recap(){
  const ep=C.episodes[session.round];
