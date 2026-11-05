@@ -81,7 +81,7 @@ test("the invitation contains a credible physical cap, and future sponsorship ne
  const e=C.episodes[0];
  assert.match(e.brief,/320/);
  assert.match(e.brief,/1,100/);
- assert.match(C.episodes[4].brief,/not.*cash/i);
+ assert.match(C.episodes[4].brief,/(?:neither.*cash|not.*cash)/i);
  let team=R.createTeam(0,"A");
  for(let round=0;round<6;round++)team=R.applyTurn(team,round,0,0,[0,1],0,zero);
  assert.equal(team.cash,C.initialCash-team.ledger.reduce((sum,x)=>sum+x.amount,0));
