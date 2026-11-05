@@ -823,13 +823,19 @@ try {
     assert.equal(await reportHost.locator(".report-advanced[open]").count(),0,
       "Long cash and risk details should be opt-in");
     assert.equal(await reportHost.getByRole("button",{name:"PRINT / SAVE AS PDF"}).count(),1);
+    assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS"}).count(),1);
+    assert.equal(await reportHost.locator(".boardroom-award").count(),3,
+      "Three award cards recognise real team strengths with no invented figures");
+    assert.equal(await reportHost.locator(".boardroom-award-winner").count(),3);
     assert.equal((await reportHost.locator("#results").innerText()).includes("JSON"),false);
     const downloadPromise=reportHost.waitForEvent("download");
-    await reportHost.getByRole("button",{name:"SAVE VISUAL REPORT (.HTML)"}).click();
+    await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS"}).click();
     const downloaded=await downloadPromise;
     assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.html");
     const html=await (await import("node:fs/promises")).readFile(await downloaded.path(),"utf8");
     assert.match(html,/THE BOARDROOM VERDICT/);
+    assert.match(html,/BEYOND THE SCOREBOARD/);
+    assert.doesNotMatch(html,/mailto:|type=["']email["']|emailjs|sendgrid/i);
     assert.match(html,/FINAL TEAM RANKINGS/);
     assert.match(html,/THE DECISION TRAIL/);
     assert.match(html,/CASH TRAJECTORY/);

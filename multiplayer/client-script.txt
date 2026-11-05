@@ -1048,6 +1048,28 @@
       ranks.append(card);
     });
     sheet.append(ranks);
+    // Celebratory but factual recognitions. Tie names are shared rather than
+    // arbitrarily picking a favourite or inventing achievements.
+    const awards=node("section",null,"boardroom-awards");
+    awards.append(node("h3","BEYOND THE SCOREBOARD","report-section-title"));
+    const awardGrid=node("div",null,"boardroom-awards-grid");
+    const awardSpecs=[
+      ["THE PEOPLE'S TRUST","HIGHEST CLIENT TRUST","trust",true," / 100"],
+      ["THE CASH GUARDIAN","MOST RESPONSE CASH LEFT","cash",true,""],
+      ["THE CLOCKKEEPER","FEWEST TIME PENALTY POINTS","timingPenalty",false," PTS LOST"]
+    ];
+    for(const [title,description,field,higher,suffix] of awardSpecs){
+      const values=verdict.ranked.map(t=>Number(t[field]));
+      const best=higher?Math.max(...values):Math.min(...values);
+      const winners=verdict.ranked.filter(t=>Number(t[field])===best).map(t=>t.name);
+      const card=node("article",null,"boardroom-award");
+      card.append(node("small",description),node("strong",title));
+      card.append(node("p",winners.join(" / "),"boardroom-award-winner"));
+      const shown=field==="cash"?cash(best):String(best)+suffix;
+      card.append(node("span",shown,"boardroom-award-value"));
+      awardGrid.append(card);
+    }
+    awards.append(awardGrid);sheet.append(awards);
     // A six-chapter head-to-head comparison, default collapsed for teambuilding.
     // The underlying facts are the final server verdict, never a fabricated chart.
     const trail=node("details",null,"decision-trail");
@@ -1091,7 +1113,7 @@
     sheet.append(coda);
     const footer=node("footer",null,"report-foot");
     footer.append(node("strong","BUSINESS CRISIS / THE 09:17 INCIDENT"));
-    footer.append(node("p","Illustrative economic simulation for gameplay, not a financial projection. No individual ballots, confidential adviser choices, participant names or email addresses are included."));
+    footer.append(node("p","Illustrative economic simulation for gameplay, not a financial projection. Personal ballots, adviser choices and participant names are excluded from the report."));
     sheet.append(footer);
     target.append(sheet);
 
@@ -1109,8 +1131,7 @@
     }
     if (state.viewer.role === "projector") return;
     const actions=node("div",null,"report-actions");
-    actions.append(button("PRINT / SAVE AS PDF",()=>window.print(),"primary"));
-    actions.append(button("SAVE VISUAL REPORT (.HTML)",()=>{
+    actions.append(button("DOWNLOAD RESULTS",()=>{
       // Self-contained readable file; intentionally no JS, token, room code or user emails.
       const exported=sheet.cloneNode(true);
       exported.querySelectorAll("details").forEach(item=>{item.open=true;});
@@ -1123,8 +1144,9 @@
       a.href=href;a.download="business-crisis-boardroom-verdict.html";
       document.body.append(a);a.click();a.remove();
       setTimeout(()=>URL.revokeObjectURL(href),1000);
-    },"secondary"));
-    actions.append(node("p","Want a PDF? Choose Print, then Save as PDF in your browser. Email delivery is not enabled; no addresses are collected."));
+    },"primary"));
+    actions.append(button("PRINT / SAVE AS PDF",()=>window.print(),"secondary"));
+    actions.append(node("p","Download a complete offline results file immediately. For PDF, choose Print / Save as PDF. Neither option requires an account or sends any data."));
     target.append(actions);
   }
 

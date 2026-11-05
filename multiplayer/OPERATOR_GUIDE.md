@@ -26,12 +26,12 @@
 ## Closing the session
 - The **Boardroom Verdict** ranks teams by economic score less time penalties (floored at zero). Equal final scores break on remaining cash; only exact score-and-cash ties share the title.
 - Winning the **championship** also requires renewed client-contract status, a solvent fund and viable operations. If nobody meets those requirements, recognise the best crisis response without falsely saying every contract was lost.
-- The report shows cash, risk, trust and all six decisions. Use **Print → Save as PDF** or **Save Visual Report (.HTML)**. No automatic email is sent and player email addresses are not collected.
+- The report shows cash, risk, trust and all six decisions. Use **DOWNLOAD RESULTS** for an immediate offline HTML file, or **PRINT / SAVE AS PDF** for a PDF through the browser. Neither requires contact details.
 - Suggested debrief: Which evidence changed your mind? Which public promise was most expensive? When did disagreement improve the team decision?
 - The sender's identity is intentionally **unconfirmed**. Contractor access evidence is not proof of who leaked the memo.
 
 ## Boundaries of this playtest
-Room data expires after 24 hours. This staging prototype is **not commercially ready**: real 30-device load, 40–80 participant support, robust entry rate limits, host account recovery, consent-based email delivery, privacy processes, payments, accessibility and physical projector/mobile testing remain outstanding. Never put real customer, staff or commercially sensitive information into test nicknames or notes.
+Room data expires after 24 hours. This staging prototype is **not commercially ready**: real 30-device load, 40–80 participant support, robust entry rate limits, host account recovery, privacy processes, payments, accessibility and physical projector/mobile testing remain outstanding. Never put real customer, staff or commercially sensitive information into test nicknames or notes.
 
 ## Sharing the projector safely
 A normal `/?room=CODE` link is not a projector invitation. On the **host** page choose **GENERATE / ROTATE PROJECTOR LINK** then **COPY PROJECTOR LINK**. Open or paste the entire `/projector?room=CODE#access=…` link on another device. You can also copy the projector address bar or use **COPY THIS PROJECTOR LINK**. This is a transferable **read-only bearer capability**. Anyone with the link can see the public game stage but cannot manage it, see private ballots/advice or act as a team. Don't post the link publicly; rotating invalidates earlier copies.
