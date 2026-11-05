@@ -128,7 +128,7 @@ if(!reasons.length)reasons.push("The company retains sufficient cash and has con
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
 }
 function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).sort((a,b)=>b.outcome.score-a.outcome.score||b.team.cash-a.team.cash||a.team.id-b.team.id);}
-// Scores compare performance. The title requires the flagship renewal to be signed.
+// Scores compare modelled performance. Championship means renewal readiness in the simulation, not a real signed contract.
 function championshipResult(teams){
 const ranked=rankTeams(teams);
 const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);

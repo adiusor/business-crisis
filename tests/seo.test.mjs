@@ -76,3 +76,5 @@ test("corporate challenge branding stays positive and coherent across each publi
  assert.match(home,/HOST A PRIVATE GAME/);
  assert.match(home,/JOIN A ROOM/);
 });
+
+test("original site navigation and joining instructions remain intact after the rebrand",()=>{const home=renderPublicPage("/",preview,{}).html;for(const path of ["/corporate-team-building-game","/virtual-team-building","/leadership-team-building","/for-facilitators"]){assert.ok(PAGES[path]);assert.ok(home.includes('href="'+path+'"'));}assert.match(home,/How does someone choose or get assigned/);assert.match(home,/4-character code or QR/);assert.match(home,/HOST A PRIVATE GAME/);assert.match(home,/JOIN A ROOM/);});

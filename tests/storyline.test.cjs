@@ -89,7 +89,7 @@ test("unverified assurances and operational fatigue entail risk rather than free
  const client=C.episodes[2];
  assert.ok(client.plans.find(x=>x.name==="COMMIT TO RECOVERY").delay.cost>0);
  const operation=C.episodes[4];
- assert.ok(operation.plans.find(x=>x.name==="SUPPORT THE FRONT LINE").delta.workforce>0);
+ assert.ok(operation.plans.find(x=>x.name==="REDEPLOY THE CREW").delta.ops<0 && operation.plans.find(x=>x.name==="REDEPLOY THE CREW").delta.customer>0);
  const close=C.episodes[5];
  assert.ok(close.signals.find(x=>x.name==="BUILD MOMENTUM").delay.cost>0);
 });
@@ -114,3 +114,5 @@ test("The 09:17 Challenge presents three defensible strategic options per scene,
  assert.ok(assurance.delay.cost>0 && assurance.delta.legal>0,
   "An optimistic assurance has a bounded contingent cost, not a free bonus");
 });
+
+test("story respects fatigued staff and makes recovery trade-offs coherent",()=>{ const work=C.episodes[4],p=work.plans.find(x=>x.name==="REDEPLOY THE CREW"); assert.match(work.evidence[2].body,/unsafe/);assert.match(p.desc,/rested/);assert.ok(p.delay.cost>0);assert.match(C.episodes[0].plans[1].delay.label,/Controlled access/);assert.match(C.episodes[2].brief,/service milestones/);});

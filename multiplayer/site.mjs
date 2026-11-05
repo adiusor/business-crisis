@@ -20,9 +20,17 @@ export function isPublishedOrigin(url,env={}){
     !/\.workers\.dev$/i.test(url.hostname) && !/^(localhost|127\.0\.0\.1)$/i.test(url.hostname);
 }
 const card=([a,b])=>'<article class="tile"><span class="tile-mark">↗</span><h3>'+esc(a)+'</h3><p>'+esc(b)+'</p></article>';
-const steps=[["01","ENTER","The host opens a room and invites 2–4 teams."],["02","BRIEF","Captains choose two advisers for the episode."],["03","DECIDE","Players vote privately on a collective response."],["04","DEBRIEF","Review six episodes and the final boardroom verdict."]];
+const steps=[["01","HOST","The facilitator creates a private room, chooses 2–4 teams and shares a link or QR code."],["02","JOIN","Players enter a nickname and choose their team or auto-assign to the smallest team."],["03","DECIDE","Captains select two private advisers. Each eligible player votes on a strategy and public message."],["04","REVEAL","The host advances six connected chapters. Teams compare their choices, cash, trust, risks and boardroom report."]];
 const one=([n,a,b])=>'<li><span>'+n+'</span><h3>'+esc(a)+'</h3><p>'+esc(b)+'</p></li>';
 const faq=([a,b])=>'<details><summary>'+esc(a)+'</summary><p>'+esc(b)+'</p></details>';
+const commonFaqEnglish=[
+["How does someone choose or get assigned to a team?","The facilitator shares a room link, 4-character code or QR. Players choose a named team or select AUTO-ASSIGN to join the least populated team. Their assigned team is confirmed in the lobby."],
+["Can hosts and players do the same things?","No. The host manages the game and cannot vote in that role. Each player makes private choices and votes from their own device. The projector is read-only."],
+["How is the result calculated?","The simulated economic score combines business risk, customer trust, liquidity and future commitments. Timing penalties reduce it. A high score does not automatically meet the renewal-readiness, solvency and service thresholds for a championship."]];
+const commonFaqRomanian=[
+["Cum este alesă echipa?","Gazda oferă un cod sau QR. Participanții pot alege o echipă sau repartizarea automată în echipa cu cei mai puțini membri."],
+["Poate gazda să voteze?","Nu în rolul de gazdă. Ea administrează jocul, în timp ce fiecare participant votează din sesiunea sa."],
+["Cum este calculat scorul?","Scorul economic simulat include riscurile, încrederea, lichiditatea și obligațiile restante; întârzierile adaugă penalizări. Câștigătorul trebuie să îndeplinească și praguri de viabilitate."]];
 
 function openingDemo(){
  const ep=globalThis.BCContent.episodes[0];
@@ -61,7 +69,7 @@ export function renderPublicPage(path,url,env={}){
     (path==="/"||path==="/corporate-team-building-game"?openingDemo():"")+
     '<section class="section wrap"><div class="heading"><p class="eyebrow">'+esc(p.why)+'</p><h2>'+esc(p.why)+'.</h2><p>'+esc(p.body)+'</p></div><div class="tiles">'+p.cards.map(card).join("")+'</div></section>'+
     '<section class="section second" id="how-it-works"><div class="wrap"><div class="heading"><p class="eyebrow">THE FORMAT</p><h2>Six connected episodes. One boardroom verdict.</h2><p>Facilitated gameplay, two to four teams and decisions that shape what comes next.</p></div><ol class="steps">'+steps.map(one).join("")+'</ol></div></section>'+
-    '<section class="section wrap faq-section"><div><p class="eyebrow">QUESTIONS & ANSWERS</p><h2>Know what is in the room.</h2><p class="soft">The current release is an isolated staging playtest. Prices, capacity and commercial availability are still being verified.</p></div><div class="faqs">'+p.faq.map(faq).join("")+'</div></section>'+
+    '<section class="section wrap faq-section"><div><p class="eyebrow">QUESTIONS & ANSWERS</p><h2>Know what is in the room.</h2><p class="soft">The current release is an isolated staging playtest. Prices, capacity and commercial availability are still being verified.</p></div><div class="faqs">'+p.faq.concat(p.lang==="ro"?commonFaqRomanian:commonFaqEnglish).map(faq).join("")+'</div></section>'+
     '<section class="outro"><div class="wrap outro-inner"><div><p class="eyebrow">THE NEXT MOVE</p><h2>Different teams. Different decisions. New possibilities.</h2></div><div class="actions"><a class="btn main" href="/corporate-team-building-game">EXPLORE THE GAME ↗</a><a class="btn outline" href="/for-facilitators">FOR FACILITATORS</a></div></div></section></main>'+
     '<footer><div class="wrap footer-links"><div><strong>THE 09:17 CHALLENGE</strong><p>THE 09:17 CHALLENGE / Simulated corporate decisions.</p></div><div><a href="/about">About</a><a href="/pricing">Pricing status</a><a href="/demo">Demo information</a></div><div><a href="/virtual-team-building">Virtual team building</a><a href="/leadership-team-building">Leadership</a><a href="/ro" lang="ro">Română</a></div></div><div class="wrap footnote">PRIVATE PLAYTEST / NOT YET A COMMERCIAL SERVICE</div></footer></body></html>';
   return {html,robots,indexable:index};

@@ -1064,7 +1064,12 @@
     header.append(winner);
     sheet.append(header);
     sheet.append(node("h3", "FINAL TEAM RANKINGS", "report-section-title"));
-    sheet.append(node("p", "Ranking score = economic score − late / missed-deadline penalties (minimum 0). Renewal, solvent cash and viable operations remain separate champion requirements.", "report-explain"));
+    sheet.append(node("p", "Final score = simulated economic score minus late/missed-deadline penalties (minimum 0). The championship additionally requires renewal-readiness, available cash and viable delivery. These outcomes do not constitute a signed contract.", "report-explain"));
+    const scoring=node("details",null,"report-advanced");
+    scoring.append(node("summary","HOW SCORING WORKS"));
+    scoring.append(node("p","Economic score starts at 100 minus the risk index: 24% legal, 27% operations, 18% workforce, 31% customer, multiplied by 0.62. Trust above/below 50 contributes 0.25 points per index point. Liquidity risk over 40 costs 0.16 points per point. Unpaid commitments cost up to 18 points, at one point per £4,000."));
+    scoring.append(node("p","Further deductions apply for negative cash (27 points), customer risk above 75 (13), operations risk above 75 (11), and a nonnegative reserve below £25,000 (7). Economic score is rounded and capped between 0 and 100. Late and missed team decisions add separate penalties to final ranks. This is a game model, not a financial forecast or assessment of personal leadership."));
+    sheet.append(scoring);
     const ranks = node("div", null, "report-rankings");
     verdict.ranked.forEach((team, index) => {
       const card = node("article", null, "report-team");

@@ -1040,3 +1040,5 @@ test("a team cannot add an extra required voter with less than a minute remainin
  assert.equal(viewFor(late,host).teams[0].eligibleVoters,1);
  assert.equal(viewLobby(late,start+ROUND_MS-50000).teams[0].canVoteThisEpisode,false);
 });
+
+test("automatic team names have no panic or disaster theme",()=>{assert.equal(TEAM_NAME_POOL.length,16);assert.equal(new Set(TEAM_NAME_POOL).size,16);assert.ok(TEAM_NAME_POOL.every(n=>!/PANIC|CRISIS|DAMAGE|LAST RESORT/i.test(n)));});
