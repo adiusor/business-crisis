@@ -1400,3 +1400,9 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
  .prebrief-question{font-size:16px}
  .prebrief-exhibit-title{padding:12px}
 }
+
+/* The projector can reveal a public upcoming briefing once all teams finish,
+   while the normal live projector omits between-round recap clutter. */
+body.projector-mode.in-game #round-recap.has-prebrief{display:block!important}
+body.projector-mode.in-game .prebrief-details{margin:6px 0 12px}
+body.projector-mode.in-game .prebrief-summary{padding:12px 16px}
