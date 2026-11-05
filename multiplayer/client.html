@@ -29,7 +29,17 @@
 
     <section class="content-panel">
       <section id="create-screen" hidden>
-        <div class="eyebrow">01 / FACILITATOR SETUP</div>
+        <div class="join-first">
+          <div class="eyebrow">PLAYERS / ENTER AN EXISTING GAME</div>
+          <h2>Join your team.</h2>
+          <form id="quick-join-form">
+            <label for="quick-room-code">Room code</label>
+            <input id="quick-room-code" maxlength="12" autocapitalize="characters" autocomplete="off" placeholder="E.g. 7KMP" required>
+            <button type="submit" class="primary">JOIN GAME</button>
+          </form>
+          <p>Already started? You can join at any episode and vote from the next one.</p>
+        </div>
+        <div class="eyebrow">FACILITATOR / CREATE A NEW ROOM</div>
         <h2>Open the war room.</h2>
         <p>Rooms start with random team callsigns. Captains may select a different available name before the session starts.</p>
         <form id="create-form">
@@ -70,6 +80,8 @@
           <img id="join-qr" width="152" height="152" alt="QR code to join this room" />
           <a id="join-link" target="_blank" rel="noopener noreferrer"></a>
           <button id="copy-link" type="button" class="secondary">COPY JOIN LINK</button>
+          <a id="host-play-link" target="_blank" rel="noopener noreferrer" class="player-launch">PLAY AS A TEAM MEMBER (NEW TAB)</a>
+          <p class="host-role-help">The host controls the rounds but never votes. To choose advisers, strategies and statements on your Mac, open the player tab and join a team.</p>
         </div>
         <div id="projector-share" hidden class="projector-access">
           <div class="eyebrow">SEPARATE PROJECTOR DISPLAY</div>
@@ -103,7 +115,7 @@
             <li class="rule-card"><span class="rule-index">06</span><div><strong>SURVIVE TO WIN.</strong><p>Cash, trust and risks carry forward. A champion needs a renewed client contract, solvent funds and viable operations — not just points.</p></div></li>
           </ol>
           <p class="briefing-closing">TALK TO YOUR TEAM. <span>MAKE THE CALL.</span> OWN THE CONSEQUENCES.</p>
-          <p class="briefing-fairplay">Fair play: keep adviser briefings within your team; locked votes cannot be changed unless there is a runoff. The host advances once every team is finished.</p>
+          <p class="briefing-fairplay">New arrivals may join a room during any live episode, but their first vote is in the next episode. Leave via the LEAVE ROOM control to announce your departure. Short connection drops do not remove you. Keep private adviser advice within your team.</p>
         </details>
         <div id="timer-wrap" hidden class="timer-wrap" role="timer" aria-live="off">
           <span id="timer-phase">TIME LEFT</span>
@@ -111,6 +123,16 @@
           <p id="timer-note">Every team has the same server-controlled clock.</p>
         </div>
         <div id="room-message" role="status" aria-live="polite"></div>
+        <div id="presence-toast" role="status" aria-live="polite" hidden></div>
+        <div id="host-ready-dialog" role="dialog" aria-modal="true" aria-labelledby="host-ready-title" hidden>
+          <div class="host-ready-card">
+            <span class="eyebrow">ROUND COMPLETE / HOST ACTION</span>
+            <h2 id="host-ready-title">All teams finished.</h2>
+            <p id="host-ready-description">Every team has submitted its response.</p>
+            <button id="ready-next" type="button" class="primary">START NEXT EPISODE</button>
+            <button id="ready-later" type="button" class="secondary">REVIEW FIRST</button>
+          </div>
+        </div>
         <a id="decision-dock" hidden class="decision-dock" href="#player-actions" aria-label="Jump to your team decision">
           <span><small>YOUR NEXT MOVE</small><strong id="decision-dock-label">Open team decision</strong></span>
           <span id="decision-dock-clock" class="decision-dock-time">03:00</span>
@@ -131,6 +153,7 @@
           <div class="inline-actions"><select id="team-name-choice"></select><button id="rename-team" type="button" class="secondary">USE NAME</button></div>
         </div>
         <div id="player-actions" hidden></div>
+        <button id="leave-room" type="button" class="secondary" hidden>LEAVE ROOM</button>
         <div id="host-actions" hidden></div>
         <div id="results" hidden></div>
         <p class="privacy-note">Nicknames are visible to participants in this room. Email addresses are not collected. Room data expires automatically after 24 hours. Do not share the host credential.</p>
