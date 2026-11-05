@@ -5,6 +5,7 @@
 const C=g.BCLearningContent;
 const R=g.BCCreateRules(C);
 const X=g.BCLearningExperience;
+const B=g.BCLearningBranches;
 const KEY="bip-opening-night-preview-v1";
 const TEAMS=["THE SPARKS","TEAM HORIZON","THE MAKERS","THE WILD CARDS"];
 const MODES={
@@ -98,8 +99,8 @@ function investmentMarkup(){
 function play(){
  if(active<0||active>=session.teams.length){screen="team";return teamPicker();}
  const t=session.teams[active],ep=C.episodes[session.round],beat=X[ep.id];
- const previous=t.economic.history.at(-1);
- const echo=previous?'<div class="notes"><p class="eyebrow">PREVIOUSLY, YOUR TEAM CHOSE '+esc(previous.plan)+'</p><p>'+esc(previous.fallout)+'</p><p class="small subtle">The economic consequences of that choice are already in your cash, risk and commitments.</p></div>':"";
+ const previous=B.interlude(t.economic.history,session.round);
+ const echo=previous?'<div class="notes"><p class="eyebrow">AN EARLIER DECISION RETURNS · '+esc(previous.plan)+'</p><p>'+esc(previous.text)+'</p><p class="small subtle">That earlier choice has already changed your cash ledger, trust, risk and outstanding commitments.</p></div>':"";
  const cards=C.advisers.map((a,i)=>'<button class="choice" type="button" data-action="adviser" data-index="'+i+'" aria-pressed="'+draft.advisers.includes(i)+'" '+(draft.revealed?"disabled":"")+'><span class="eyebrow">'+esc(a.role)+'</span><strong>'+esc(a.name)+'</strong><small>'+esc(a.line)+'</small></button>').join("");
  const selections=draft.advisers.length;
  const dossier=draft.revealed?'<div class="notes" aria-label="Confidential adviser notes"><p class="eyebrow">TWO PRIVATE TEAM PERSPECTIVES</p>'+draft.advisers.map(i=>'<p><b>'+esc(C.advisers[i].name)+':</b> '+esc(ep.advice[i])+'</p>').join("")+'</div>':"";
@@ -150,16 +151,17 @@ function recap(){
 function final(){
  const ranked=R.rankTeams(session.teams.map(t=>t.economic)),leader=ranked[0];
  const every=ranked.map((x,i)=>'<article class="panel"><span class="eyebrow">RANK '+(i+1)+' · '+esc(x.team.name)+'</span>'+
- '<h3>'+x.outcome.score+' / 100</h3>'+
+ '<h3>'+x.outcome.score+' / 100</h3><p><b>Event health:</b> '+esc(x.outcome.status)+'</p>'+
  '<div class="metric"><span>Available cash</span><b>'+money(x.team.cash)+'</b></div>'+
  '<div class="metric"><span>Trust index</span><b>'+x.team.trust+'/100</b></div>'+
  '<div class="metric"><span>Outstanding commitments</span><b>'+money(x.outcome.unpaid)+'</b></div>'+
- '<p>'+esc(x.outcome.reasons.join(" "))+'</p></article>').join("");
+ '<p>'+esc(x.outcome.reasons.join(" "))+'</p>'+
+ '<p class="hint"><b>Your final decision:</b> '+esc(B.ending(x.team.history)||"The team has completed its event response.")+'</p></article>').join("");
  return '<section class="section"><p class="eyebrow">FIELDWORK HOUSE / THE FINAL CHAPTER</p>'+
  '<h1 class="title">What your team <em>made possible.</em></h1>'+
  '<p class="lead">The doors opened. The mystery behind the unclear invitation has a mundane but useful explanation: the wrong draft was published from the scheduler. It was a missed handover, not a villain. The real story is what happened when people had to work together.</p>'+
  '<div class="leader"><p class="eyebrow">HIGHEST SIMULATED PERFORMANCE</p><div class="winner">'+esc(leader.team.name)+'</div>'+
- '<p>'+leader.outcome.score+' / 100 · An illustrative comparison, not a diagnosis of real leadership skill.</p></div>'+
+ '<p>'+leader.outcome.score+' / 100 · Event health: '+esc(leader.outcome.status)+' · An illustrative comparison, not a diagnosis of real leadership skill.</p></div>'+
  '<div class="report">'+every+'</div>'+
  '<div class="debrief"><p class="eyebrow">DEBRIEF / '+esc(MODES[session.mode].label)+'</p>'+
  '<h3>Move from play to insight</h3><p>'+esc(MODES[session.mode].debrief)+'</p>'+
