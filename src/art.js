@@ -40,7 +40,7 @@ return '<g transform="translate(360 270)">'+person(0,410,1.05,"#b98b70","#1c313c
 }
 function scene(id){
 const theme=id==="press"?"#a84c43":id==="warehouse"?"#c5965c":id==="floor"?"#79a3b1":"#e6b16d";
-return '<svg class="scene-art" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Original illustrated corporate crisis environment">'+
+return '<svg class="scene-art" viewBox="0 0 1440 800" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Original illustrated team business challenge scene">'+
 '<defs><linearGradient id="night" x2=".8" y2="1"><stop stop-color="#142c3b"/><stop offset=".65" stop-color="#07121d"/><stop offset="1" stop-color="#07111a"/></linearGradient>'+
 '<linearGradient id="glass" x2="0" y2="1"><stop stop-color="#314d5c"/><stop offset=".65" stop-color="#4d5860"/><stop offset="1" stop-color="#a27354"/></linearGradient>'+
 '<linearGradient id="floor" x2="0" y2="1"><stop stop-color="#283540"/><stop offset="1" stop-color="#0a131b"/></linearGradient>'+
