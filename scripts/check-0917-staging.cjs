@@ -29,7 +29,7 @@ for(const token of [
 // A successful feature-branch push must NOT automatically overwrite a live
 // physical playtest. The release marker belongs to the latest commit message,
 // never a PR description or an old commit somewhere in the branch history.
-const releaseGuard=workflow.split("\n").find(line=>/^    if: \${\{\{/.test(line));
+const releaseGuard=workflow.split("\n").find(line=>line.startsWith("    if: ${{ "));
 assert.ok(releaseGuard,"Missing the deploy-isolated job-level release gate");
 for(const token of [
 "github.repository == 'adiusor/business-crisis'",
