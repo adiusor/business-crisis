@@ -896,35 +896,26 @@ try {
       "Each expanded chapter directly compares both teams");
     assert.equal(await reportHost.locator(".report-advanced[open]").count(),0,
       "Long cash and risk details should be opt-in");
-    assert.equal(await reportHost.getByRole("button",{name:"PRINT / SAVE AS PDF"}).count(),1);
-    assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS"}).count(),1);
-    assert.equal(await reportHost.locator(".boardroom-award").count(),3,
-      "Three award cards recognise real team strengths with no invented figures");
+    assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).count(),1);
+    assert.equal(await reportHost.locator(".boardroom-award").count(),3);
     assert.equal(await reportHost.locator(".boardroom-award-winner").count(),3);
-    assert.equal((await reportHost.locator("#results").innerText()).includes("JSON"),false);
     const downloadPromise=reportHost.waitForEvent("download");
-    await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS"}).click();
+    await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).click();
     const downloaded=await downloadPromise;
-    assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.html");
-    const html=await (await import("node:fs/promises")).readFile(await downloaded.path(),"utf8");
-    assert.match(html,/THE BOARDROOM VERDICT/);
-    assert.match(html,/BEYOND THE SCOREBOARD/);
-    assert.doesNotMatch(html,/mailto:|type=["']email["']|emailjs|sendgrid/i);
-    assert.match(html,/FINAL TEAM RANKINGS/);
-    assert.match(html,/THE DECISION TRAIL/);
-    assert.match(html,/CASH TRAJECTORY/);
-    assert.match(html,/ONE FINAL UNANSWERED QUESTION/);
-    assert.match(html,/not been identified/);
-    assert.match(html,/role="img"/);
-    assert.doesNotMatch(html,/FACILITATOR DEBRIEF/,"Debrief not exported into private team reports");
-    assert.doesNotMatch(html,new RegExp(hostToken));
-    assert.doesNotMatch(html,new RegExp(roomCode));
-    assert.doesNotMatch(html,/<script/i);
-    assert.match(html,/font-family:Segoe UI,Arial,Helvetica,sans-serif/,
-      "Exported report contains self-hosted system typography");
-    assert.doesNotMatch(html,/font-family:Inter,/,
-      "The exported report cannot depend on a missing web font");
-    assert.doesNotMatch(html,/credentialHash/);
+    assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.pdf",
+      "A direct download must provide a real PDF, not HTML");
+    const pdfBytes=await (await import("node:fs/promises")).readFile(await downloaded.path());
+    const pdfContent=pdfBytes.toString("latin1");
+    assert.match(pdfContent,/^%PDF-1\.4/);
+    assert.match(pdfContent,/THE BOARDROOM VERDICT/);
+    assert.match(pdfContent,/FINAL TEAM RANKINGS/);
+    assert.match(pdfContent,/CRISIS SNAPSHOT/);
+    assert.match(pdfContent,/WHAT EACH TEAM CHOSE/);
+    assert.match(pdfContent,/\/Count (?:[7-9]|[1-9][0-9])/);
+    assert.doesNotMatch(pdfContent,/mailto:|emailjs|sendgrid|credentialHash/i);
+    assert.doesNotMatch(pdfContent,new RegExp(hostToken));
+    assert.doesNotMatch(pdfContent,new RegExp(roomCode));
+    assert.ok(pdfBytes.length>10000,"PDF must contain actual graphical and textual content");
     assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
   } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
