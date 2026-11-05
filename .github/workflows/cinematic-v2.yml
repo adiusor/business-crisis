@@ -42,7 +42,7 @@ jobs:
       - name: Install browser runner
         run: |
           npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium webkit
+          npx playwright install --with-deps chromium webkit firefox
       - name: Bundle isolated Cloudflare Worker (dry-run only, no deploy)
         run: npm run check:room-bundle
       - name: Check staging shell syntax
@@ -55,6 +55,8 @@ jobs:
         run: node tests/room-runtime.test.mjs
       - name: Cross-browser Safari WebKit room journey (late join, voting, projector and finale)
         run: BC_BROWSER=webkit node tests/room-runtime.test.mjs
+      - name: Cross-browser Firefox room journey (late join, voting, projector and finale)
+        run: BC_BROWSER=firefox node tests/room-runtime.test.mjs
       - name: Play 2-, 3- and 4-team games in Chromium
         run: node tests/browser.mjs
       - name: Upload actual browser screenshots
