@@ -46,6 +46,7 @@ jobs:
           npm run test:rules
           npm run test:storyline
           npm run test:multiplayer
+          node --test tests/seo.test.mjs
           npm run check:staging-bundle
 
       - name: Validate browser, QR, WebSocket and six-episode gameplay before staging

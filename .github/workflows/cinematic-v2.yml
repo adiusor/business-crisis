@@ -30,11 +30,14 @@ jobs:
           node --check src/app.js
           node --check multiplayer/room-core.mjs
           node --check multiplayer/worker.mjs
+          node --check multiplayer/site.mjs
           node --check tests/multiplayer.test.mjs
       - name: Test economic engine and 1200 seeded sessions
         run: node tests/rules.test.cjs
       - name: Audit six episodes and consequence coherence
         run: node --test tests/storyline.test.cjs
+      - name: Verify global SEO pages, canonical URLs and staging noindex
+        run: node --test tests/seo.test.mjs
       - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
         run: |
           node --test tests/multiplayer.test.mjs
