@@ -26,7 +26,7 @@ assert.throws(()=>R.applyTurn(t0,0,0,3,[0,1],0),/Invalid public/);checks++;
 const promise=R.applyTurn(t0,0,1,2,[0,1],0);
 check(promise.pending.length===2,"two independent delayed commitments");
 let next=R.applyTurn(promise,1,0,0,[1,2],0);
-check(next.pending.length===1&&next.ledger.filter(x=>x.kind==="deferred").length===1,"only the round-two liability is charged");
+check(next.pending.length===2&&next.ledger.filter(x=>x.kind==="deferred").length===0,"first-stage feasibility checks remain deferred until the supplier review");
 check(R.evaluate(next).unpaid>0,"future liability remains distinct from cash");
 next=R.applyTurn(next,2,0,0,[1,2],0);
 check(next.pending.every(p=>p.due>3),"due liabilities charged once");
