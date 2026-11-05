@@ -309,9 +309,13 @@ try {
   const pendingSocket=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
   sockets.push(pendingSocket);
   const pendingClose=await new Promise((resolve,reject)=>{
-    const deadline=setTimeout(()=>reject(Error("Unauthenticated socket occupied a slot beyond 17s")),17000);
+    let opened=false,errored=false;
+    const deadline=setTimeout(()=>reject(Error(
+      "Unauthenticated socket occupied a slot beyond 17s; readyState="+pendingSocket.readyState+
+      " opened="+opened+" errored="+errored+" worker="+logs.slice(-650))),17000);
+    pendingSocket.addEventListener("open",()=>{opened=true;},{once:true});
     pendingSocket.addEventListener("close",event=>{clearTimeout(deadline);resolve(event.code);},{once:true});
-    pendingSocket.addEventListener("error",()=>{ /* close is authoritative */ });
+    pendingSocket.addEventListener("error",()=>{errored=true;});
   });
   assert.equal(pendingClose,1008,"Unauthenticated sockets must expire without a client message");
 

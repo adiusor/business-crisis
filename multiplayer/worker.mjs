@@ -245,7 +245,9 @@ export class CrisisRoom extends DurableObject {
               server.close(1008,"Authentication timed out");
           } catch(_){ /* already closed or DO recycled */ }
         },WS_AUTH_TIMEOUT_MS+250);
-        await this.schedule(room);
+        // Do not delay the HTTP 101 upgrade on persistent alarm storage. Some
+        // local Worker runtimes otherwise never complete the WebSocket handshake.
+        this.ctx.waitUntil(this.schedule(room));
         return new Response(null, {status: 101, webSocket: client});
       }
       fail(404, "Not found");
