@@ -363,7 +363,9 @@ try {
     const commercial=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
     commercial.on("pageerror",err=>browserErrors.push(err.message));
     await commercial.goto(base+"/",{waitUntil:"load"});
-    await commercial.locator(".hero .btn.main").click();
+    assert.equal(await commercial.locator(".hero a[href=\"/play\"]").count(),1,"Host entry is easy to find");
+    assert.equal(await commercial.locator(".hero a[href=\"/join\"]").count(),1,"Player entry is separate");
+    await commercial.locator('.hero a[href="#try-a-decision"]').click();
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
     await commercial.locator(".demo-choice").nth(1).locator("summary").click();
