@@ -1406,3 +1406,7 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
 body.projector-mode.in-game #round-recap.has-prebrief{display:block!important}
 body.projector-mode.in-game .prebrief-details{margin:6px 0 12px}
 body.projector-mode.in-game .prebrief-summary{padding:12px 16px}
+
+/* Projector lobby must fit its join QR, rules and team cards at 1280 × 720.
+   The public first-episode preview stays available on host/player screens. */
+body.projector-mode:not(.in-game) #round-recap{display:none!important}
