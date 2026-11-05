@@ -1,12 +1,12 @@
 (function(g){
 "use strict";
 const advisers=[
-{id:"legal",name:"MARA VALE",role:"GENERAL COUNSEL",color:"#b9a6a0",line:"What you say now becomes evidence."},
-{id:"ops",name:"DANIEL ROOK",role:"OPERATIONS DIRECTOR",color:"#a9bbc4",line:"The business still has to open tomorrow."},
-{id:"client",name:"INES PARK",role:"CLIENT PARTNER",color:"#b4a6b5",line:"Trust is built in the uncomfortable call."},
-{id:"finance",name:"ELI MERCER",role:"FINANCE CONTROLLER",color:"#9fbaa9",line:"Cash doesn't care about your intentions."},
-{id:"security",name:"NOOR SHAH",role:"SECURITY LEAD",color:"#a9b3c6",line:"A timestamp is a clue, not a verdict."},
-{id:"people",name:"RUTH BELL",role:"PEOPLE DIRECTOR",color:"#c4ae94",line:"Rumours spread faster than corrections."}
+{id:"legal",name:"MARA VALE",role:"GENERAL COUNSEL",color:"#b9a6a0",line:"Clear facts make confident decisions possible."},
+{id:"ops",name:"DANIEL ROOK",role:"OPERATIONS DIRECTOR",color:"#a9bbc4",line:"A strong plan must also work on the floor."},
+{id:"client",name:"INES PARK",role:"CLIENT PARTNER",color:"#b4a6b5",line:"Trust grows when we show our work."},
+{id:"finance",name:"ELI MERCER",role:"FINANCE CONTROLLER",color:"#9fbaa9",line:"Every pound should support a real outcome."},
+{id:"security",name:"NOOR SHAH",role:"SECURITY LEAD",color:"#a9b3c6",line:"Follow the evidence, not the first theory."},
+{id:"people",name:"RUTH BELL",role:"PEOPLE DIRECTOR",color:"#c4ae94",line:"A good leader gives people a real voice."}
 ];
 const episodes=[
 {id:"send",number:"01",time:"09:17",title:"THE SEND",kicker:"One unexpected message. One leadership opportunity.",scene:"mail",base:8000,
