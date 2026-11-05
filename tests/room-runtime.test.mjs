@@ -369,7 +369,7 @@ try {
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
     await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/Access is cut/);
+    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/sensitive access route is closed/i);
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -938,8 +938,8 @@ try {
     assert.equal(await reportHost.locator(".report-advanced[open]").count(),0,
       "Long cash and risk details should be opt-in");
     assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).count(),1);
-    assert.equal(await reportHost.locator(".boardroom-award").count(),3);
-    assert.equal(await reportHost.locator(".boardroom-award-winner").count(),3);
+    assert.equal(await reportHost.locator(".boardroom-award").count(),4);
+    assert.equal(await reportHost.locator(".boardroom-award-winner").count(),4);
     assert.equal(await reportHost.locator(".verdict-ring").count(),2,
       "Two factually grounded pie-style graphics appear in the verdict");
     assert.match(await reportHost.locator(".verdict-surprise").textContent(),/MOST EXPENSIVE CHAPTER/);
