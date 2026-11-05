@@ -133,14 +133,14 @@ GitHub Actions reports cash, score and risk percentiles from 1,200 seeded simula
 
 ## Results delivery — downloadable only
 
-**Product decision: no results-by-email feature, now or on the roadmap.** The final Boardroom Verdict displays in the room and can be downloaded instantly as a self-contained offline HTML file through **DOWNLOAD RESULTS**. A secondary **PRINT / SAVE AS PDF** option uses the browser's native print-to-PDF dialog. The app does not collect email addresses, contact recipients, run a mail delivery endpoint or require any account to retrieve results. The original fictional leaked email remains an element of the game's story, not a communication feature.
+**Product decision: no results-by-email feature, now or on the roadmap.** The final Boardroom Verdict displays in the room and can be downloaded instantly as a professionally formatted vector PDF through **DOWNLOAD RESULTS · PDF**, with no print dialog or HTML export. The app does not collect email addresses, contact recipients, run a mail delivery endpoint or require any account to retrieve results. The original fictional leaked email remains an element of the game's story, not a communication feature.
 
 ## Outstanding charter requirements — not yet delivered
 
 - **Partly prototyped, not released:** QR/link room joining, nickname/team selection, proposed team callsigns, host controls, authenticated per-role WebSocket snapshots, timed private adviser selection, reconnection attempts and 24-hour room expiry. Verified with local Cloudflare Worker integration and limited staging HTTPS smoke checks, not on real phones.
 - **Now built in local preview:** all six economic episodes and final score integration, individual voting with team-only tie-breaking, independent team timer freezes, time penalties, per-team private adviser intelligence, server-authoritative commits and a designed, printable/exportable Boardroom Verdict.
 - **Now locally prototyped:** separate projector mode with revocable, read-only credentials, and automatic refresh on reconnection or tab visibility.
-- **Still missing:** polished cinematic projector transitions, verified real-device reconnect, commercial host login, robust rate limits, host recovery, payment/licensing and direct browser-file PDF download. The current PDF path is **Print → Save as PDF in a browser**.
+- **Still missing:** polished cinematic projector transitions, verified real-device reconnect, commercial host login, robust rate limits, host recovery, payment/licensing and real-device PDF download verification, particularly iPhone Safari.
 - **Not independently verified:** real iPhone/Safari, assistive-technology screen readers, five moderated customer groups, 30-player load and reconnect, commercial willingness-to-pay and validated economic forecasts.
 - **Partially delivered:** recurring SVG characters, six episodes, shared-screen team competition, local save/resume and seeded scenario variants. Character art direction still requires founder approval.
 - **Release boundary:** this is a draft development PR. Production main/Cloudflare stays unchanged until deliberate approval.
