@@ -318,6 +318,8 @@ test("The delivery test changes risk/trust but never invents an expense or an aw
  alternative.history[2].planIndex=0;
  const aEvent=R.deliveryTest(initial,4),bEvent=R.deliveryTest(alternative,4);
  assert.notEqual(aEvent.id,bEvent.id);
+ // Compare with equal, non-saturated trust so the authored deltas are observable.
+ initial.trust=50; alternative.trust=50;
  const a=R.applyTurn(initial,4,0,0,[0,1],0,zero);
  const b=R.applyTurn(alternative,4,0,0,[0,1],0,zero);
  assert.equal(a.cash,b.cash);
