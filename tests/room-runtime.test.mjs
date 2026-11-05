@@ -304,6 +304,17 @@ try {
   assert.equal((await req("/api/rooms/" + roomCode + "/state","GET",undefined,rotated.payload.projectorToken)).response.status,200);
 
 
+  // A websocket opened without an auth message must be evicted; otherwise 64
+  // idle strangers can block every genuine team/player connection.
+  const pendingSocket=new WebSocket("ws://127.0.0.1:"+port+"/api/rooms/"+roomCode+"/socket");
+  sockets.push(pendingSocket);
+  const pendingClose=await new Promise((resolve,reject)=>{
+    const deadline=setTimeout(()=>reject(Error("Unauthenticated socket occupied a slot beyond 17s")),17000);
+    pendingSocket.addEventListener("close",event=>{clearTimeout(deadline);resolve(event.code);},{once:true});
+    pendingSocket.addEventListener("error",()=>{ /* close is authoritative */ });
+  });
+  assert.equal(pendingClose,1008,"Unauthenticated sockets must expire without a client message");
+
   // Browser-level preview check at actual 320px viewport, separate from the existing standalone game.
   // The same complete room journey runs in Chromium and Safari's WebKit engine.
   const browserName=process.env.BC_BROWSER==="webkit"?"webkit":"chromium";

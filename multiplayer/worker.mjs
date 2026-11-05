@@ -8,6 +8,9 @@ import CLIENT_ART from "./client-art.txt";
 import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
   clockFor, expireRoom, rotateProjector, ROOM_CODE_ALPHABET} from "./room-core.mjs";
 
+// Pending, unauthenticated sockets must not occupy one of the 64 connections
+// forever. Durable Object alarms enforce the deadline across hibernation.
+const WS_AUTH_TIMEOUT_MS = 12000;
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' ws: wss:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
@@ -112,6 +115,13 @@ export class CrisisRoom extends DurableObject {
     if (clock) {
       if (now < clock.normalEndsAt) times.push(clock.normalEndsAt);
       else if (now < clock.closesAt) times.push(clock.closesAt);
+    }
+    for(const ws of this.ctx.getWebSockets()){
+      const attachment=ws.deserializeAttachment();
+      if(attachment?.role!=="pending")continue;
+      const due=(Number.isFinite(attachment.createdAtMs)?
+        attachment.createdAtMs:now)+WS_AUTH_TIMEOUT_MS;
+      times.push(Math.max(now+1000,due));
     }
     await this.ctx.storage.setAlarm(Math.min(...times));
   }
@@ -219,12 +229,13 @@ export class CrisisRoom extends DurableObject {
         return json({state: viewFor(next, actor)});
       }
       if (path === "/socket" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
-        await this.readRoom();
+        const room=await this.readRoom();
         if (this.ctx.getWebSockets().length >= 64) fail(429, "Too many connections");
         const pair = new WebSocketPair();
         const [client, server] = Object.values(pair);
         this.ctx.acceptWebSocket(server);
-        server.serializeAttachment({role: "pending"});
+        server.serializeAttachment({role:"pending",createdAtMs:Date.now()});
+        await this.schedule(room);
         return new Response(null, {status: 101, webSocket: client});
       }
       fail(404, "Not found");
@@ -239,6 +250,9 @@ export class CrisisRoom extends DurableObject {
       if (!input || typeof input !== "object" || Array.isArray(input)) fail(400, "Invalid message");
       const room = await this.readRoom();
       if (attachment.role === "pending") {
+        if(!Number.isFinite(attachment.createdAtMs)||
+           Date.now()-attachment.createdAtMs>=WS_AUTH_TIMEOUT_MS)
+          fail(401,"Authentication window expired");
         if (input.type !== "authenticate" || typeof input.token !== "string" || !/^[0-9a-f]{64}$/.test(input.token))
           fail(401, "Unauthorized");
         const actor = authorize(room, await sha256(input.token));
@@ -270,6 +284,15 @@ export class CrisisRoom extends DurableObject {
   }
   async alarm() {
     try {
+      const now=Date.now();
+      for(const ws of this.ctx.getWebSockets()){
+        const attached=ws.deserializeAttachment();
+        if(attached?.role!=="pending")continue;
+        if(!Number.isFinite(attached.createdAtMs)||
+           now-attached.createdAtMs>=WS_AUTH_TIMEOUT_MS){
+          try{ws.close(1008,"Authentication timed out");}catch(_){}
+        }
+      }
       const room = await this.readRoom();
       await this.schedule(room);
       await this.notify(room); // Timers enter the grace window without continuous polling.
