@@ -1338,3 +1338,21 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
 .host-format-guide summary{cursor:pointer;color:#e9bf95;font-size:11px;font-weight:850;
  letter-spacing:.07em;line-height:1.5}
 .host-format-guide p{margin:10px 0 0;color:#c6dade;font-size:13px;line-height:1.48}
+
+/* Keep the original projector composition fully visible on large 16:9 displays.
+   At 1920px some engine font metrics cause evidence cards to overflow the
+   fixed-height stage. Compact only on wide, tall projectors. */
+@media(min-width:1500px) and (min-height:900px){
+ .projector-mode.in-game .layout{padding:4px 2.3vw 6px}
+ .projector-mode.in-game .content-panel{padding:7px 12px}
+ .projector-mode.in-game .episode-panel{padding:7px 12px}
+ .projector-mode.in-game .scene-hero{max-height:188px}
+ .projector-mode.in-game .scene-art{min-height:120px;max-height:135px}
+ .projector-mode.in-game .scene-art svg{max-height:137px}
+ .projector-mode.in-game .scene-copy h3{font-size:clamp(43px,3vw,58px)!important;margin:2px 0 5px}
+ .projector-mode.in-game .episode-progress{margin:3px 0 4px}
+ .projector-mode.in-game .evidence-list{gap:7px}
+ .projector-mode.in-game .evidence-item summary{padding:6px 9px;gap:3px}
+ .projector-mode.in-game .evidence-finding{font-size:clamp(14px,1vw,16px);line-height:1.22}
+ .projector-mode.in-game .evidence-summary strong{font-size:clamp(14px,1vw,17px)}
+}

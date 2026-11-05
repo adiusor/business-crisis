@@ -329,7 +329,7 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.equal(rules.length,6,"One-minute briefing contains exactly six rules");
   assert.match(html, /THE CLOCK IS REAL/);
   assert.match(html, /THE MAJORITY DECIDES/);
-  assert.match(html, /SURVIVE TO WIN/);
+  assert.match(html, /MAKE IT COUNT/);
   assert.match(html, /3:00 without penalty/);
   assert.match(html, /4:00 costs −12/);
   assert.match(html, /reserve minute costs −5/);
@@ -344,7 +344,7 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
   assert.doesNotMatch(style, /font-family:Inter,/, "No unshipped Inter dependency");
   assert.doesNotMatch(script, /fonts\.googleapis\.com|fonts\.gstatic\.com/,
     "No external font requests or third-party image traffic");
-  assert.match(html, /ONE LEAK\./);
+  assert.match(html, /ONE STORY\./);
   assert.match(html, /SIX CALLS\./);
   assert.match(script, /EPISODE_FACTS/, "Every chapter has a concise public fact strip");
   assert.match(script, /renderPublicFacts\(number\)/);

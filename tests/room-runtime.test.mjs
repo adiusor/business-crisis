@@ -717,6 +717,15 @@ try {
           scroll:document.documentElement.scrollHeight,
           clipped:cards.some(x=>x.bottom>innerHeight-8||x.top<0)};
       });
+      if(screen.scroll>screen.height+2||screen.clipped){
+        const geometry=await projected.evaluate(()=>{
+          const names=[".masthead",".layout",".content-panel",".scene-hero",".episode-panel",".episode-progress",".briefing-details",".evidence-folder",".evidence-list"];
+          const result={};
+          for(const n of names){const e=document.querySelector(n),r=e?.getBoundingClientRect();result[n]=r?{top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height)}:null}
+          return result;
+        });
+        console.error("PROJECTOR FIT DIAGNOSTIC",JSON.stringify({dimensions,screen,geometry}));
+      }
       assert.ok(screen.scroll<=screen.height+2&&!screen.clipped,
         "Projector must fit legacy 4:3 and Full HD screens without losing evidence: "+JSON.stringify(screen));
     }
