@@ -150,7 +150,7 @@ export class CrisisRoom extends DurableObject {
       const attachment = ws.deserializeAttachment();
       if (!attachment || attachment.role === "pending") continue;
       if(attachment.role==="player" &&
-         !room.players.some(p=>p.id===attachment.playerId)){
+         !room.players.some(p=>!p.departed&&p.id===attachment.playerId)){
         try{ws.close(1008,"Participant access revoked");}catch(_){}
         continue;
       }
@@ -247,7 +247,7 @@ export class CrisisRoom extends DurableObject {
         return;
       }
       if(attachment.role==="player" &&
-         !room.players.some(p=>p.id===attachment.playerId)){
+         !room.players.some(p=>!p.departed&&p.id===attachment.playerId)){
         ws.close(1008,"Participant access revoked");return;
       }
       if(attachment.role === "projector" && attachment.credentialHash !== room.projectorHash){

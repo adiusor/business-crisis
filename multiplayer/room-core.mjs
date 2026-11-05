@@ -332,6 +332,7 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
    next.teams[previous].captainId=liveMembers(next,previous)[0]?.id||null;
   if(!next.teams[destination].captainId)
    next.teams[destination].captainId=player.id;
+   rosterEvent(next,"moved",player.nickname,next.teams[destination].name,nowMs);
  }else if(type==="rename_team"){
   requireState(!!player&&next.phase==="lobby",403,"Only a lobby participant can rename their team");
   const t=next.teams[player.teamIndex];
@@ -401,7 +402,8 @@ export function applyRoomAction(room,actor,command,nowMs=Date.now()){
    penalty:t.roundPenalty,timedOut:t.timedOut})); // Never expose private adviser indices.
   if(next.round===5){next.phase="complete";next.startedAtMs=null;}
   else{
-   next.round++;next.startedAtMs=nowMs;
+    next.players=next.players.filter(p=>!p.departed);
+    next.round++;next.startedAtMs=nowMs;
    next.teams.forEach(t=>{t.advisers=[];t.locked=false;t.lockedAtMs=null;t.timedOut=false;
     t.votes={};t.participatedIds=[];t.runoff=null;t.roundPenalty=0;});
   }
@@ -439,7 +441,7 @@ export function viewFor(room,actor,nowMs=Date.now()){
     lockedAtMs:t.lockedAtMs||null})),
    verdict:room.phase==="complete"?finalVerdict(room):null};
  }
- const player=actor.role==="player"?room.players.find(p=>p.id===actor.playerId):null;
+ const player=actor.role==="player"?room.players.find(p=>!p.departed&&p.id===actor.playerId):null;
  requireState(actor.role==="host"||!!player&&!player.departed,401,"Unauthorized");
  const shared={code:room.code,phase:room.phase,round:room.round,revision:room.revision,
   expiresAtMs:room.expiresAtMs,clock:clockFor(room,nowMs),episode:publicEpisode(room),

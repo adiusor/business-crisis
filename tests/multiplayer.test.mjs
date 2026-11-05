@@ -35,7 +35,7 @@ test("host and players require independently authenticated credentials", () => {
   assert.equal(JSON.stringify(joined.room).includes('"host"'), false, "plaintext host token never stored");
 });
 
-test("joining is lobby-only, requires unique nicknames, and stays bounded", () => {
+test("joining allows late arrival without changing current votes, requires unique nicknames, and stays bounded", () => {
   let {room, host} = fixture();
   assert.throws(() => enter(room, "A", 10, 1), /Invalid team/);
   assert.throws(() => enter(room, " ", 0, 1), /Nickname/);
@@ -44,7 +44,13 @@ test("joining is lobby-only, requires unique nicknames, and stays bounded", () =
   assert.throws(() => act(room, host, "start"), /Each team needs a participant/);
   room = enter(room, "Bob", 1, 2).room;
   room = act(room, host, "start");
-  assert.throws(() => enter(room, "Late", 0, 3), /late joining is not enabled/);
+  const newcomer=enter(room,"Late",0,3);
+  room=newcomer.room;
+  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.canVote,false);
+  assert.equal(viewFor(room,newcomer.actor).privateTeam.voting.totalMembers,1);
+  assert.equal(room.teams[0].locked,false);
+  assert.throws(()=>act(room,newcomer.actor,"select_advisers",{advisers:[0,1]}),/Joined mid-episode/);
+  assert.match(JSON.stringify(viewFor(room,host).rosterEvents),/Late/);
   assert.equal(room.phase, "advisers");
   let capped = fixture().room;
   for (let i = 0; i < MAX_PLAYERS; i++) capped = enter(capped, "P" + i, i % 2, i + 100).room;
@@ -946,4 +952,45 @@ test("runoff-stage guard rejects delayed original ballots despite unchanged epis
  assert.throws(()=>applyRoomAction(room,host,{
    type:"set_captain",playerId:a.actor.playerId,expectedRevision:oldRevision
  },at+7),/Room changed/,"Host administration retains strict revision checking");
+});
+
+test("late arrivals do not reset a clock or prolong current votes; they vote next round",()=>{
+ let {room,host}=fixture();
+ const a=enter(room,"Alice",0,41);room=a.room;
+ const b=enter(room,"Bob",1,42);room=b.room;
+ room=act(room,host,"start");
+ const start=room.startedAtMs;
+ const late=enter(room,"Late",0,43);room=late.room;
+ assert.equal(room.startedAtMs,start);
+ assert.equal(viewFor(room,late.actor).privateTeam.voting.canVote,false);
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].locked,true);
+ room=act(room,b.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,b.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ room=act(room,host,"advance");
+ assert.equal(viewFor(room,late.actor).privateTeam.voting.canVote,true);
+ assert.equal(viewFor(room,late.actor).privateTeam.voting.totalMembers,2);
+ room=act(room,a.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,a.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].locked,false);
+ room=act(room,late.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ assert.equal(room.teams[0].locked,true);
+});
+
+test("explicit departure revokes access without erasing committed decisions",()=>{
+ let {room,host}=fixture();
+ const alice=enter(room,"Alice",0,51);room=alice.room;
+ const bob=enter(room,"Bob",1,52);room=bob.room;
+ room=act(room,host,"start");
+ room=act(room,alice.actor,"select_advisers",{advisers:[0,1]});
+ room=act(room,alice.actor,"lock_vote",{planIndex:0,signalIndex:0});
+ const original=room.teams[0].economic.cash;
+ room=act(room,alice.actor,"leave_room");
+ assert.throws(()=>authorize(room,hash("participant-51")) ,/Unauthorized/);
+ assert.equal(room.teams[0].economic.cash,original);
+ assert.equal(viewFor(room,host).teams[0].joined,0);
+ assert.match(JSON.stringify(viewFor(room,host).rosterEvents),/left/);
+ assert.equal(JSON.stringify(viewFor(room,{role:"projector"})).includes("credentialHash"),false);
+ assert.throws(()=>act(room,alice.actor,"lock_vote",{planIndex:2,signalIndex:2}),/Only a participant/);
 });
