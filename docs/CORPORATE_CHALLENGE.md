@@ -51,3 +51,18 @@ Every plan has at least one plausible operational/commercial benefit and a meani
 - The separate *Opening Night* educational game and Vercel experiment remain untouched in `feature/business-in-play-learning-v1`.
 - The standalone `index.html` can be opened as a local HTML file after download. It is **not** the live 25-player room product.
 - A clean staging / preview and CI review must happen before directing prospective clients to the new version.
+
+## Full playable multiplayer staging URL — verified
+**Use this URL to review the actual product**, not the misleading standalone Vercel demo:
+
+**https://the-0917-challenge-staging.adiusor.workers.dev/**
+
+This separate Cloudflare Worker preserves all original sections (`THE GAME`, `REMOTE TEAMS`, `LEADERSHIP`, `FOR FACILITATORS`) and the private Host, Join, QR, team assignment, voting, projector and PDF routes.
+
+**How to test:** The host opens `/play`, chooses 2–4 teams and uses the founder-managed creation key. Players open `/join`, enter the shared 4-character room code and nickname, choose a named team or select automatic smallest-team assignment, then vote privately. The host never votes in that role. The projector uses its own read-only credential.
+
+The dedicated deployment configuration is `multiplayer/wrangler.0917.staging.jsonc` and its guarded workflow is `.github/workflows/0917-full-staging.yml`. It uses independent Worker/Durable Object storage, not the original Business Crisis staging room database or production.
+
+**Limits:** This is staging and not an approved commercial service. Unit and browser simulations do not prove that 25 physical phones will perform reliably on a venue network. The current strict winner is a renewal-readiness *simulation criterion*, not evidence of a client having actually signed a contract. Scores are inspectable in the boardroom report.
+
+**Original / new coexistence:** The original Business Crisis staging remains at `https://business-crisis-rooms-staging.adiusor.workers.dev/`. Opening Night and the Business in Play Vercel site are separate experiments. Never send participants to the standalone Vercel `0917-challenge-experimental` link when demonstrating room join and live host controls.
