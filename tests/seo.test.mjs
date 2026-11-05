@@ -50,6 +50,7 @@ test("commercial incident choices originate in canonical opening story",()=>{
  const first=globalThis.BCContent.episodes[0];
  const page=renderPublicPage("/",live,cfg).html;
  assert.match(page,/id="try-a-decision"/);
+ assert.match(page,/class="btn main" href="#try-a-decision">TRY A DECISION/);
  assert.equal((page.match(/class="demo-choice"/g)||[]).length,3);
  for(const option of first.plans){
    assert.ok(page.includes(option.name));

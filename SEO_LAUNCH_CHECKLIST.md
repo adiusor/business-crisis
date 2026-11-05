@@ -2,6 +2,7 @@
 SEO staging preview; not a published commercial launch. Updated November 5, 2026.
 
 Implemented:
+- The global homepage and corporate landing primary CTA now takes visitors directly to the interactive decision sample.
 - An interactive, JavaScript-free first-episode strategy sampler based on canonical game data on the homepage and corporate landing page. No unverified outcomes or personal data collection.
 - Server-rendered unique pages for homepage, corporate game, remote teams, leadership, facilitators, about, Romanian entry, pricing status and demo status.
 - Dedicated room experience at /play, /join and /projector. Old /?room=CODE links remain valid.

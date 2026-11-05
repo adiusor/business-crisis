@@ -19,7 +19,7 @@
 | Rules of Engagement shown on first entry, collapsed and moved below action during live play | Implemented in player/host; projector rules optional overlay only in lobby | Browser position checks, responsive CSS |
 | Boardroom exciting, readable, designed, few irrelevant KPIs | Original boardroom SVG art; team rankings, short outcome narrative and 3 evidence-based awards; deeper financial data optional | Browser screenshot tests. **Qualitative review by real players still needed.** |
 | Comparison across all teams for all six rounds | Implemented as one expandable, round-by-round comparative trail | Two–four-team verdict and download tests |
-| No email results, no email form, no mail sending or mail feature roadmap | Permanent **DOWNLOAD-ONLY** product decision; `DOWNLOAD RESULTS` saves local offline HTML; secondary native browser Print to PDF | Source and no-email regression |
+| No email results, no email form, no mail sending or mail feature roadmap | Permanent **DOWNLOAD-ONLY** product decision; `DOWNLOAD RESULTS · PDF` generates and downloads a standalone vector PDF directly | Source and no-email regression |
 | Projector link copied into new browser still works | Read-only revocable `/projector?room=CODE#access=TOKEN`; host copy, projector copy and selectable fallback | Fresh-session browser verification. Do not share publicly. |
 | No need to scroll the physical projector screen | Dedicated 1280×720 lobby / incident / finale; detailed evidence opens in on-screen overlays | 4:3 1024×768 and Full HD 1920×1080 checks added, final outcome depends on green CI |
 | Mobile legible and less scrolling | Shorter incident, collapsible evidence and finances, persistent decision dock, collapsed adviser picker | 320px and 390px browser checks. Real iPhone needed. |
@@ -40,7 +40,7 @@
 9. **Projector link is forwarded:** it permits read-only shared-room access, not host or player access; rotating revokes past links.
 10. **Repeated anonymous socket opens exhaust capacity:** unauthenticated sockets should close quickly; separate production-grade rate limits are still required.
 11. **A participant uses a copied host tab or joins from a new Safari window:** routing and host/player separation must be tested in WebKit, not inferred from Chromium alone.
-12. **Downloads are attempted offline or on iOS:** self-contained HTML remains usable without external assets; PDF relies on the user's native print/save dialog.
+12. **Downloads are attempted offline or on iOS:** the PDF is generated locally without a print dialog; real iOS download behavior is not yet device-tested.
 
 ## Still NOT complete / must be treated honestly
 
@@ -50,7 +50,7 @@
 - Commercial willingness-to-pay, replayability and actual team learning outcomes are unmeasured.
 - Current story branches share a fixed six-episode spine; alternative story arcs or deeper cumulative branching are a product phase, not delivered now.
 - Room nicknames are pseudonymous but may still be personal data: the prototype notice and 24h retention are not a substitute for a full privacy review.
-- The download is self-contained **HTML**; PDF is available through the browser's Print/Save as PDF action, not a dedicated one-click PDF renderer.
+- The Boardroom report now offers a one-click **locally generated PDF** with actual decision charts. No HTML results export or email submission remains. Real-world iOS downloads and customer readability are still unverified.
 
 ## Product opportunities — prioritised, not falsely labelled as done
 
