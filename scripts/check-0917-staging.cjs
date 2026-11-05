@@ -17,6 +17,11 @@ for(const cfg of [challenge,legacy,original]){
  }
 }
 const workflow=fs.readFileSync(".github/workflows/0917-full-staging.yml","utf8");
+const pushTrigger=workflow.split("  push:")[1]?.split("  workflow_dispatch:")[0]||"";
+assert.ok(pushTrigger.includes('branches: ["feature/0917-corporate-challenge"]'),
+  "Release verification must run on the authorised staging branch");
+assert.ok(!pushTrigger.includes("paths:"),
+  "Path filters can silently suppress explicit release commits; verify every push instead");
 for(const token of [
 'branches: ["feature/0917-corporate-challenge"]',
 "vars.BC_STAGING_DEPLOY_ENABLED == 'YES'",
