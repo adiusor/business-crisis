@@ -194,3 +194,78 @@ test("all six Project Spark chapters supply a purposeful public collaboration pr
     "A discussion prompt must not instruct or reveal the secret winning plan");
  }
 });
+
+
+test("Episode 04's teaser tests recorded promises, not an arbitrary shared script",()=>{
+ const setup=(plans,signals)=>{
+  let t=R.createTeam(0,"TEAM");
+  for(let i=0;i<3;i++)t=R.applyTurn(t,i,plans[i],signals[i],[0,1],0,zero);
+  return t;
+ };
+ const paths=[
+  {plans:[1,1,1],signals:[1,0,0],id:"ambition-fast"},
+  {plans:[1,1,0],signals:[0,0,0],id:"ambition"},
+  {plans:[2,1,0],signals:[2,0,0],id:"focused"},
+  {plans:[0,0,0],signals:[0,0,0],id:"co-designed"},
+  {plans:[0,1,2],signals:[0,0,0],id:"unverified"}
+ ];
+ const variants=[];
+ for(const path of paths){
+  const before=setup(path.plans,path.signals);
+  const baseline=JSON.stringify(before);
+  const surprise=R.spotlightTwist(before,3);
+  assert.equal(surprise.id,path.id);
+  assert.match(surprise.text,/teaser|public|visitor|partner/i);
+  assert.ok(Object.keys(surprise.delta).length>=1);
+  assert.equal(JSON.stringify(before),baseline,"Inspecting a callback must not mutate the team's state");
+  assert.equal(R.spotlightTwist(before,2),null,"The surprise must not arrive in episode three");
+  assert.equal(R.spotlightTwist(before,4),null,"Episode five cannot charge the same event twice");
+  const after=R.applyTurn(before,3,0,0,[0,1],0,zero);
+  assert.equal(after.history[3].spotlight.id,path.id);
+  assert.match(after.history[3].fallout,/EARLIER PROMISES UNDER THE SPOTLIGHT/);
+  assert.ok(after.history[3].fallout.includes(surprise.result));
+  assert.equal(after.cash,C.initialCash-after.ledger.reduce((sum,x)=>sum+x.amount,0));
+  assert.equal(after.nextRound,4);
+  variants.push(surprise.text);
+ }
+ assert.equal(new Set(variants).size,5,"Each path has a distinct narrative pressure");
+});
+
+test("Episode 04 has real model consequences but never invents a cash expense or contract award",()=>{
+ const make=(plans,signals)=>{
+  let t=R.createTeam(0,"TEAM");
+  for(let i=0;i<3;i++)t=R.applyTurn(t,i,plans[i],signals[i],[0,1],0,zero);
+  return t;
+ };
+ const ambitious=make([1,1,1],[1,0,0]);
+ // Compare counterfactual histories against the *same* economic state so the
+ // observed difference is the spotlight callback alone, not earlier spending.
+ const focused=JSON.parse(JSON.stringify(ambitious));
+ focused.history[0].planIndex=2;
+ focused.history[0].signalIndex=2;
+ assert.equal(R.spotlightTwist(ambitious,3).id,"ambition-fast");
+ assert.equal(R.spotlightTwist(focused,3).id,"focused");
+ const a=R.applyTurn(ambitious,3,0,0,[0,1],0,zero);
+ const b=R.applyTurn(focused,3,0,0,[0,1],0,zero);
+ assert.equal(a.cash,b.cash,"The spotlight adds risk, not fictitious spend");
+ assert.equal(a.ledger.length,b.ledger.length);
+ assert.notEqual(a.risks.legal,b.risks.legal);
+ assert.notEqual(a.trust,b.trust);
+ assert.equal(a.pending.reduce((sum,x)=>sum+x.cost,0),b.pending.reduce((sum,x)=>sum+x.cost,0));
+ assert.doesNotMatch(a.history[3].fallout,/has been awarded|contract signed/i);
+});
+
+test("Missed earlier response creates a distinct spotlight risk even on an episode-four timeout",()=>{
+ let t=R.createTeam(0,"TEAM");
+ t=R.applyTurn(t,0,0,0,[0,1],0,zero);
+ t=R.applyTimeout(t,1,0);
+ t=R.applyTurn(t,2,0,0,[0,1],0,zero);
+ const surprise=R.spotlightTwist(t,3);
+ assert.equal(surprise.id,"unanswered");
+ assert.equal(surprise.trust,-2);
+ const after=R.applyTimeout(t,3,0);
+ assert.equal(after.history[3].spotlight.id,"unanswered");
+ assert.equal(after.history[3].timedOut,true);
+ assert.match(after.history[3].fallout,/EARLIER PROMISES UNDER THE SPOTLIGHT/);
+ assert.equal(after.cash,C.initialCash-after.ledger.reduce((sum,x)=>sum+x.amount,0));
+});
