@@ -351,7 +351,14 @@ test("UI is a separate no-email preview with a real QR route and no inline crede
     "Original illustrated story art receives sufficient foreground visibility");
 
   assert.doesNotMatch(script, /localStorage/);
-  assert.doesNotMatch(html, /type="email"/);
+  assert.doesNotMatch(html, /type=["']email["']/i);
+  const worker=await fs.readFile(new URL("../multiplayer/worker.mjs",import.meta.url),"utf8");
+  assert.doesNotMatch(worker, /sendgrid|mailgun|postmark|smtp|mailjet|resend\.com|mailto:/i,
+    "No outbound mail transport may be introduced in the room worker");
+  assert.match(script, /button\("DOWNLOAD RESULTS"/,
+    "The final verdict has an immediate local-download action");
+  assert.doesNotMatch(script,/mailto:|navigator\.share\(|type=["']email["']/i,
+    "The player UI must never collect an address or create mail delivery links");
   assert.match(style, /max-width:430px/, "Narrow phones retain a responsive breakpoint");
   assert.doesNotMatch(style, /min-width\s*:\s*320px/, "No minimum 320px width that could force overflow");
   assert.doesNotThrow(() => new Function(script), "Client JS has valid syntax");

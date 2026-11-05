@@ -632,6 +632,18 @@ try {
     });
     assert.ok(stageFit.visible && stageFit.scroll<=stageFit.innerHeight+2,
       "Full projected scene and source leads must fit without vertical scroll: "+JSON.stringify(stageFit));
+    for(const dimensions of [{width:1024,height:768},{width:1920,height:1080}]){
+      await projected.setViewportSize(dimensions);
+      const screen=await projected.evaluate(()=>{
+        const cards=[...document.querySelectorAll(".evidence-item summary")].map(x=>x.getBoundingClientRect());
+        return {width:innerWidth,height:innerHeight,
+          scroll:document.documentElement.scrollHeight,
+          clipped:cards.some(x=>x.bottom>innerHeight-8||x.top<0)};
+      });
+      assert.ok(screen.scroll<=screen.height+2&&!screen.clipped,
+        "Projector must fit legacy 4:3 and Full HD screens without losing evidence: "+JSON.stringify(screen));
+    }
+    await projected.setViewportSize({width:1280,height:720});
     await projected.locator(".evidence-item summary").first().click();
     assert.equal(await projected.locator(".evidence-item[open] .dismiss-exhibit").isVisible(),true,
       "Full evidence opens in a bounded, closable projector overlay");

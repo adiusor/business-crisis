@@ -998,7 +998,7 @@
     const header = node("header", null, "report-head");
     header.append(node("p", "BUSINESS CRISIS / THE 09:17 INCIDENT", "report-eyebrow"));
     header.append(node("h2", "THE BOARDROOM VERDICT"));
-    header.append(node("p", "Six decisions. One crisis. One team walks into the boardroom with the strongest result.", "report-subhead"));
+    header.append(node("p", "Six decisions. One crisis. The board has reached its verdict.", "report-subhead"));
     if(window.BCPreviewArt?.scene){
       const art=node("div",null,"report-scene-art");
       art.innerHTML=window.BCPreviewArt.scene("board");
@@ -1064,7 +1064,7 @@
     awards.append(node("h3","BEYOND THE SCOREBOARD","report-section-title"));
     const awardGrid=node("div",null,"boardroom-awards-grid");
     const awardSpecs=[
-      ["THE PEOPLE'S TRUST","HIGHEST CLIENT TRUST","trust",true," / 100"],
+      ["THE CLIENT'S TRUST","HIGHEST CLIENT TRUST","trust",true," / 100"],
       ["THE CASH GUARDIAN","MOST RESPONSE CASH LEFT","cash",true,""],
       ["THE CLOCKKEEPER","FEWEST TIME PENALTY POINTS","timingPenalty",false," PTS LOST"]
     ];
