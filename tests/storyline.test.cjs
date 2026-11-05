@@ -169,3 +169,61 @@ test("every strategic or statement alternative changes model state on at least o
   }
  }
 });
+
+test("the next episode uses the team's actual earlier choice, including missed decisions",()=>{
+ const initial=R.createTeam(0,"TEAM");
+ assert.equal(R.storyContext(initial,0),null);
+ const verifying=R.applyTurn(initial,0,0,0,[0,1],0);
+ const restricting=R.applyTurn(initial,0,1,2,[0,1],0);
+ assert.equal(verifying.nextRound,1);
+ const a=R.storyContext(verifying,1),b=R.storyContext(restricting,1);
+ assert.notEqual(a.lead,b.lead);
+ assert.match(a.lead,/verification trail/);
+ assert.match(b.lead,/access restrictions/);
+ assert.match(b.pressure,/future commitments/);
+ assert.equal(R.storyContext(verifying,1).lead,a.lead,"Story must be reproducible");
+ assert.match(restricting.history[0].fallout,/Customers hear operational reassurance/);
+ assert.doesNotMatch(verifying.history[0].fallout,/Customers hear operational reassurance/);
+ const timeout=R.applyTimeout(initial,0,0);
+ assert.match(R.storyContext(timeout,1).lead,/did not file a response/);
+});
+test("story never describes an insolvent intervention as fully funded and reflects deferred liabilities",()=>{
+ let t=R.createTeam(0,"FUNDING");
+ t.cash=5000; // controlled what-if for the insolvency narrative path
+ const next=R.applyTurn(t,0,0,2,[0,1],0);
+ assert.ok(next.cash<0);
+ assert.match(next.history[0].fallout,/cannot authorise the unfunded portion/);
+ assert.match(next.history[0].fallout,/still committed for future/);
+ assert.doesNotMatch(next.history[0].fallout,/client receives a verified update/);
+ let debt=R.applyTurn(R.createTeam(0,"DUE"),0,1,2,[0,1],0);
+ debt=R.applyTurn(debt,1,0,0,[0,1],0);
+ assert.match(debt.history[1].fallout,/Earlier promises have now cost £/);
+ assert.ok(debt.history[1].paidDeferred.length>0);
+});
+test("score components reconcile to the exact published economic score",()=>{
+ const p=[0,1,2,0,1,2],q=[2,0,1,2,0,1];
+ for(let variant=0;variant<C.variants.length;variant++){
+  let t=R.createTeam(0,"FINANCE");
+  for(let i=0;i<6;i++)t=R.applyTurn(t,i,p[i],q[i],[0,1],variant,
+   [2,4].includes(i)?{amount:10000,route:"audit"}:{amount:0,route:null});
+  const o=R.evaluate(t),b=o.scoreBreakdown;
+  const raw=b.base-b.riskPenalty+b.trustEffect-b.liquidityPenalty-b.commitmentPenalty-
+   b.cashPenalty-b.customerPenalty-b.operationsPenalty-b.reservePenalty;
+  assert.ok(Math.abs(raw-b.unrounded)<0.06,"Breakdown components must reconcile to unrounded value");
+  assert.equal(o.score,b.economicScore);
+  assert.ok(Array.isArray(o.strengths)&&o.strengths.length>=1);
+  assert.ok(Array.isArray(o.nextSteps)&&o.nextSteps.length>=1);
+  assert.equal(t.cash,C.initialCash-t.ledger.reduce((a,x)=>a+x.amount,0));
+ }
+});
+test("liquidity is derived from actual funded cash and commitments, not overwritten story modifiers",()=>{
+ let t=R.createTeam(0,"LEDGER");
+ for(let round=0;round<6;round++){
+  t=R.applyTurn(t,round,1,1,[0,1],0);
+  const unpaid=t.pending.reduce((sum,x)=>sum+x.cost,0);
+  const coverage=t.cash-unpaid;
+  const expected=R.clamp(Math.round(22+Math.max(0,C.initialCash-coverage)/C.initialCash*65+
+   (t.cash<0?10:0)),18,95);
+  assert.equal(t.risks.liquidity,expected);
+ }
+});
