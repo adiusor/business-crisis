@@ -1356,3 +1356,16 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
  .projector-mode.in-game .evidence-finding{font-size:clamp(14px,1vw,16px);line-height:1.22}
  .projector-mode.in-game .evidence-summary strong{font-size:clamp(14px,1vw,17px)}
 }
+
+/* Narrative bridge is private to the team and never displaces primary ballot controls. */
+.team-story-thread{margin:12px 0;padding:0;border:1px solid #567a75;background:#173b3a;color:#e8f0e5}
+.team-story-thread summary{display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;padding:13px 15px;list-style:none}
+.team-story-thread summary::-webkit-details-marker{display:none}
+.team-story-thread summary strong{font-size:12px;color:#f0d8a3}
+.team-story-thread>p{margin:5px 15px 12px;line-height:1.5}
+.team-story-thread .story-pressure{border-left:3px solid #d8ad78;padding:8px 12px;background:#243d3b}
+.report-numeric-breakdown,.report-learning-notes{padding:14px 17px;border-top:1px solid #809991}
+.report-calculation-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #899d97;padding:6px 0;margin:0;font-size:13px}
+.report-calculation-row strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.report-learning-notes p{font-size:14px;line-height:1.45}
+@media(max-width:540px){.team-story-thread summary{padding:11px}.report-calculation-row{font-size:12px}}
