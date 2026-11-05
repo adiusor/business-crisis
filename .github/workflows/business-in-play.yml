@@ -1,0 +1,62 @@
+name: Business in Play experimental quality gates
+on:
+  push:
+    branches: ["feature/business-in-play-learning-v1"]
+    paths: ["learning/*.js", "learning/*.cjs", "learning/*.css", "learning/*.html", "learning/tests/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
+  pull_request:
+    branches: ["exploration/entertainment-first-audit"]
+    paths: ["learning/*.js", "learning/*.cjs", "learning/*.css", "learning/*.html", "learning/tests/**", "src/rules.js", ".github/workflows/business-in-play.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: business-in-play-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  educational-scenario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify isolated preview and modular syntax
+        run: |
+          node --check src/rules.js
+          node --check learning/story.js
+          node --check learning/experience.js
+          node --check learning/play.js
+          node --check learning/build.cjs
+          cp learning/preview.html /tmp/business-in-play-before.html
+          node learning/build.cjs
+          cmp learning/preview.html /tmp/business-in-play-before.html
+      - name: Run 1,000-session ledger, causality, and backward-compatibility tests
+        run: |
+          node --test learning/tests/game.test.cjs
+          node tests/rules.test.cjs
+          node --test tests/storyline.test.cjs
+      - name: Audit buyer-specific website pages, links and noindex
+        run: node --test learning/tests/site.test.cjs
+      - name: Install Chromium and WebKit for a real browser journey
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium webkit
+      - name: Run 12-turn game and download on 320px Chromium
+        run: BIP_BROWSER=chromium BIP_WIDTH=320 node learning/tests/browser.mjs
+      - name: Run 12-turn game and download on desktop Chromium
+        run: BIP_BROWSER=chromium BIP_WIDTH=1280 node learning/tests/browser.mjs
+      - name: Run 12-turn game and download in Safari-like WebKit
+        run: BIP_BROWSER=webkit BIP_WIDTH=390 node learning/tests/browser.mjs
+      - name: Save real browser screenshots for design review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opening-night-real-browser-screenshots
+          path: screenshots/learning/
+          if-no-files-found: ignore
+      - name: Check that experimental pages are noindex and nothing deploys
+        run: |
+          grep -q 'noindex,nofollow,noarchive' learning/index.html
+          grep -q 'noindex,nofollow,noarchive' learning/preview.html
+          ! grep -E '^[[:space:]]*-[[:space:]]*uses:[[:space:]].*(deploy-pages|cloudflare)' .github/workflows/business-in-play.yml

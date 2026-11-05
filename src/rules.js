@@ -1,6 +1,8 @@
 (function(g){
 "use strict";
-const DATA=g.BCContent;
+// Shared deterministic engine factory: the original incident remains the default.
+function createRules(DATA){
+if(!DATA || !Array.isArray(DATA.episodes) || DATA.episodes.length!==6)throw new Error("Invalid six-episode scenario data");
 const RISK_KEYS=["legal","ops","workforce","customer","liquidity"];
 const ALLOCATIONS=[
 {id:"audit",name:"AUDIT & CONTROLS",delta:{legal:-7,customer:-3},trust:2},
@@ -112,18 +114,25 @@ if(risk.ops>75)score-=11;
 if(team.cash<25000&&team.cash>=0)score-=7;
 score=clamp(Math.round(score),0,100);
 let status="AT RISK";
-if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
-else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
-else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
+const isEvent=DATA.scenarioType==="event";
+if(isEvent){
+  if(team.cash<0||risk.customer>=86||risk.ops>=90)status="UNVIABLE";
+  else if(risk.customer<=42&&risk.ops<=56&&risk.workforce<=60&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="STRONG OPENING";
+  else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="VIABLE WITH WORK";
+}else{
+  if(team.cash<0||risk.customer>=86||risk.ops>=90)status="LOST";
+  else if(risk.customer<=38&&risk.ops<=56&&risk.legal<=62&&team.trust>=60&&team.cash>=25000&&unpaid<28000)status="RENEWED";
+  else if(risk.customer<=68&&risk.ops<=76&&team.trust>=42&&team.cash>=0)status="CONDITIONAL";
+}
 const reasons=[];
-if(team.cash<0)reasons.push("Response spending exceeded the £260,000 fund.");
+if(team.cash<0)reasons.push("Response spending exceeded the "+(isEvent?"event response":"£260,000 response")+" fund.");
 else if(team.cash<25000)reasons.push("The remaining response reserve is thin.");
 if(unpaid>0)reasons.push("£"+unpaid.toLocaleString("en-GB")+" of contingent commitments remain.");
 if(risk.customer>65)reasons.push("Customer exposure remains elevated.");
 if(risk.ops>65)reasons.push("Operational delivery remains fragile.");
 if(risk.workforce>65)reasons.push("Workforce capacity is under strain.");
 if(risk.legal>65)reasons.push("Legal and compliance issues remain unresolved.");
-if(team.trust>=70)reasons.push("Direct, credible communication helped preserve client confidence.");
+if(team.trust>=70)reasons.push(isEvent?"Clear communication helped preserve stakeholder trust.":"Direct, credible communication helped preserve client confidence.");
 if(!reasons.length)reasons.push("The company retains sufficient cash and has contained the most serious exposures.");
 return {score:score,status:status,avgRisk:Math.round(avg),unpaid:unpaid,reasons:reasons};
 }
@@ -131,12 +140,15 @@ function rankTeams(teams){return teams.map(t=>({team:t,outcome:evaluate(t)})).so
 // Scores compare performance. The title requires the flagship renewal to be signed.
 function championshipResult(teams){
 const ranked=rankTeams(teams);
-const eligible=ranked.filter(x=>x.outcome.status==="RENEWED"&&x.team.cash>=0&&x.team.risks.ops<=56);
+const eligible=ranked.filter(x=>x.outcome.status===(DATA.scenarioType==="event"?"STRONG OPENING":"RENEWED")&&x.team.cash>=0&&x.team.risks.ops<=56);
 const champion=eligible[0]||null;
 const joint=champion?eligible.filter(x=>x.outcome.score===champion.outcome.score&&x.team.cash===champion.team.cash):[];
 return {ranked:ranked,leader:ranked[0],champion:champion,joint:joint};
 }
 function sessionValid(teams,round){return Array.isArray(teams)&&teams.length>=2&&teams.length<=4&&teams.every(t=>t.nextRound===round&&t.history.length===round);}
-g.BCRules={createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+return {createTeam:createTeam,applyTurn:applyTurn,applyTimeout:applyTimeout,evaluate:evaluate,rankTeams:rankTeams,championshipResult:championshipResult,seedVariant:seedVariant,sessionValid:sessionValid,allocations:ALLOCATIONS,clamp:clamp,deepCopy:deepCopy};
+}
+g.BCCreateRules=createRules;
+g.BCRules=createRules(g.BCContent);
 if(typeof module!=="undefined"&&module.exports)module.exports=g.BCRules;
 })(globalThis);

@@ -1,0 +1,30 @@
+name: Opening Night staging HTTP access check
+on:
+  push:
+    branches: ["feature/business-in-play-learning-v1"]
+    paths: [".github/workflows/business-in-play-http.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  outside-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify published experimental site from a separate network
+        run: |
+          set -euo pipefail
+          base="https://business-in-play-experimental-h3v2pb5ww-adiusor-6916.vercel.app"
+          for route in "/" "/preview.html" "/corporate-team-building.html" "/agency-partners.html" "/leadership-training.html" "/business-universities.html" "/ro.html"; do
+            file="$(mktemp)"
+            code="$(curl --location --silent --show-error --max-time 20 --output "$file" --write-out "%{http_code}" "$base$route")"
+            echo "$route : HTTP $code ($(wc -c < "$file") bytes)"
+            test "$code" = "200"
+            grep -q 'noindex,nofollow,noarchive' "$file"
+            case "$route" in
+              "/") grep -q 'The best lessons' "$file" ;;
+              "/preview.html") grep -q 'Opening Night — Business in Play' "$file" ;;
+              "/ro.html") grep -q 'lang="ro"' "$file" ;;
+            esac
+            rm "$file"
+          done
