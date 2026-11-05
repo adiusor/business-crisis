@@ -125,11 +125,51 @@ function chapter(v,index){
  }
  pages.push(p);
 }
+function reviewPages(v){
+ for(const team of v.ranked){
+  const p=page();
+  frame(p,"TEAM PERFORMANCE / EVIDENCE-BASED DEBRIEF",team.name,pages.length+1);
+  p.txt(M,154,"FINAL SIMULATION SCORE",10,muted,"F2");
+  p.txt(M,174,String(team.score)+" / 100",28,ink,"F3");
+  p.txt(M+205,182,"ECONOMIC "+team.rawScore+"  |  TIME PENALTIES "+team.timingPenalty,11,ink,"F2");
+  p.txt(M,221,"WHAT THE MODEL MEASURED",12,ink,"F2");
+  const b=team.scoreBreakdown||{};
+  let y=247;
+  for(const [label,value] of [
+    ["STARTING VALUE",b.base],
+    ["RISK EXPOSURE DEDUCTION","-"+b.riskPenalty],
+    ["TRUST ADJUSTMENT",b.trustEffect],
+    ["LIQUIDITY EXPOSURE DEDUCTION","-"+b.liquidityPenalty],
+    ["UNPAID COMMITMENTS DEDUCTION","-"+b.commitmentPenalty],
+    ["OTHER RISK / RESERVE DEDUCTIONS","-"+((b.cashPenalty||0)+(b.customerPenalty||0)+(b.operationsPenalty||0)+(b.reservePenalty||0))],
+    ["ROUNDED ECONOMIC SCORE",team.rawScore]
+  ]){
+   p.txt(M+8,y,label,10,muted,"F2");
+   p.txt(W-M-83,y,String(value??"—"),11,ink,"F2");
+   y+=29;
+  }
+  y+=22;
+  p.rect(M,y,W-2*M,2,mint);
+  y+=18;
+  p.txt(M,y,"WHAT THIS TEAM PROTECTED",12,ink,"F2");y+=26;
+  for(const idea of (team.strengths||[]).slice(0,3)){
+   y=p.lines(M+10,y,"• "+idea,W-2*M-20,11,ink,"F1",16)+6;
+  }
+  y+=6;
+  p.txt(M,y,"A CONSTRUCTIVE NEXT MOVE",12,ink,"F2");y+=26;
+  for(const idea of (team.nextSteps||[]).slice(0,3)){
+   y=p.lines(M+10,y,"• "+idea,W-2*M-20,11,ink,"F1",16)+6;
+  }
+  p.txt(M,H-80,"Scores are fictional game rules, not a judgement of individual ability.",10,muted);
+  pages.push(p);
+ }
+}
 function build(verdict){
  if(!verdict||!Array.isArray(verdict.ranked)||verdict.ranked.length<1)
    throw Error("No completed results are available");
  pages.length=0;cover(verdict);
  for(let i=0;i<6;i++)chapter(verdict,i);
+ reviewPages(verdict);
  const objects=[],add=x=>{objects.push(x);return objects.length};
  const root=add(""),parent=add("");
  add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
