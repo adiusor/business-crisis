@@ -1383,11 +1383,11 @@ test("Episode-five delivery callbacks are personal, true to past decisions and a
  assert.equal(b.privateTeam.delivery.title,"THE CREW IS ALREADY PREPARED");
  assert.ok(["strong","managed","tight"].includes(a.privateTeam.delivery.reserveBand));
  assert.deepEqual(a.episode,b.episode,"All teams get identical public evidence and options");
- for(const v of [viewFor(room,host),viewFor(room,{role:"projector"},b]){
+ for(const v of [viewFor(room,host),viewFor(room,{role:"projector"}),b]){
   assert.doesNotMatch(JSON.stringify(v),/THE FAST TRACK HITS A ROADBLOCK/,
    "Other teams, host and projector must never learn Alice's private delivery twist");
  }
- for(const v of [viewFor(room,host),viewFor(room,{role:"projector"},a]){
+ for(const v of [viewFor(room,host),viewFor(room,{role:"projector"}),a]){
   assert.doesNotMatch(JSON.stringify(v),/THE CREW IS ALREADY PREPARED/,
    "Other teams, host and projector must never learn Bob's private delivery twist");
  }
