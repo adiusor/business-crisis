@@ -4,6 +4,7 @@ const assert=require("node:assert/strict");
 require("../../src/content.js");
 require("../../src/rules.js");
 require("../story.js");
+require("../branching.js");
 const base=globalThis.BCRules;
 const C=globalThis.BCLearningContent;
 const R=globalThis.BCCreateRules(C);
@@ -86,4 +87,36 @@ test("the invitation contains a credible physical cap, and future sponsorship ne
  for(let round=0;round<6;round++)team=R.applyTurn(team,round,0,0,[0,1],0,zero);
  assert.equal(team.cash,C.initialCash-team.ledger.reduce((sum,x)=>sum+x.amount,0));
  assert.ok(!team.ledger.some(x=>x.amount<0||/sponsor.*income|renewal.*income/i.test(x.label)));
+});
+
+
+test("The event uses event-health results, not fictional contract-renewal achievements",()=>{
+ assert.equal(C.scenarioType,"event");
+ let t=R.createTeam(0,"OPENING");
+ for(let round=0;round<6;round++)t=R.applyTurn(t,round,0,0,[0,1],0,zero);
+ const result=R.evaluate(t);
+ assert.ok(["STRONG OPENING","VIABLE WITH WORK","AT RISK","UNVIABLE"].includes(result.status));
+ assert.doesNotMatch(JSON.stringify(result),/renewed|contract renewal|client confidence|£260,000/i);
+ const old=base.evaluate(base.createTeam(0,"ORIGINAL"));
+ assert.ok(["RENEWED","CONDITIONAL","AT RISK","LOST"].includes(old.status));
+});
+test("A chosen plan creates a truthful, deterministic later-story reminder and differentiated coda",()=>{
+ const B=globalThis.BCLearningBranches;
+ const first=C.episodes[0];
+ const choose=p=>R.applyTurn(R.createTeam(0,"CASE"),0,p,0,[0,1],0,zero);
+ const capped=B.interlude(choose(0).history,1);
+ const expanded=B.interlude(choose(1).history,1);
+ const hype=B.interlude(choose(2).history,1);
+ assert.match(capped.text,/capped/);
+ assert.match(expanded.text,/conditional/);
+ assert.match(hype.text,/ambiguous/);
+ assert.equal(new Set([capped.text,expanded.text,hype.text]).size,3);
+ assert.equal(B.interlude([],0),null);
+ for(const ep of C.episodes)for(const p of ep.plans){
+  assert.ok(typeof B.branches[ep.id][p.name]==="string",ep.id+" missing branch for "+p.name);
+ }
+ let team=R.createTeam(0,"FINALE");
+ for(let round=0;round<6;round++)team=R.applyTurn(team,round,0,0,[0,1],0,zero);
+ assert.match(B.ending(team.history),/recognised/);
+ assert.equal(B.ending(team.history.slice(0,5)),null);
 });
