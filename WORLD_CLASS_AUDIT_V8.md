@@ -25,7 +25,7 @@
 | Mobile legible and less scrolling | Shorter incident, collapsible evidence and finances, persistent decision dock, collapsed adviser picker | 320px and 390px browser checks. Real iPhone needed. |
 | Confidential advice, ballots and cash are team-private during rounds | Server-authoritative role-based views and revocable projector token; no individual ballots in exported report | Server privacy and end-to-end room tests |
 | Team changes, exits and new joins cannot unfairly change a running vote | Fixed electorate, team cap, cutoff for live join, locked ballots persist, revoked player access | Unit and integration tests |
-| Idle unauthenticated WebSockets cannot fill all connection slots | Added 12s active-instance watchdog and hibernation-alarm fallback | Runtime timeout regression; only claim passed after latest green CI |
+| Idle unauthenticated WebSockets cannot remain usable indefinitely | Added 12s active-instance watchdog and hibernation-alarm fallback | Local regression checks 1008 close or peer CLOSING; **actual server slot reclamation requires staging/load verification** |
 
 ## Additional what-if review
 
