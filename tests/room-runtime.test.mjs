@@ -803,7 +803,7 @@ try {
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "Two chosen advisers remain after the ballot locks");
     assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
-    assert.match(await phoneA.locator(".aftershock-report").innerText(),/CONTAIN THE LEAK/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/VERIFY & SECURE/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
     assert.equal(await phoneB.locator(".aftershock-report").count(),0,
@@ -881,7 +881,7 @@ try {
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
       "Previous consequence folds away so it does not delay the next timed vote");
-    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/CONTAIN THE LEAK/);
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/VERIFY & SECURE/);
     await phoneA.locator(".aftershock-summary").click();
     assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/client receives/i);
     await phoneA.locator(".recap-details summary").click();
@@ -946,14 +946,14 @@ try {
     const downloadPromise=reportHost.waitForEvent("download");
     await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).click();
     const downloaded=await downloadPromise;
-    assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.pdf",
+    assert.equal(downloaded.suggestedFilename(),"the-0917-challenge-team-results.pdf",
       "A direct download must provide a real PDF, not HTML");
     const pdfBytes=await (await import("node:fs/promises")).readFile(await downloaded.path());
     const pdfContent=pdfBytes.toString("latin1");
     assert.match(pdfContent,/^%PDF-1\.4/);
     assert.match(pdfContent,/THE BOARDROOM VERDICT/);
     assert.match(pdfContent,/FINAL TEAM RANKINGS/);
-    assert.match(pdfContent,/CRISIS SNAPSHOT/);
+    assert.match(pdfContent,/CHALLENGE SNAPSHOT/);
     assert.match(pdfContent,/WHAT EACH TEAM CHOSE/);
     assert.match(pdfContent,/\/Count (?:[7-9]|[1-9][0-9])/);
     assert.doesNotMatch(pdfContent,/mailto:|emailjs|sendgrid|credentialHash/i);
