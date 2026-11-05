@@ -727,10 +727,17 @@ try {
     },{code:roomCode,token:hostToken});
     await reportHost.goto(base+"/?room="+roomCode,{waitUntil:"load"});
     await reportHost.locator("#boardroom-report").waitFor({state:"visible",timeout:12000});
-    await projected.locator(".projection-verdict").waitFor({state:"visible",timeout:12000});
-    assert.equal(await projected.locator(".projection-rank").count(),2,
+    // The interactive screen above is only at episode 2. Use the separate
+    // six-episode completed room for the real public boardroom finale.
+    const finishedAccess=await req("/api/rooms/"+roomCode+"/projector-access","POST",{},hostToken);
+    assert.equal(finishedAccess.response.status,200);
+    const finishedProjector=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
+    finishedProjector.on("pageerror",err=>browserErrors.push(err.message));
+    await finishedProjector.goto(base+"/projector?room="+roomCode+"#access="+finishedAccess.payload.projectorToken);
+    await finishedProjector.locator(".projection-verdict").waitFor({state:"visible",timeout:12000});
+    assert.equal(await finishedProjector.locator(".projection-rank").count(),2,
       "The final projector uses concise public team rankings rather than the long report");
-    const verdictFit=await projected.evaluate(()=>{
+    const verdictFit=await finishedProjector.evaluate(()=>{
       const r=document.querySelector(".projection-verdict").getBoundingClientRect();
       return {height:innerHeight,scroll:document.documentElement.scrollHeight,bottom:r.bottom};
     });
