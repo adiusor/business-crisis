@@ -628,6 +628,27 @@ try {
     await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
+    // A late player may enter a running episode without altering the current
+    // electorate, vote window or locked decisions. All connected roles get a
+    // short named presence notification; projector still has no private votes.
+    const lateUI=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
+    lateUI.on("pageerror",err=>browserErrors.push(err.message));
+    await lateUI.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
+    await lateUI.locator("#join-form").waitFor({state:"visible",timeout:10000});
+    assert.match(await lateUI.locator("#join-caption").textContent(),/GAME IN PROGRESS/);
+    await lateUI.locator("#join-name").fill("Late Charlie");
+    await lateUI.locator("#join-team").selectOption("0");
+    await lateUI.locator("#join-form button.primary").click();
+    await lateUI.locator("#room-screen").waitFor({state:"visible",timeout:12000});
+    assert.match(await lateUI.locator(".vote-finished").textContent(),/JOINED MID-EPISODE/);
+    assert.equal(await lateUI.locator(".submit-game").count(),0,
+      "Joining after the timer starts must never introduce an extra required ballot");
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
+      null,{timeout:12000});
+    await projected.waitForFunction(()=>
+      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie JOINED"),
+      null,{timeout:12000});
     assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
       "Six original illustrated adviser portraits appear in multiplayer");
     assert.equal(await phoneA.locator(".jump-decision").count(),1);
@@ -637,6 +658,14 @@ try {
     await phoneA.locator('[data-choice="1"]').click();
     await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
+    assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
+      "After choosing advisers, their full two briefings must display below the portrait grid");
+    const adviserOrder=await phoneA.evaluate(()=>{
+      const grid=document.querySelector("#player-actions .choice-grid"),
+        advice=document.querySelector(".chosen-advisers");
+      return Boolean(grid&&advice&&(grid.compareDocumentPosition(advice)&Node.DOCUMENT_POSITION_FOLLOWING));
+    });
+    assert.equal(adviserOrder,true,"The selected adviser intelligence must never render above the adviser picker");
     assert.equal(await phoneA.locator(".strategy-grid .strategy-choice").count(),3);
     assert.equal(await phoneA.locator(".team-pulse").count(),0,
       "No live strategy popularity gauge should influence an undecided player");
@@ -676,6 +705,13 @@ try {
       null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
     await phoneA.locator(".aftershock-report").waitFor({state:"visible",timeout:12000});
+    assert.equal(await phoneA.locator(".submit-game").count(),0,
+      "Saving the ballot removes its submit control on every episode");
+    assert.equal(await phoneA.locator(".strategy-choice").count(),0,
+      "Locked player sees adviser intelligence, not another long strategy form");
+    assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
+      "Two chosen advisers remain after the ballot locks");
+    assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/CONTAIN THE LEAK/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
@@ -698,8 +734,21 @@ try {
     // Network loss while a team is waiting must not lose its saved session.
     await phoneB.context().setOffline(true);
     await hostUI.locator("#host-ready-dialog").waitFor({state:"visible",timeout:10000});
+    assert.match(await hostUI.locator("#host-ready-title").textContent(),/ready/i);
+    await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
+    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      null,{timeout:15000});
+    await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
+    await lateUI.waitForFunction(()=>document.querySelector(".vote-finished")===null,
+      null,{timeout:12000});
+    lateUI.once("dialog",dialog=>dialog.accept());
+    await lateUI.locator("#leave-room").click();
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie LEFT"),
+      null,{timeout:12000});
+    assert.equal(await hostUI.locator("#host-roster").count(),0);
     await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
@@ -760,6 +809,15 @@ try {
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
       "Host gets optional facilitator questions without adding default reading");
     assert.equal(await reportHost.locator(".report-episode").count(),12);
+    assert.equal(await reportHost.locator(".decision-trail").evaluate(el=>el.open),false,
+      "The teambuilding scoreboard starts with the outcome, not 12 paragraphs");
+    assert.equal(await reportHost.locator(".compare-round").count(),6);
+    await reportHost.locator(".decision-trail > summary").click();
+    await reportHost.locator(".compare-round > summary").first().click();
+    assert.equal(await reportHost.locator(".compare-round").first().locator(".compare-team-name").count(),2,
+      "Each expanded chapter directly compares both teams");
+    assert.equal(await reportHost.locator(".report-advanced[open]").count(),0,
+      "Long cash and risk details should be opt-in");
     assert.equal(await reportHost.getByRole("button",{name:"PRINT / SAVE AS PDF"}).count(),1);
     assert.equal((await reportHost.locator("#results").innerText()).includes("JSON"),false);
     const downloadPromise=reportHost.waitForEvent("download");
