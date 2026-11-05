@@ -1,14 +1,9 @@
 name: The 09:17 Challenge — isolated multiplayer staging
 on:
+  # Every push runs the cheap policy check, even an empty/manual release
+  # commit. No normal push can deploy without the explicit marker below.
   push:
     branches: ["feature/0917-corporate-challenge"]
-    paths:
-      - ".github/workflows/0917-full-staging.yml"
-      - "multiplayer/**"
-      - "src/content.js"
-      - "src/rules.js"
-      - "scripts/check-0917-staging.cjs"
-      - "scripts/smoke-0917-staging.sh"
   workflow_dispatch:
 permissions:
   contents: read
