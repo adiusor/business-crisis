@@ -1,0 +1,25 @@
+name: 09:17 Challenge isolated preview HTTP probe
+on:
+  workflow_dispatch:
+  push:
+    branches: ["feature/0917-corporate-challenge"]
+    paths: [".github/workflows/0917-preview-http.yml"]
+permissions:
+  contents: read
+jobs:
+  public-playtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify standalone preview serves branded HTML without authentication
+        run: |
+          set -euo pipefail
+          url="https://0917-challenge-experimental-nsl6byqvg-adiusor-6916.vercel.app/"
+          tmp="$(mktemp)"
+          code="$(curl --location --silent --show-error --max-time 20 --output "$tmp" --write-out "%{http_code}" "$url")"
+          echo "Playtest URL : HTTP $code ($(wc -c < "$tmp") bytes)"
+          test "$code" = "200"
+          grep -q 'THE 09:17 CHALLENGE' "$tmp"
+          grep -q 'noindex,nofollow,noarchive' "$tmp"
+          grep -q 'VERIFY &amp; SECURE\|VERIFY & SECURE\|VERIFY &amp; SECURE' "$tmp" || grep -q 'PROTECT THE SYSTEMS' "$tmp"
+          ! grep -q 'BUSINESS CRISIS — THE 09:17 INCIDENT' "$tmp"
