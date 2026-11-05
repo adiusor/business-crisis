@@ -16,8 +16,19 @@ concurrency:
   group: isolated-0917-challenge-staging
   cancel-in-progress: false
 jobs:
+  verify-release-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify staging isolation and explicit release authorization policy
+        run: node scripts/check-0917-staging.cjs
   deploy-isolated:
-    if: ${{ github.repository == 'adiusor/business-crisis' && github.ref == 'refs/heads/feature/0917-corporate-challenge' && vars.BC_STAGING_DEPLOY_ENABLED == 'YES' }}
+    needs: verify-release-policy
+    # PRs and unmarked pushes are intentionally build-only. This job deploys
+    # exclusively after a consciously marked release commit or a manual dispatch
+    # of this workflow on the authorised staging branch.
+    if: ${{ github.repository == 'adiusor/business-crisis' && github.ref == 'refs/heads/feature/0917-corporate-challenge' && vars.BC_STAGING_DEPLOY_ENABLED == 'YES' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[release-0917-staging]'))) }}
     runs-on: ubuntu-latest
     environment: business-crisis-staging
     timeout-minutes: 28
