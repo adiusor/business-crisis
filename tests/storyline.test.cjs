@@ -227,3 +227,11 @@ test("liquidity is derived from actual funded cash and commitments, not overwrit
   assert.equal(t.risks.liquidity,expected);
  }
 });
+
+test("direct liquidity effects are not advertised when liquidity is computed from cash and pending costs",()=>{
+ for(const e of C.episodes)for(const option of [...e.plans,...e.signals]){
+  assert.equal(Object.hasOwn(option.delta||{},"liquidity"),false);
+  if(option.delay)assert.equal(Object.hasOwn(option.delay.delta||{},"liquidity"),false,
+   "Deferred commitments already enter liquidity through future cash coverage");
+ }
+});

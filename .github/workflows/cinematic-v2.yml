@@ -36,6 +36,8 @@ jobs:
         run: node tests/rules.test.cjs
       - name: Audit six episodes and consequence coherence
         run: node --test tests/storyline.test.cjs
+      - name: Run reproducible story/scoring calibration audit
+        run: node scripts/calibrate-0917.cjs
       - name: Verify global SEO pages, canonical URLs and staging noindex
         run: node --test tests/seo.test.mjs
       - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
