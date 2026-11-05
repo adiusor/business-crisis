@@ -490,6 +490,7 @@
     const box = $("round-recap");
     box.replaceChildren();
     box.hidden = !state.lastRecap && !state.nextPreview;
+    box.classList.toggle("has-prebrief",!!state.nextPreview);
     // The host decides when to start the next shared clock. This preview only
     // contains public episode evidence and never reveals advice, ballots or cash.
     if(state.nextPreview){
@@ -1417,7 +1418,7 @@
     const previousPreviewNumber=state?.nextPreview?.number;
     state = next;
     if(previousPreviewNumber!==state.nextPreview?.number)
-      preBriefOpen=state.phase==="advisers"&&!!state.nextPreview;
+      preBriefOpen=state.phase==="advisers"&&!!state.nextPreview&&state.viewer.role!=="projector";
     clockOffset = (state.clock?.serverNowMs ?? Date.now()) - Date.now();
     if (draftRound !== state.round || prevRound !== state.round || prevCode !== state.code) {
       playerRenderKey = null;
