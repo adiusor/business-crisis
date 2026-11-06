@@ -948,7 +948,15 @@ try {
     await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
     await lateUI.waitForFunction(()=>document.querySelector(".vote-finished")===null,
       null,{timeout:12000});
+    const strayLeaveLobbyRequests=[];
+    let intentionalLeaveStarted=false;
+    lateUI.on("request",request=>{
+      if(intentionalLeaveStarted&&request.method()==="GET" &&
+        new URL(request.url()).pathname==="/api/rooms/"+uiCode+"/lobby")
+        strayLeaveLobbyRequests.push(request.url());
+    });
     lateUI.once("dialog",dialog=>dialog.accept());
+    intentionalLeaveStarted=true;
     await lateUI.locator("#leave-room").click();
     await lateUI.waitForURL(/\/join$/,{timeout:12000});
     assert.equal(await lateUI.evaluate(code=>
@@ -960,6 +968,8 @@ try {
       document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie LEFT"),
       null,{timeout:12000});
     assert.equal(await hostUI.locator("#host-roster").count(),0);
+    assert.deepEqual(strayLeaveLobbyRequests,[],
+      "Leaving deliberately must not trigger a revoked-socket lobby fetch during Safari navigation");
     await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
