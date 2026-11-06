@@ -13,6 +13,7 @@
   const codeFromUrl = new URLSearchParams(location.search).get("room")?.toUpperCase() || "";
   let roomCode = validRoomCode(codeFromUrl) ? codeFromUrl : "";
   let credential = null;
+  let leavingRoom = false;
   // Ignore HTTP responses begun under a token that has since been revoked,
   // replaced or discarded. A delayed Safari fetch must not resurrect a room.
   let sessionEpoch = 0;
@@ -1690,6 +1691,10 @@
     $("connection").classList.toggle("live", online);
   }
   function stopAccess(message) {
+    // A voluntary leave invalidates the token on the server before the
+    // leave-room HTTP response completes. Its 1008 WebSocket close is
+    // expected; never launch an unrelated lobby fetch during navigation.
+    if(leavingRoom)return;
     dropSession();
     clearTimeout(retryHandle);
     if (socket && [WebSocket.OPEN, WebSocket.CONNECTING].includes(socket.readyState)) socket.close();
@@ -1731,7 +1736,10 @@
         if (socket !== ws) return;
         socket = null;
         setConnection(false);
-        if (evt.code === 1008) {stopAccess("Access revoked or authentication failed.");return;}
+        if (evt.code === 1008) {
+          if(!leavingRoom)stopAccess("Access revoked or authentication failed.");
+          return;
+        }
         if (!credential) return;
         retryHandle = setTimeout(async () => {
           if (!credential || !navigator.onLine) return;
@@ -1911,9 +1919,11 @@
     printDetails=null;
   });
   $("leave-room").addEventListener("click",async()=>{
-    if(!state||state.viewer.role!=="player")return;
+    if(leavingRoom||!state||state.viewer.role!=="player")return;
     if(!window.confirm("Leave "+state.teams[state.viewer.teamIndex].name+
        "? Your saved vote will remain committed for this round."))return;
+    leavingRoom=true;
+    $("leave-room").disabled=true;
     try{
       await request("/api/rooms/"+roomCode+"/actions",{
         method:"POST",headers:{authorization:"Bearer "+credential},
@@ -1922,7 +1932,11 @@
       dropSession();
       if(socket)socket.close();
       location.assign("/join");
-    }catch(e){error(e.message);}
+    }catch(e){
+      leavingRoom=false;
+      $("leave-room").disabled=false;
+      error(e.message);
+    }
   });
   window.addEventListener("online", () => {setConnection(false);refreshConnection();});
   window.addEventListener("offline", () => {
