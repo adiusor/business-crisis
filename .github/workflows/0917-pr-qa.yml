@@ -1,0 +1,35 @@
+name: 09:17 pull request QA (no deployment)
+on:
+  pull_request:
+    branches: ["feature/0917-corporate-challenge"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: ${{ github.repository == 'adiusor/business-crisis' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Enforce single isolated staging boundary
+        run: node scripts/check-0917-staging.cjs
+      - name: Rules, storyline, privacy and multiplayer regression
+        run: |
+          npm run test:rules
+          npm run test:storyline
+          npm run test:multiplayer
+          node --test tests/seo.test.mjs
+      - name: Browser dependencies
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Browser and live-room simulation
+        run: |
+          node tests/browser.mjs
+          node tests/room-runtime.test.mjs
+      - name: Workerd isolated dry-run (never deploy)
+        run: npx wrangler deploy --dry-run --config multiplayer/wrangler.0917.staging.jsonc --outdir /tmp/0917-pr-qa-build
