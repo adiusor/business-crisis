@@ -71,6 +71,12 @@ try {
     await delay(250);
   }
   assert.ok(live, "Wrangler preview never started: " + logs);
+  const health=await req("/healthz");
+  assert.equal(health.payload.service,"the-0917-challenge");
+  assert.equal(health.payload.game,"Project Spark");
+  assert.equal(health.payload.buildSha,null,"Local workerd is not a deployed release");
+  assert.equal(health.payload.deployedGame,false);
+  assert.equal(health.response.headers.get("x-0917-build"),"LOCAL");
   // The new marketing site must stay unindexed on staging.
   const landing=await req("/");
   assert.equal(landing.response.status,200);
@@ -88,6 +94,8 @@ try {
     const page=await req(route);
     assert.equal(page.response.status,200);
     assert.match(page.response.headers.get("x-robots-tag"),/noindex/);
+    assert.match(page.payload,/BUILD LOCAL/,"Host/Join HTML must identify the current build");
+    assert.equal(page.response.headers.get("x-0917-build"),"LOCAL");
   }
   assert.equal((await req("/site-style.css")).response.status,200);
   const css = await req("/room-style.css"); assert.equal(css.response.status, 200);
