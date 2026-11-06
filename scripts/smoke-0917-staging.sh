@@ -14,7 +14,7 @@ fi
 # explicitly verify the current live Worker serves THIS workflow's Git SHA.
 [[ "${GITHUB_SHA:-}" =~ ^[a-f0-9]{40}$ ]] || { echo "::error::Missing exact workflow commit SHA";exit 1; }
 health="$(curl --silent --show-error --fail --max-time 20 "$BASE/healthz")"
-jq -e --arg sha "$GITHUB_SHA" '.ok == true and .service == "the-0917-challenge" and .game == "Project Spark" and .deployedGame == true and .buildSha == $sha and .buildLabel == $sha[0:12]' <<<"$health" >/dev/null ||
+jq -e --arg sha "$GITHUB_SHA" --arg label "${GITHUB_SHA:0:12}" '.ok == true and .service == "the-0917-challenge" and .game == "Project Spark" and .deployedGame == true and .buildSha == $sha and .buildLabel == $label' <<<"$health" >/dev/null ||
   { echo "::error::Live Worker build differs from the approved release commit";exit 1; }
 echo "LIVE RELEASE VERIFIED: ${GITHUB_SHA:0:12} (exact Git SHA)"
 echo "Checking all public pages remain available and noindex on staging..."
