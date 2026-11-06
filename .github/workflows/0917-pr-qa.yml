@@ -14,9 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-      - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
+      - name: Install dependencies (repository has no lockfile)
+        run: npm install --no-audit --no-fund
       - name: Enforce single isolated staging boundary
         run: node scripts/check-0917-staging.cjs
       - name: Rules, storyline, privacy and multiplayer regression
