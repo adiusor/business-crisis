@@ -35,3 +35,14 @@ With two development/QA conversations contributing concurrently, a routine push 
 - Canonical merge base: `3c781522954dc871b72f878aeaf8d76178179bac`; its complete 60-file tree is identical to the tested source tree.
 - Included: interactive Project Spark demo, social discussion prompts, episode 04 promise teaser, episode 05 consequence-driven delivery, and Safari reconnection/session safety.
 - Keep all existing original Business Crisis staging, production and `main` untouched. Start a NEW room after publishing.
+
+## Verify exactly what is deployed
+
+The isolated staging Worker exposes a public, read-only build identity at:
+`https://the-0917-challenge-staging.adiusor.workers.dev/healthz`.
+
+For an approved release, `buildSha` must equal the **full 40-character GitHub Actions checkout commit**, `buildLabel` its first 12 characters, `service` must be `the-0917-challenge`, and `deployedGame` must be `true`. The Host/Join footer and staging marketing pages also show the same build label. Local development intentionally reports `buildSha: null`, `buildLabel: LOCAL`, `deployedGame: false`.
+
+The explicit-release GitHub workflow first stamps **only the public Git SHA** into the isolated Worker source in its ephemeral runner, after checking it matches the checkout. The live smoke test compares `/healthz`, public pages and Host/Join HTML with the exact workflow commit and fails if any does not match. No credential, secret, player token, room details or private choice is embedded in the marker.
+
+Use this signal when several PRs are moving concurrently: a green PR CI run does not mean that PR is live. Only a successful protected release with matching live `buildSha` confirms staging has the requested version. Never bypass the explicit release marker or deploy an untested worker.
