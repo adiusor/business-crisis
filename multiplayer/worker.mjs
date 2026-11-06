@@ -15,7 +15,13 @@ import {createRoom, authorize, joinRoom, applyRoomAction, viewFor, viewLobby,
 // Pending, unauthenticated sockets must not occupy one of the 64 connections
 // forever. Durable Object alarms enforce the deadline across hibernation.
 const WS_AUTH_TIMEOUT_MS = 12000;
+// The isolated release workflow stamps ONLY this public source token with the
+// exact GitHub commit being deployed. A local/dev Worker reports buildSha=null.
+const RELEASE_SOURCE_SHA = "__09_17_RELEASE_SHA__";
+const buildSha = /^[a-f0-9]{40}$/.test(RELEASE_SOURCE_SHA) ? RELEASE_SOURCE_SHA : null;
+const buildLabel = buildSha ? buildSha.slice(0,12) : "LOCAL";
 const HEADERS = {"content-type": "application/json; charset=utf-8", "cache-control": "no-store",
+  "x-0917-build": buildLabel,
   "x-content-type-options": "nosniff", "referrer-policy": "no-referrer"};
 const CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' ws: wss:; form-action 'self'; base-uri 'none'; frame-ancestors 'none'";
 const htmlResponse = (body, type, extra={}) => new Response(body, {headers: {...HEADERS, "content-type": type,
@@ -57,11 +63,18 @@ export default {
         // A private host link from the old format continues to work.
         if (url.pathname === "/play" || url.pathname === "/join" ||
             url.pathname === "/projector" || (url.pathname === "/" && url.searchParams.has("room")))
-          return htmlResponse(CLIENT_HTML, "text/html; charset=utf-8",
+          return htmlResponse(CLIENT_HTML.replace("__09_17_BUILD_SHORT__",buildLabel),
+            "text/html; charset=utf-8",
             {"x-robots-tag":"noindex, nofollow, noarchive"});
         if (publicPath(url.pathname)) {
           const page=renderPublicPage(url.pathname,url,env);
-          return htmlResponse(page.html, "text/html; charset=utf-8", {"x-robots-tag":page.robots});
+          // QA-only footer stamp: people can confirm exactly which version is
+          // live without exposing room credentials or placing debug UI on a
+          // future custom-domain commercial site.
+          const siteHtml=url.hostname.endsWith(".workers.dev")?
+            page.html.replace("</footer>",'<small class="build-check" aria-label="Staging build">STAGING BUILD '+buildLabel+'</small></footer>'):
+            page.html;
+          return htmlResponse(siteHtml, "text/html; charset=utf-8", {"x-robots-tag":page.robots});
         }
         if (url.pathname === "/site-style.css")
           return htmlResponse(SITE_STYLE,"text/css; charset=utf-8");
@@ -85,7 +98,8 @@ export default {
         if (url.pathname === "/room-pdf.js")
           return htmlResponse(CLIENT_PDF, "text/javascript; charset=utf-8");
         if (url.pathname === "/healthz")
-          return json({ok: true, service: "room-prototype", deployedGame: false});
+          return json({ok: true, service: "the-0917-challenge", game: "Project Spark",
+            deployedGame: buildSha !== null, buildSha, buildLabel});
       }
       // Strict same-origin checks for browser-originated HTTP writes AND WebSocket upgrades.
       const origin = request.headers.get("origin");

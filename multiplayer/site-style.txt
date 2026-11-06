@@ -59,3 +59,6 @@
 .demo-after-actions .btn{font-size:10px;flex:1}
 .demo-after-actions button{color:#f6ede2;background:transparent;cursor:pointer}
 @media(max-width:700px){.demo-evidence-list{margin-bottom:20px}.demo-choice{padding:14px 10px}.demo-outcome{padding:17px}.demo-after-actions{flex-direction:column}.demo-after-actions .btn{width:100%}}
+
+/* QA-only: exact release fingerprint on the dedicated Workers.dev staging site. */
+.build-check{display:block;width:min(1200px,calc(100% - 64px));margin:25px auto 0;font-size:10px;letter-spacing:.12em;color:#93aab6;overflow-wrap:anywhere}

@@ -47,6 +47,13 @@ for(const token of [
  assert.ok(releaseGuard.includes(token),"Missing explicit staging release condition: "+token);
 }
 assert.ok(workflow.includes("needs: verify-release-policy"),"Deployment must wait for the release-policy verification job");
+assert.ok(workflow.includes("run: node scripts/stamp-0917-release.cjs"),
+  "Staging Worker must be stamped with its exact release commit before deployment");
+const smoke=fs.readFileSync("scripts/smoke-0917-staging.sh","utf8");
+assert.ok(smoke.includes('.buildSha == $sha'),
+  "Live smoke check must compare the exact deployed Worker SHA to the approved Git commit");
+assert.ok(smoke.includes('STAGING BUILD'),
+  "Live smoke check must verify the public website's matching release identity");
 assert.ok(workflow.includes("run: node scripts/check-0917-staging.cjs"),"Release policy must be checked on every staging-branch push");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.staging.jsonc"),"Legacy staging may not be redeployed");
 assert.ok(!workflow.includes("--config multiplayer/wrangler.jsonc"),"Original preview may not be deployed");

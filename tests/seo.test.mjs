@@ -2,6 +2,9 @@ import "../src/content.js";
 import test from "node:test";
 import {execFileSync} from "node:child_process";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {createRequire} from "node:module";
+const {stampSource,TOKEN}=createRequire(import.meta.url)("../scripts/stamp-0917-release.cjs");
 import {PUBLIC_PATHS,PAGES,renderPublicPage,isPublishedOrigin,robotsText,sitemapXml,sharingSvg} from "../multiplayer/site.mjs";
 const preview=new URL("https://business-crisis-rooms-staging.example.workers.dev/");
 const live=new URL("https://example.com/");
@@ -118,4 +121,16 @@ test("education pathway is truthful about classroom scope and individual assessm
 test("only explicitly released 09:17 commits may deploy to the dedicated staging Worker",()=>{
  const output=execFileSync(process.execPath,["scripts/check-0917-staging.cjs"],{encoding:"utf8"});
  assert.match(output,/PASS: Distinct Workers\.dev-only 09:17 deployment/);
+});
+
+test("isolated staging build stamp rejects stale or invalid commit identities",()=>{
+ const source=readFileSync(new URL("../multiplayer/worker.mjs",import.meta.url),"utf8");
+ const sha="a".repeat(40);
+ assert.equal(source.split(TOKEN).length-1,1,"Single controlled Worker build-token marker");
+ const stamped=stampSource(source,sha);
+ assert.ok(stamped.includes('const RELEASE_SOURCE_SHA = "'+sha+'";'));
+ assert.equal(stamped.includes(TOKEN),false);
+ assert.throws(()=>stampSource(source,"unknown"),/full public Git SHA/);
+ assert.throws(()=>stampSource(stamped,sha),/exactly one replaceable/);
+ assert.throws(()=>stampSource(TOKEN+" "+TOKEN,sha),/exactly one replaceable/);
 });

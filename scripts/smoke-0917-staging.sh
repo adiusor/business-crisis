@@ -10,6 +10,13 @@ if [[ ${#STAGING_CREATION_KEY} -lt 32 ]]; then
   echo "::error::Missing isolated staging-only creation key"
   exit 1
 fi
+# A 200 page alone cannot prove that the intended game was deployed:
+# explicitly verify the current live Worker serves THIS workflow's Git SHA.
+[[ "${GITHUB_SHA:-}" =~ ^[a-f0-9]{40}$ ]] || { echo "::error::Missing exact workflow commit SHA";exit 1; }
+health="$(curl --silent --show-error --fail --max-time 20 "$BASE/healthz")"
+jq -e --arg sha "$GITHUB_SHA" --arg label "${GITHUB_SHA:0:12}" '.ok == true and .service == "the-0917-challenge" and .game == "Project Spark" and .deployedGame == true and .buildSha == $sha and .buildLabel == $label' <<<"$health" >/dev/null ||
+  { echo "::error::Live Worker build differs from the approved release commit";exit 1; }
+echo "LIVE RELEASE VERIFIED: ${GITHUB_SHA:0:12} (exact Git SHA)"
 echo "Checking all public pages remain available and noindex on staging..."
 for route in / /corporate-team-building-game /virtual-team-building /leadership-team-building /for-facilitators /about /ro /play /join; do
   page="$(mktemp)"
@@ -18,9 +25,11 @@ for route in / /corporate-team-building-game /virtual-team-building /leadership-
     echo "::error::$route returned $status";exit 1
   fi
   if [[ "$route" != "/play" && "$route" != "/join" ]]; then
+    grep -q "STAGING BUILD ${GITHUB_SHA:0:12}" "$page" || { echo "::error::$route is not the approved build";exit 1; }
     grep -q 'noindex,nofollow,noarchive' "$page" || { echo "::error::$route is not noindex";exit 1; }
     grep -q 'THE 09:17 CHALLENGE' "$page" || { echo "::error::$route has stale branding";exit 1; }
   else
+    grep -q "BUILD ${GITHUB_SHA:0:12}" "$page" || { echo "::error::$route is not the approved build";exit 1; }
     grep -q 'id="join-team"' "$page" || { echo "::error::Team selector missing on $route";exit 1; }
     grep -q 'id="join-form"' "$page" || { echo "::error::Player join missing on $route";exit 1; }
   fi
