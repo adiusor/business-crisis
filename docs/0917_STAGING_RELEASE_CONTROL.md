@@ -46,3 +46,12 @@ For an approved release, `buildSha` must equal the **full 40-character GitHub Ac
 The explicit-release GitHub workflow first stamps **only the public Git SHA** into the isolated Worker source in its ephemeral runner, after checking it matches the checkout. The live smoke test compares `/healthz`, public pages and Host/Join HTML with the exact workflow commit and fails if any does not match. No credential, secret, player token, room details or private choice is embedded in the marker.
 
 Use this signal when several PRs are moving concurrently: a green PR CI run does not mean that PR is live. Only a successful protected release with matching live `buildSha` confirms staging has the requested version. Never bypass the explicit release marker or deploy an untested worker.
+
+## Release 2026-11-06 · Verifiable staging + Safari leave-room fix
+
+- User-authorised update to the **existing isolated 09:17 staging Worker only**, not production or legacy staging.
+- Fully tested PR #27 SHA `a01eb5a49b422e6ec782e5f63be627fd96b242d7`, CI successful: https://github.com/adiusor/business-crisis/actions/runs/42141519580
+- Canonical squash commit `c5956609acc8d0163b6be9998d56f8e0e9a4a226`; all 61 Git file-blob SHAs match the tested PR source. Focused story/PDF browser QA success: https://github.com/adiusor/business-crisis/actions/runs/42142230934
+- Added exact release SHA in `/healthz`, a visible build label on Host/Join and staging public pages, and a mandatory live smoke comparison against the workflow checkout.
+- Fixed voluntary leave WebSocket 1008 causing a redundant Safari `/lobby` fetch during navigation; added strict no-request regression without disabling unrelated access revocation.
+- Existing explicit `[release-0917-staging]` guard is retained. No new staging variants or production routes.
