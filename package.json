@@ -5,7 +5,7 @@
   "description": "Cinematic shared-screen corporate crisis strategy game",
   "scripts": {
     "build": "node scripts/build.cjs",
-    "test:rules": "node tests/rules.test.cjs",
+    "test:rules": "node tests/rules.test.cjs && node --test tests/connection-accessibility.test.cjs",
     "test:browser": "node tests/browser.mjs",
     "test": "npm run test:rules && npm run test:multiplayer && npm run test:browser",
     "test:multiplayer": "node --test tests/multiplayer.test.mjs",
