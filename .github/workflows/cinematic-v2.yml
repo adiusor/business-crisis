@@ -11,7 +11,7 @@ permissions:
 jobs:
   gameplay:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +36,8 @@ jobs:
         run: node tests/rules.test.cjs
       - name: Audit six episodes and consequence coherence
         run: node --test tests/storyline.test.cjs
+      - name: Run reproducible story/scoring calibration audit
+        run: node scripts/calibrate-0917.cjs
       - name: Verify global SEO pages, canonical URLs and staging noindex
         run: node --test tests/seo.test.mjs
       - name: Test multiplayer room authority and private views (Node, not Cloudflare runtime)
@@ -56,6 +58,8 @@ jobs:
         run: npm run check:staging-bundle
       - name: Exercise local Worker HTTP, QR and live WebSocket room sync (no deploy)
         run: node tests/room-runtime.test.mjs
+      - name: Prove 25 virtual clients, 4 teams and 150 votes in one real local Cloudflare room
+        run: node tests/room-load-25.test.mjs
       - name: Cross-browser Safari WebKit room journey (late join, voting, projector and finale)
         run: BC_BROWSER=webkit node tests/room-runtime.test.mjs
       - name: Cross-browser Firefox room journey (late join, voting, projector and finale)

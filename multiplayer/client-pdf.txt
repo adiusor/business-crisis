@@ -48,7 +48,7 @@ function page(){
 }
 function frame(p,kicker,title,index){
  p.rect(0,0,W,134,night);p.rect(0,0,9,H,gold);
- p.txt(M,22,"BUSINESS CRISIS  /  THE 09:17 INCIDENT",9,gold,"F2");
+ p.txt(M,22,"THE 09:17 CHALLENGE  /  TEAM DECISIONS",9,gold,"F2");
  p.txt(M,49,kicker,10,"#bfd1d2","F2");
  p.txt(M,69,title,25,paper,"F3");
  p.rect(0,H-44,W,44,night);
@@ -57,9 +57,9 @@ function frame(p,kicker,title,index){
 }
 function cover(v){
  const p=page();frame(p,"OFFICIAL SIMULATION RESULT","THE BOARDROOM VERDICT",1);
- const winner=v.hasChampion?v.champions.join(" / "):"NO CONFIRMED RENEWAL";
+ const winner=v.hasChampion?v.champions.join(" / "):v.leader;
  p.rect(M,153,W-2*M,88,"#1b3b49");
- p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"THE BOARD DID NOT RENEW",11,gold,"F2");
+ p.txt(M+16,167,v.hasChampion?"BOARDROOM CHAMPION":"HIGHEST TEAM SCORE",11,gold,"F2");
  p.lines(M+16,188,winner,W-2*M-32,18,paper,"F3",23);
  p.txt(M,263,"FINAL TEAM RANKINGS",12,ink,"F2");
  let top=287;
@@ -76,7 +76,7 @@ function cover(v){
  const completed=decisions.filter(d=>!d.timedOut).length;
  const total=decisions.length,trust=v.ranked[0].trust;
  p.rect(M,556,W-2*M,199,night);
- p.txt(M+15,570,"CRISIS SNAPSHOT / FACTS FROM THIS SESSION",11,gold,"F2");
+ p.txt(M+15,570,"CHALLENGE SNAPSHOT / SESSION FACTS",11,gold,"F2");
  p.ring(M+104,658,44,total?completed/total:0,mint);
  p.ring(M+351,658,44,trust/100,gold);
  p.txt(M+79,645,total?Math.round(completed/total*100)+"%":"0%",18,paper,"F2");
@@ -84,11 +84,11 @@ function cover(v){
  p.txt(M+20,717,"FILED BEFORE 4:00",10,paper,"F2");
  p.txt(M+265,717,"LEADER'S TRUST / 100",10,paper,"F2");
  p.txt(M,769,"Based only on recorded team decisions. The score combines",10,muted);
- p.txt(M,784,"economics and time penalties; renewal has separate rules.",10,muted);
+ p.txt(M,784,"economics and time penalties; board-readiness has further conditions.",10,muted);
  pages.push(p);
 }
 function chapterFrame(v,index,continued){
- const p=page(),episode=v.ranked[0]?.decisions?.[index]?.episode||"THE INCIDENT";
+ const p=page(),episode=v.ranked[0]?.decisions?.[index]?.episode||"THE STORY";
  frame(p,"EPISODE "+String(index+1).padStart(2,"0")+
     (continued?" / CONTINUED":" / TEAM-BY-TEAM COMPARISON"),episode,pages.length+1);
  p.txt(M,149,"WHAT EACH TEAM CHOSE / WHAT FOLLOWED",11,ink,"F2");
@@ -125,11 +125,51 @@ function chapter(v,index){
  }
  pages.push(p);
 }
+function reviewPages(v){
+ for(const team of v.ranked){
+  const p=page();
+  frame(p,"TEAM PERFORMANCE / EVIDENCE-BASED DEBRIEF",team.name,pages.length+1);
+  p.txt(M,154,"FINAL SIMULATION SCORE",10,muted,"F2");
+  p.txt(M,174,String(team.score)+" / 100",28,ink,"F3");
+  p.txt(M+205,182,"ECONOMIC "+team.rawScore+"  |  TIME PENALTIES "+team.timingPenalty,11,ink,"F2");
+  p.txt(M,221,"WHAT THE MODEL MEASURED",12,ink,"F2");
+  const b=team.scoreBreakdown||{};
+  let y=247;
+  for(const [label,value] of [
+    ["STARTING VALUE",b.base],
+    ["RISK EXPOSURE DEDUCTION","-"+b.riskPenalty],
+    ["TRUST ADJUSTMENT",b.trustEffect],
+    ["LIQUIDITY EXPOSURE DEDUCTION","-"+b.liquidityPenalty],
+    ["UNPAID COMMITMENTS DEDUCTION","-"+b.commitmentPenalty],
+    ["OTHER RISK / RESERVE DEDUCTIONS","-"+((b.cashPenalty||0)+(b.customerPenalty||0)+(b.operationsPenalty||0)+(b.reservePenalty||0))],
+    ["ROUNDED ECONOMIC SCORE",team.rawScore]
+  ]){
+   p.txt(M+8,y,label,10,muted,"F2");
+   p.txt(W-M-83,y,String(value??"—"),11,ink,"F2");
+   y+=29;
+  }
+  y+=22;
+  p.rect(M,y,W-2*M,2,mint);
+  y+=18;
+  p.txt(M,y,"WHAT THIS TEAM PROTECTED",12,ink,"F2");y+=26;
+  for(const idea of (team.strengths||[]).slice(0,2)){
+   y=p.lines(M+10,y,"- "+idea,W-2*M-20,11,ink,"F1",16)+6;
+  }
+  y+=6;
+  p.txt(M,y,"A CONSTRUCTIVE NEXT MOVE",12,ink,"F2");y+=26;
+  for(const idea of (team.nextSteps||[]).slice(0,2)){
+   y=p.lines(M+10,y,"- "+idea,W-2*M-20,11,ink,"F1",16)+6;
+  }
+  p.txt(M,H-80,"Scores are fictional game rules, not a judgement of individual ability.",10,muted);
+  pages.push(p);
+ }
+}
 function build(verdict){
  if(!verdict||!Array.isArray(verdict.ranked)||verdict.ranked.length<1)
    throw Error("No completed results are available");
  pages.length=0;cover(verdict);
  for(let i=0;i<6;i++)chapter(verdict,i);
+ reviewPages(verdict);
  const objects=[],add=x=>{objects.push(x);return objects.length};
  const root=add(""),parent=add("");
  add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");

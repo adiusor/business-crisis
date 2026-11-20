@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#091421">
-  <meta name="description" content="Private BUSINESS CRISIS game room for facilitators, players and projector display.">
+  <meta name="description" content="Private THE 09:17 CHALLENGE game room for facilitators, players and projector display.">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>BUSINESS CRISIS — PRIVATE GAME ROOM</title>
+  <title>THE 09:17 CHALLENGE — PRIVATE GAME ROOM</title>
   <link rel="stylesheet" href="/room-style.css">
   <script src="/room-art.js" defer></script>
   <script src="/room-pdf.js" defer></script>
@@ -14,18 +14,18 @@
 </head>
 <body>
   <header class="masthead">
-    <a class="brand" href="/" aria-label="BUSINESS CRISIS room preview home">
+    <a class="brand" href="/" aria-label="THE 09:17 CHALLENGE room preview home">
       <span class="brand-mark">09:17</span>
-      <span>BUSINESS CRISIS <small>THE 09:17 INCIDENT / LIVE ROOM</small></span>
+      <span>THE 09:17 CHALLENGE <small>SIX DECISIONS / LIVE ROOM</small></span>
     </a>
     <span class="status-dot">STAGING / PRIVATE PLAYTEST</span>
   </header>
   <main class="layout">
     <section class="lead-panel">
-      <p class="eyebrow">A CLOSED-DOOR INCIDENT / TEAM-OWNED CLOCKS</p>
-      <h1>ONE LEAK.<br><em>SIX CALLS.</em></h1>
-      <p class="intro-copy">A confidential memo escaped at 09:17. Your decisions write the next six chapters.</p>
-      <div class="landing-city" role="img" aria-label="Cinematic illustration of a London-style financial district at night, with illuminated towers and a glowing 09:17 incident signal">
+      <p class="eyebrow">A SHARED CHALLENGE / TEAM-OWNED CLOCKS</p>
+      <h1>ONE STORY.<br><em>SIX CALLS.</em></h1>
+      <p class="intro-copy">At 09:17, a surprising invitation arrives. Six decisions will shape Project Spark.</p>
+      <div class="landing-city" role="img" aria-label="Cinematic illustration of a London-style financial district at night, with illuminated towers and a glowing 09:17 story signal">
         <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid slice">
           <defs>
             <linearGradient id="city-sky" x1="0" y1="0" x2="1" y2="1">
@@ -74,10 +74,10 @@
             <path d="M20 0h52" stroke="#e8b483" stroke-width="2"/>
           </g>
         </svg>
-        <div class="landing-city-caption"><span>INCIDENT / 09:17</span><strong>WHO DO YOU TRUST WHEN EVERY SECOND COUNTS?</strong></div>
+        <div class="landing-city-caption"><span>CHALLENGE / 09:17</span><strong>WHAT CAN YOUR TEAM ACHIEVE TOGETHER?</strong></div>
       </div>
 
-      <div class="rules"><span>02–04 TEAMS</span><span>EVERY MEMBER VOTES</span><span>03 MIN / EPISODE</span></div>
+      <div class="rules"><span>02–04 TEAMS</span><span>EVERY MEMBER VOTES</span><span>UNTIMED PRE-BRIEF · 03 MIN TO DECIDE</span></div>
       <p class="disclaimer">Each team has a private clock and one collective outcome. Test version — not yet a commercial service.</p>
     </section>
 
@@ -94,7 +94,7 @@
           <p>Already started? You can join at any episode and vote from the next one.</p>
         </div>
         <div class="eyebrow">FACILITATOR / CREATE A NEW ROOM</div>
-        <h2>Open the war room.</h2>
+        <h2>Open the challenge.</h2>
         <p>Rooms start with random team callsigns. Captains may select a different available name before the session starts.</p>
         <form id="create-form">
           <label for="create-teams">Teams</label>
@@ -110,6 +110,7 @@
         <div class="eyebrow">02 / TEAM ARRIVAL</div>
         <h2>Step inside.</h2>
         <p id="join-caption">Enter your nickname and choose your team.</p>
+        <p class="small">Your facilitator may already have assigned your team. Choose it below or select <strong>AUTO-ASSIGN</strong> for the least populated team. Your team is confirmed before you vote.</p>
         <form id="join-code-form" hidden>
           <label for="join-code">Enter the 4-character room code</label>
           <input id="join-code" maxlength="12" minlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="E.g. 7KMP" required>
@@ -121,14 +122,14 @@
           <label for="join-team">Join a team</label>
           <select id="join-team" required aria-describedby="join-team-selection"></select>
           <p id="join-team-selection" class="join-team-selected" role="status" aria-live="polite"></p>
-          <button type="submit" class="primary">JOIN THE INCIDENT</button>
+          <button type="submit" class="primary">JOIN THE CHALLENGE</button>
         </form>
       </section>
 
       <section id="room-screen" hidden>
         <div class="room-bar">
           <div><div class="eyebrow">ROOM CODE</div><h2 id="room-code">—</h2></div>
-          <span id="connection" class="connection">CONNECTING</span>
+          <span id="connection" class="connection" role="status" aria-live="polite" aria-atomic="true">CONNECTING</span>
         </div>
         <section id="host-control-room" hidden aria-label="Facilitator live control room"></section>
         <div id="host-share" hidden class="share-box">
@@ -157,18 +158,18 @@
             <p>ROOM <span id="projector-invite-room">Shown above</span> · Open the link on your phone to join the same game.</p>
             <a id="projector-join-link" target="_blank" rel="noopener noreferrer"></a>
           </div>
-          <img id="projector-qr" width="240" height="240" alt="Scannable QR code to join this specific BUSINESS CRISIS room"/>
+          <img id="projector-qr" width="240" height="240" alt="QR code to join the private 09:17 team challenge room"/>
         </section>
         <details id="game-rules" class="game-rules" open aria-label="Rules of engagement">
           <summary><span class="briefing-eyebrow">PRE-GAME BRIEFING / 60 SECONDS</span><strong>RULES OF ENGAGEMENT</strong><span class="briefing-toggle">READ / REVIEW</span></summary>
           <p id="rules-host-note" class="briefing-host-note" hidden>FACILITATOR: Read these six rules aloud before starting the first episode.</p>
           <ol class="briefing-grid">
-            <li class="rule-card"><span class="rule-index">01</span><div><strong>SIX EPISODES. ONE CRISIS.</strong><p>Your decisions affect everything that follows.</p></div></li>
-            <li class="rule-card"><span class="rule-index">02</span><div><strong>CHOOSE YOUR INTELLIGENCE.</strong><p>Your captain selects two advisers. Their advice stays confidential to your team.</p></div></li>
+            <li class="rule-card"><span class="rule-index">01</span><div><strong>SIX EPISODES. ONE TEAM JOURNEY.</strong><p>Your decisions affect everything that follows.</p></div></li>
+            <li class="rule-card"><span class="rule-index">02</span><div><strong>PREPARE WITHOUT THE CLOCK.</strong><p>Read the public evidence together. Your captain chooses two advisers and shares their private advice before timed voting begins.</p></div></li>
             <li class="rule-card"><span class="rule-index">03</span><div><strong>EVERY VOICE COUNTS.</strong><p>Discuss together. Each player locks one complete response: Strategy, Public Statement and any optional investment.</p></div></li>
-            <li class="rule-card"><span class="rule-index">04</span><div><strong>THE MAJORITY DECIDES.</strong><p>Only participation progress is visible until everyone votes. A tie triggers a private revote; a second tie goes to the captain's ballot.</p></div></li>
-            <li class="rule-card"><span class="rule-index">05</span><div><strong>THE CLOCK IS REAL.</strong><p>3:00 without penalty; one reserve minute costs −5 points. No final answer by 4:00 costs −12 plus economic damage. Your team clock stops on a confirmed decision.</p></div></li>
-            <li class="rule-card"><span class="rule-index">06</span><div><strong>SURVIVE TO WIN.</strong><p>Cash, trust and risks carry forward. A champion needs a renewed client contract, solvent funds and viable operations — not just points.</p></div></li>
+            <li class="rule-card"><span class="rule-index">04</span><div><strong>THE MOST-SUPPORTED RESPONSE WINS.</strong><p>The highest tally of matching complete responses wins, even without over 50%. Equal leaders enter a private runoff; if the revote ties, the captain's runoff vote decides. Individual ballots stay private.</p></div></li>
+            <li class="rule-card"><span class="rule-index">05</span><div><strong>THE CLOCK STARTS AFTER THE PRE-BRIEF.</strong><p>Host starts the decision clock only after all teams select advisers. You then have 3:00 without penalty to debate and vote; one reserve minute costs −5 points. No answer by 4:00 costs −12 plus economic damage.</p></div></li>
+            <li class="rule-card"><span class="rule-index">06</span><div><strong>MAKE IT COUNT.</strong><p>Cash, trust and risks carry forward. A champion needs a board-ready pilot plan, sufficient reserve and viable delivery — not just points. No client award is implied.</p></div></li>
           </ol>
           <p class="briefing-closing">TALK TO YOUR TEAM. <span>MAKE THE CALL.</span> OWN THE CONSEQUENCES.</p>
           <p class="briefing-fairplay">Late arrivals can join immediately. They may vote this episode if their team has not submitted a ballot and at least one minute remains in normal time; otherwise their first vote is next episode. LEAVE ROOM announces a deliberate exit, while brief disconnections do not. Keep your team's adviser briefings private.</p>
@@ -217,6 +218,6 @@
       <p id="error" class="error" role="alert" hidden></p>
     </section>
   </main>
-  <footer>BUSINESS CRISIS / THE 09:17 INCIDENT <span>ISOLATED EXPERIMENT · DOWNLOAD-ONLY RESULTS</span></footer>
+  <footer>THE 09:17 CHALLENGE / THE 09:17 CHALLENGE <span>ISOLATED EXPERIMENT · DOWNLOAD-ONLY RESULTS · BUILD __09_17_BUILD_SHORT__</span></footer>
 </body>
 </html>

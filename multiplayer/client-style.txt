@@ -1338,3 +1338,110 @@ body.in-game:not(.projector-mode):not(.player-view) #team-heading{display:none!i
 .host-format-guide summary{cursor:pointer;color:#e9bf95;font-size:11px;font-weight:850;
  letter-spacing:.07em;line-height:1.5}
 .host-format-guide p{margin:10px 0 0;color:#c6dade;font-size:13px;line-height:1.48}
+
+/* Keep the original projector composition fully visible on large 16:9 displays.
+   At 1920px some engine font metrics cause evidence cards to overflow the
+   fixed-height stage. Compact only on wide, tall projectors. */
+@media(min-width:1500px) and (min-height:900px){
+ .projector-mode.in-game .layout{padding:4px 2.3vw 6px}
+ .projector-mode.in-game .content-panel{padding:7px 12px}
+ .projector-mode.in-game .episode-panel{padding:7px 12px}
+ .projector-mode.in-game .scene-hero{max-height:188px}
+ .projector-mode.in-game .scene-art{min-height:120px;max-height:135px}
+ .projector-mode.in-game .scene-art svg{max-height:137px}
+ .projector-mode.in-game .scene-copy h3{font-size:clamp(43px,3vw,58px)!important;margin:2px 0 5px}
+ .projector-mode.in-game .episode-progress{margin:3px 0 4px}
+ .projector-mode.in-game .evidence-list{gap:7px}
+ .projector-mode.in-game .evidence-item summary{padding:6px 9px;gap:3px}
+ .projector-mode.in-game .evidence-finding{font-size:clamp(14px,1vw,16px);line-height:1.22}
+ .projector-mode.in-game .evidence-summary strong{font-size:clamp(14px,1vw,17px)}
+}
+
+/* Narrative bridge is private to the team and never displaces primary ballot controls. */
+.team-story-thread{margin:12px 0;padding:0;border:1px solid #567a75;background:#173b3a;color:#e8f0e5}
+.team-story-thread summary{display:flex;justify-content:space-between;gap:12px;align-items:center;cursor:pointer;padding:13px 15px;list-style:none}
+.team-story-thread summary::-webkit-details-marker{display:none}
+.team-story-thread summary strong{font-size:12px;color:#f0d8a3}
+.team-story-thread>p{margin:5px 15px 12px;line-height:1.5}
+.team-story-thread .story-pressure{border-left:3px solid #d8ad78;padding:8px 12px;background:#243d3b}
+.report-numeric-breakdown,.report-learning-notes{padding:14px 17px;border-top:1px solid #809991}
+.report-calculation-row{display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #899d97;padding:6px 0;margin:0;font-size:13px}
+.report-calculation-row strong{font-variant-numeric:tabular-nums;white-space:nowrap}
+.report-learning-notes p{font-size:14px;line-height:1.45}
+@media(max-width:540px){.team-story-thread summary{padding:11px}.report-calculation-row{font-size:12px}}
+
+/* 09:17 gameplay: a readable, untimed public evidence preview between rounds. */
+.prebrief-details{border:1px solid #5e8190;background:#102935;margin:0 0 14px;overflow:hidden}
+.prebrief-summary{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;cursor:pointer;padding:15px 18px;list-style:none}
+.prebrief-summary::-webkit-details-marker{display:none}
+.prebrief-summary>span{font-size:11px;font-weight:900;letter-spacing:.1em;color:#f4c28e}
+.prebrief-summary strong{display:block;flex-basis:100%;font-size:clamp(18px,2.2vw,27px);color:#f7f6f0;line-height:1.16}
+.prebrief-summary small{display:block;flex-basis:100%;font-size:12px;color:#b7cfd6;line-height:1.5}
+.prebrief-summary:focus-visible,.prebrief-exhibit-title:focus-visible{outline:2px solid #ffd090;outline-offset:-2px}
+.prebrief-body{border-top:1px solid #426371;padding:17px 20px}
+.prebrief-intro{font-size:15px!important;line-height:1.6!important;color:#e1eaf0!important}
+.prebrief-question{display:block;font-size:18px;line-height:1.35;color:#ffce95;margin:12px 0 18px}
+.prebrief-evidence{display:grid;gap:10px}
+.prebrief-exhibit{border:1px solid #3c5969;background:#0a1e29}
+.prebrief-exhibit-title{cursor:pointer;list-style:none;display:grid;gap:5px;padding:12px 14px}
+.prebrief-exhibit-title::-webkit-details-marker{display:none}
+.prebrief-exhibit-title small{font-size:11px;color:#e7bc88}
+.prebrief-exhibit-title strong{font-size:15px;color:#f7f5ed}
+.prebrief-exhibit-title span{font-size:13px;color:#bcd7df}
+.prebrief-source{margin:0 14px 14px!important;padding-top:10px;border-top:1px solid #355363}
+.prebrief-note{font-size:12px!important;line-height:1.55!important;color:#a9c7d0!important}
+.vote-resolution{padding:12px 15px;margin:12px 0;border-left:3px solid #91d6c4;background:#132f36}
+.vote-resolution strong{font-size:12px;letter-spacing:.07em;color:#afe8d7}
+.vote-resolution p{font-size:14px;margin:6px 0 0;line-height:1.5;color:#e3eeea}
+.aftershock-context-line{padding:12px 14px;border:1px solid #426373;background:#112935;font-size:13px!important;line-height:1.6!important}
+@media(max-width:540px){
+ .prebrief-summary{padding:13px 14px}
+ .prebrief-body{padding:12px 13px}
+ .prebrief-question{font-size:16px}
+ .prebrief-exhibit-title{padding:12px}
+}
+
+/* The projector can reveal a public upcoming briefing once all teams finish,
+   while the normal live projector omits between-round recap clutter. */
+body.projector-mode.in-game #round-recap.has-prebrief{display:block!important}
+body.projector-mode.in-game .prebrief-details{margin:6px 0 12px}
+body.projector-mode.in-game .prebrief-summary{padding:12px 16px}
+
+/* Projector lobby must fit its join QR, rules and team cards at 1280 × 720.
+   The public first-episode preview stays available on host/player screens. */
+body.projector-mode:not(.in-game) #round-recap{display:none!important}
+
+/* Untimed adviser preparation: distinguish reading from the decisive timer. */
+.prep-adviser-panel{border:1px solid #5c8c8b;background:#102b35;padding:16px;margin:12px 0}
+.prep-adviser-panel>.section-label{color:#a9e2cc;letter-spacing:.13em}
+.prep-message{font-size:16px!important;line-height:1.55!important;color:#e3f3ed!important}
+.prep-status{border-left:3px solid #9cddbd;padding:11px 13px;background:#183c40;color:#daf5e8;font-size:13px;line-height:1.5}
+.prep-adviser-panel .choice-grid{margin:12px 0}
+.prep-adviser-panel .choice{min-height:130px}
+.prep-adviser-panel button:focus-visible{outline:3px solid #ffe1af;outline-offset:2px}
+@media(max-width:540px){
+  .prep-adviser-panel{padding:12px}
+  .prep-adviser-panel .choice{min-height:118px}
+}
+
+/* Optional social discussion cue: public, never scores or exposes votes. */
+.scene-team-prompt{margin:14px 0 18px;padding:13px 16px;border:1px solid #698d93;border-left:3px solid #e4b781;background:#16313d;max-width:690px}
+.scene-team-prompt small{display:block;margin-bottom:6px;font-size:10px;letter-spacing:.14em;font-weight:800;color:#f1c699}
+.scene-team-prompt p{margin:0;font-size:clamp(13px,1.35vw,16px);line-height:1.55;color:#dbe8e9}
+.projector-mode .scene-team-prompt{display:none}
+
+/* Episode-04 promise callback: visible to the owning team only, never on projector. */
+.spotlight-twist{border:1px solid #bd9a66;border-left:4px solid #eab276;background:linear-gradient(145deg,#263743,#152c38);padding:20px 22px;margin:13px 0 18px;max-width:780px}
+.spotlight-twist small{display:block;font-size:10px;line-height:1.5;color:#f4c99c;letter-spacing:.12em;font-weight:800}
+.spotlight-twist-title{display:block;font-size:clamp(18px,2vw,25px);color:#fff3e1;letter-spacing:.025em;margin:8px 0}
+.spotlight-twist p{font-size:clamp(13px,1.4vw,16px);line-height:1.55;color:#e2edf1;margin:8px 0 13px;max-width:58ch}
+.projector-mode .spotlight-twist{display:none}
+@media(max-width:700px){.spotlight-twist{padding:15px 16px;margin:8px 0 13px}}
+
+/* Episode 05: a ledger-grounded private team readiness check, never on projector. */
+.delivery-test{border:1px solid #78ada2;border-left:4px solid #9bd4c3;background:linear-gradient(145deg,#193b3b,#132f3e);padding:20px 22px;margin:13px 0 18px;max-width:780px}
+.delivery-test small{display:block;font-size:10px;line-height:1.5;color:#b5e7d4;letter-spacing:.12em;font-weight:800}
+.delivery-test-title{display:block;font-size:clamp(18px,2vw,25px);color:#f5fff7;margin:8px 0}
+.delivery-test p{font-size:clamp(13px,1.4vw,16px);line-height:1.55;color:#e0edec;margin:8px 0 13px;max-width:58ch}
+.projector-mode .delivery-test{display:none}
+@media(max-width:700px){.delivery-test{padding:15px 16px;margin:8px 0 13px}}

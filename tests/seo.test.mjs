@@ -1,7 +1,11 @@
 import "../src/content.js";
 import test from "node:test";
+import {execFileSync} from "node:child_process";
 import assert from "node:assert/strict";
-import {PUBLIC_PATHS,PAGES,renderPublicPage,isPublishedOrigin,robotsText,sitemapXml} from "../multiplayer/site.mjs";
+import {readFileSync} from "node:fs";
+import {createRequire} from "node:module";
+const {stampSource,TOKEN}=createRequire(import.meta.url)("../scripts/stamp-0917-release.cjs");
+import {PUBLIC_PATHS,PAGES,renderPublicPage,isPublishedOrigin,robotsText,sitemapXml,sharingSvg} from "../multiplayer/site.mjs";
 const preview=new URL("https://business-crisis-rooms-staging.example.workers.dev/");
 const live=new URL("https://example.com/");
 const cfg={PUBLIC_SITE_ORIGIN:"https://example.com"};
@@ -55,11 +59,78 @@ test("commercial incident choices originate in canonical opening story",()=>{
  assert.match(page,/Hosts need a private creation key/);
  assert.match(page,/href="#try-a-decision">Try a sample decision/);
  assert.equal((page.match(/class="demo-choice"/g)||[]).length,3);
+ assert.equal((page.match(/class="demo-evidence"/g)||[]).length,3);
+ assert.match(page,/id="demo-decision-form"/);
+ assert.match(page,/name="demo-plan"/);
+ assert.match(page,/id="demo-outcome"[^>]*hidden/);
+ assert.match(page,/src="\/site-demo\.js" defer/);
+ assert.doesNotMatch(page,/An unexpected memo|RESTRUCTURING|BUSINESS CRISIS/i);
  for(const option of first.plans){
-   assert.ok(page.includes(option.name));
+   assert.ok(page.includes(option.name.replaceAll("&","&amp;")),"Rendered choice must match the canonical story after HTML escaping");
    assert.ok(page.includes(option.fallout));
    assert.ok(page.includes("£"+(first.base+option.spend).toLocaleString("en-GB")));
  }
  assert.match(renderPublicPage("/corporate-team-building-game",live,cfg).html,/id="try-a-decision"/);
  assert.doesNotMatch(renderPublicPage("/ro",live,cfg).html,/id="try-a-decision"/);
+});
+
+test("corporate challenge branding stays positive and coherent across each public page",()=>{
+ for(const path of PUBLIC_PATHS){
+  const copy=PAGES[path];
+  assert.match(copy.title,/THE 09:17 CHALLENGE/);
+  assert.doesNotMatch(copy.h,/crisis|disaster|nightmare/i);
+  assert.doesNotMatch(copy.title,/BUSINESS CRISIS/);
+ }
+ const home=renderPublicPage("/",live,cfg).html;
+ assert.match(home,/THE 09:17 CHALLENGE/);
+ assert.match(home,/HOST A PRIVATE GAME/);
+ assert.match(home,/JOIN A ROOM/);
+ assert.match(home,/href="\/education-team-challenge"/);
+});
+
+test("Project Spark is reflected in social sharing, public marketing and Romanian copy",()=>{
+ const home=renderPublicPage("/",live,cfg).html;
+ const ro=renderPublicPage("/ro",live,cfg).html;
+ const share=sharingSvg();
+ assert.match(home,/PROJECT SPARK\/ INVITATION|PROJECT SPARK \/ INVITATION|Project Spark/);
+ assert.match(ro,/La ora 09:17/);
+ assert.match(ro,/Project Spark/);
+ assert.doesNotMatch(ro,/document intern ajunge/);
+ assert.match(share,/PROJECT/);
+ assert.match(share,/SPARK/);
+ assert.doesNotMatch(share,/BUSINESS CRISIS/);
+ assert.doesNotMatch(home,/An unexpected memo arrives/);
+});
+
+test("original site navigation and joining instructions remain intact after the rebrand",()=>{const home=renderPublicPage("/",preview,{}).html;for(const path of ["/corporate-team-building-game","/virtual-team-building","/leadership-team-building","/for-facilitators"]){assert.ok(PAGES[path]);assert.ok(home.includes('href="'+path+'"'));}assert.match(home,/How does someone choose or get assigned/);assert.match(home,/4-character code or QR/);assert.match(home,/HOST A PRIVATE GAME/);assert.match(home,/JOIN A ROOM/);});
+
+test("education pathway is truthful about classroom scope and individual assessment",()=>{
+ const education=renderPublicPage("/education-team-challenge",live,cfg);
+ assert.equal(education.indexable,true);
+ assert.match(education.html,/university|universit/i);
+ assert.match(education.html,/Does this grade or certify students/);
+ assert.match(education.html,/not a validated student assessment|not a validated assessment/i);
+ assert.doesNotMatch(education.html,/guaranteed pass|accredited leadership/i);
+ const sample=renderPublicPage("/",live,cfg).html;
+ assert.match(sample,/MAKE YOUR CALL/);
+ assert.match(sample,/TRY ANOTHER APPROACH/);
+ assert.equal((sample.match(/data-demo-result="/g)||[]).length,3);
+});
+
+
+test("only explicitly released 09:17 commits may deploy to the dedicated staging Worker",()=>{
+ const output=execFileSync(process.execPath,["scripts/check-0917-staging.cjs"],{encoding:"utf8"});
+ assert.match(output,/PASS: Distinct Workers\.dev-only 09:17 deployment/);
+});
+
+test("isolated staging build stamp rejects stale or invalid commit identities",()=>{
+ const source=readFileSync(new URL("../multiplayer/worker.mjs",import.meta.url),"utf8");
+ const sha="a".repeat(40);
+ assert.equal(source.split(TOKEN).length-1,1,"Single controlled Worker build-token marker");
+ const stamped=stampSource(source,sha);
+ assert.ok(stamped.includes('const RELEASE_SOURCE_SHA = "'+sha+'";'));
+ assert.equal(stamped.includes(TOKEN),false);
+ assert.throws(()=>stampSource(source,"unknown"),/full public Git SHA/);
+ assert.throws(()=>stampSource(stamped,sha),/exactly one replaceable/);
+ assert.throws(()=>stampSource(TOKEN+" "+TOKEN,sha),/exactly one replaceable/);
 });

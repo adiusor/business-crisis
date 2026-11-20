@@ -71,6 +71,12 @@ try {
     await delay(250);
   }
   assert.ok(live, "Wrangler preview never started: " + logs);
+  const health=await req("/healthz");
+  assert.equal(health.payload.service,"the-0917-challenge");
+  assert.equal(health.payload.game,"Project Spark");
+  assert.equal(health.payload.buildSha,null,"Local workerd is not a deployed release");
+  assert.equal(health.payload.deployedGame,false);
+  assert.equal(health.response.headers.get("x-0917-build"),"LOCAL");
   // The new marketing site must stay unindexed on staging.
   const landing=await req("/");
   assert.equal(landing.response.status,200);
@@ -88,6 +94,8 @@ try {
     const page=await req(route);
     assert.equal(page.response.status,200);
     assert.match(page.response.headers.get("x-robots-tag"),/noindex/);
+    assert.match(page.payload,/BUILD LOCAL/,"Host/Join HTML must identify the current build");
+    assert.equal(page.response.headers.get("x-0917-build"),"LOCAL");
   }
   assert.equal((await req("/site-style.css")).response.status,200);
   const css = await req("/room-style.css"); assert.equal(css.response.status, 200);
@@ -357,19 +365,44 @@ try {
     const hostUI = await browser.newPage({viewport: {width: 1440, height: 900}, reducedMotion: "reduce"});
     const phoneA = await browser.newPage({viewport: {width: 320, height: 720}, reducedMotion: "reduce"});
     const phoneB = await browser.newPage({viewport: {width: 390, height: 820}, reducedMotion: "reduce"});
-    const browserErrors = [];
-    for (const page of [hostUI, phoneA, phoneB])
-      page.on("pageerror", err => browserErrors.push(err.message));
+    const browserErrors = [], lobbyNetworkFailures = [];
+    const observePage=(page,label)=>{
+      page.on("pageerror",err=>browserErrors.push(
+        label+" @ "+page.url().replace(/#.*$/,"")+" ("+
+        (page.isClosed()?"closed":"open")+"): "+err.message));
+      // Diagnostic only: failed lobby fetches are NOT ignored or excused
+      // when they also cause a JavaScript pageerror. Attribute by tab.
+      page.on("requestfailed",request=>{
+        if(/\/api\/rooms\/[2-9A-HJ-NP-Z]{4}\/lobby$/.test(request.url()))
+          lobbyNetworkFailures.push(label+": "+String(request.failure()?.errorText||"unknown"));
+      });
+    };
+    observePage(hostUI,"HOST 1440");
+    observePage(phoneA,"PHONE A 320");
+    observePage(phoneB,"PHONE B 390");
     const commercial=await browser.newPage({viewport:{width:390,height:844},reducedMotion:"reduce"});
-    commercial.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(commercial,"COMMERCIAL 390");
     await commercial.goto(base+"/",{waitUntil:"load"});
     assert.equal(await commercial.locator(".hero a[href=\"/play\"]").count(),1,"Host entry is easy to find");
     assert.equal(await commercial.locator(".hero a[href=\"/join\"]").count(),1,"Player entry is separate");
     await commercial.locator('.hero a[href="#try-a-decision"]').click();
     assert.match(commercial.url(),/#try-a-decision$/);
     assert.equal(await commercial.locator(".demo-choice").count(),3);
-    await commercial.locator(".demo-choice").nth(1).locator("summary").click();
-    assert.match(await commercial.locator(".demo-choice[open]").textContent(),/Access is cut/);
+    assert.equal(await commercial.locator(".demo-evidence").count(),3,
+      "Preview begins with three verifiable, discoverable clues");
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),false,
+      "Consequences stay concealed until a real choice is committed");
+    await commercial.locator(".demo-evidence").first().locator("summary").click();
+    assert.match(await commercial.locator(".demo-evidence[open]").innerText(),/signed contract|not yet guaranteed/i);
+    await commercial.locator('.demo-choice input[value="1"]').check();
+    await commercial.locator("#demo-decision-form button[type=submit]").click();
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),true);
+    assert.equal(await commercial.locator(".demo-result:not([hidden])").count(),1);
+    assert.match(await commercial.locator(".demo-result:not([hidden])").innerText(),
+      /three-site concept draws attention/i);
+    await commercial.locator("#demo-replay").click();
+    assert.equal(await commercial.locator("#demo-outcome").isVisible(),false,
+      "A replay hides the consequence and resets the decision");
     assert.ok(await commercial.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
       "Commercial page mobile overflow");
     await commercial.close();
@@ -389,7 +422,7 @@ try {
     // Safari/macOS sometimes duplicates a tab and inherits its session
     // storage. A joining link must still show player registration, not host.
     const clonedHost=await browser.newPage({viewport:{width:1280,height:800}});
-    clonedHost.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(clonedHost,"CLONED HOST TAB");
     await clonedHost.addInitScript(({code,token})=>{
       sessionStorage.setItem("bc-preview-session-"+code,token);
     },{code:uiCode,token:hostUiToken});
@@ -428,7 +461,7 @@ try {
       "The original corporate cityscape appears on the entry screen");
     assert.ok(await phoneA.locator(".landing-city").evaluate(el=>
       el.getBoundingClientRect().height<=160),"Entry artwork is compact on 320px phones");
-    assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE LEAK/);
+    assert.match(await phoneA.locator(".lead-panel h1").innerText(),/ONE STORY/);
     await phoneA.locator("#join-code").fill(uiCode.toLowerCase());
     await phoneA.locator("#join-code-form button.primary").click();
     await phoneA.locator("#join-form").waitFor({state: "visible"});
@@ -492,7 +525,7 @@ try {
       "Host has a selectable full link if a clipboard permission is denied");
     assert.match(projectorHref,/\/projector\?room=[2-9A-HJ-NP-Z]{4}#access=[a-f0-9]{64}$/);
     const projected=await browser.newPage({viewport:{width:1280,height:720},reducedMotion:"reduce"});
-    projected.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(projected,"PROJECTOR 1280");
     await projected.goto(projectorHref,{waitUntil:"load"});
     await projected.locator("#room-screen").waitFor({state:"visible",timeout:12000});
     assert.equal(await projected.locator("#viewer-mode").isVisible(),true);
@@ -504,7 +537,7 @@ try {
     assert.equal(projected.url(),projectorHref,"Opening a projector must preserve the shareable URL");
     const freshProjector=await browser.newContext({viewport:{width:1280,height:720},reducedMotion:"reduce"});
     const freshDisplay=await freshProjector.newPage();
-    freshDisplay.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(freshDisplay,"FRESH PROJECTOR");
     await freshDisplay.goto(projected.url(),{waitUntil:"load"});
     await freshDisplay.locator("#room-screen").waitFor({state:"visible",timeout:12000});
     assert.equal(await freshDisplay.locator("#viewer-mode").isVisible(),true,
@@ -572,6 +605,27 @@ try {
     await hostUI.waitForFunction(name => document.querySelector("#team-list")?.textContent?.includes(name), newName);
     assert.match(await hostUI.locator("#episode-panel").innerText().catch(() => ""), /|^$/); // Lobby has no episode yet.
     await hostUI.locator("#host-actions button.primary").click();
+    await phoneA.locator(".prep-adviser-panel").waitFor({state:"visible",timeout:8000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "The first preparation phase has no decision clock");
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "Host cannot start a timer before every captain has selected advice");
+    assert.equal(await phoneA.locator("[data-prep-adviser]").count(),6);
+    await phoneA.locator('[data-prep-adviser="0"]').click();
+    await phoneA.locator('[data-prep-adviser="1"]').click();
+    await phoneA.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await phoneA.locator(".chosen-adviser").first().waitFor({state:"visible"});
+    assert.equal(await hostUI.locator("#host-actions button.primary").isDisabled(),true,
+      "One ready team is insufficient to begin the decision timer");
+    await phoneB.locator('[data-prep-adviser="2"]').click();
+    await phoneB.locator('[data-prep-adviser="3"]').click();
+    await phoneB.getByRole("button",{name:"SAVE TWO ADVISERS"}).click();
+    await hostUI.waitForFunction(()=>
+      document.querySelector("#host-actions button.primary")?.disabled===false,
+      null,{timeout:12000});
+    assert.equal(await phoneA.locator("#timer-wrap").isVisible(),false,
+      "No clock runs even when all teams finish adviser preparation");
+    await hostUI.locator("#host-actions button.primary").click();
     await phoneA.locator("#timer-wrap").waitFor({state: "visible", timeout: 8000});
     assert.equal(await hostUI.locator("#game-rules").evaluate(el=>el.open),false,
       "Rules collapse when the host starts");
@@ -587,15 +641,20 @@ try {
     assert.equal(await hostUI.locator(".roster-entry button.roster-remove:disabled").count(),2,
       "Facilitator may not remove a team's only member during a live round");
 
-    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE SEND|CONFIDENTIAL/);
+    assert.match(await phoneA.locator("#episode-panel").innerText(), /THE INVITATION|OPPORTUNITY/);
+    assert.equal(await phoneA.locator(".scene-team-prompt").count(),1,
+      "Participants get a meaningful conversation starter in every episode");
+    assert.match(await phoneA.locator(".scene-team-prompt").innerText(),/verify first/i);
+    assert.equal(await projected.locator(".scene-team-prompt").count(),0,
+      "A social facilitator cue must not clutter the projector view");
     assert.equal(await phoneA.locator(".evidence-item").count(), 3);
     assert.equal(await phoneA.locator(".scene-directive").count(),1,
       "The live incident shows a distinctive, actionable dilemma");
-    assert.match(await phoneA.locator(".scene-question").textContent(),/contain the leak/i);
+    assert.match(await phoneA.locator(".scene-question").textContent(),/promise before the details have been tested/i);
     assert.equal(await phoneA.locator(".scene-fact").count(),3,
       "Every incident begins with three public, verifiable facts");
     assert.deepEqual(await phoneA.locator(".scene-fact dd").allTextContents(),
-      ["600","3","UNKNOWN"],"The opening incident never pretends to know the sender");
+      ["09:17","90 DAYS","3"],"The opening fact-strip identifies the pilot opportunity");
     const editorial=await phoneA.evaluate(()=>{
       const body=getComputedStyle(document.body),
         facts=[...document.querySelectorAll(".scene-fact dd")],
@@ -645,9 +704,9 @@ try {
     assert.equal(await phoneA.locator("body.in-game").count(),1);
     await phoneA.locator(".evidence-item summary").first().click();
     assert.equal(await phoneA.locator(".evidence-item[open]").count(),1);
-    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Subject: RESTRUCTURING/);
+    assert.match(await phoneA.locator(".evidence-item[open] .evidence-source").innerText(),/Project Spark seeks a credible/);
     await phoneA.locator(".briefing-details summary").click();
-    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/600 employees/);
+    assert.match(await phoneA.locator(".briefing-details .episode-intro").innerText(),/Project Spark/);
     assert.equal(await phoneA.locator(".exposure-risk-list .risk-entry").count(),4);
     assert.equal(await phoneA.locator(".exposure-panel").evaluate(el=>el.open),false,
       "Finance panel defaults to compact disclosure on a 320px phone");
@@ -659,7 +718,7 @@ try {
       null,{timeout:5000});
     assert.equal(await phoneA.locator("#decision-dock").isVisible(),true,
       "Players have a persistent route to their action despite long evidence");
-    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/CHOOSE TWO ADVISERS/);
+    assert.match(await phoneA.locator("#decision-dock-label").textContent(),/MAKE YOUR TEAM DECISION/);
     await phoneA.locator("#decision-dock").click();
     const rulesPlacement=await phoneA.evaluate(()=>{
       const action=document.querySelector("#player-actions");
@@ -672,7 +731,7 @@ try {
     assert.ok(await phoneA.locator("#player-actions").evaluate(el=>el.getBoundingClientRect().top<innerHeight),
       "Decision dock actually navigates to the actionable form");
 
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE SEND"));
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE INVITATION"));
     await projected.locator("#projector-ticker").waitFor({state:"visible",timeout:12000});
     assert.equal(await projected.locator(".ticker-team").count(),2);
     assert.equal(await projected.locator(".ticker-clock").count(),2);
@@ -717,6 +776,15 @@ try {
           scroll:document.documentElement.scrollHeight,
           clipped:cards.some(x=>x.bottom>innerHeight-8||x.top<0)};
       });
+      if(screen.scroll>screen.height+2||screen.clipped){
+        const geometry=await projected.evaluate(()=>{
+          const names=[".masthead",".layout",".content-panel",".scene-hero",".episode-panel",".episode-progress",".briefing-details",".evidence-folder",".evidence-list"];
+          const result={};
+          for(const n of names){const e=document.querySelector(n),r=e?.getBoundingClientRect();result[n]=r?{top:Math.round(r.top),bottom:Math.round(r.bottom),height:Math.round(r.height)}:null}
+          return result;
+        });
+        console.error("PROJECTOR FIT DIAGNOSTIC",JSON.stringify({dimensions,screen,geometry}));
+      }
       assert.ok(screen.scroll<=screen.height+2&&!screen.clipped,
         "Projector must fit legacy 4:3 and Full HD screens without losing evidence: "+JSON.stringify(screen));
     }
@@ -736,21 +804,20 @@ try {
     await phoneA.screenshot({path:path.join(root,screenshotDir,"10-design-v4-player-320.png"),fullPage:true});
     await projected.screenshot({path:path.join(root,screenshotDir,"11-design-v4-projection-1280.png"),fullPage:true});
 
-    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),6,
-      "Six original illustrated adviser portraits appear in multiplayer");
+    assert.equal(await phoneA.locator(".adviser-portrait svg").count(),0,
+      "The six-adviser picker is absent during timed decisions after its untimed selection");
+    assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
+      "Private advice stays visible during the decision window");
     assert.equal(await phoneA.locator(".jump-decision").count(),1);
     assert.equal(await phoneA.locator("#room-screen").evaluate(el=>getComputedStyle(el).display),"flex",
       "Player decisions are prioritised over long rosters");
-    await phoneA.locator('[data-choice="0"]').click();
-    await phoneA.locator('[data-choice="1"]').click();
-    await phoneA.getByRole("button", {name: "SAVE TWO PICKS"}).click();
     await phoneA.locator(".strategy-grid .strategy-choice").first().waitFor({state:"visible"});
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "The two chosen adviser briefings appear immediately under a short heading");
     assert.equal(await phoneA.locator(".adviser-portrait").count(),0,
       "The six-card adviser picker collapses after selection to reduce phone scrolling");
-    assert.equal(await phoneA.locator(".adviser-edit").count(),1,
-      "A captain may still change the pair before any teammate has voted");
+    assert.equal(await phoneA.locator(".adviser-edit").count(),0,
+      "Adviser changes close when the timed decision phase starts");
     const adviserOrder=await phoneA.evaluate(()=>{
       const grid=document.querySelector("#player-actions .strategy-grid"),
         advice=document.querySelector(".chosen-advisers");
@@ -778,11 +845,11 @@ try {
       await phoneA.locator("#room-screen").getAttribute("data-revision"));
     assert.equal(await phoneA.locator('[data-plan="0"]').evaluate(el=>el===document.activeElement),
       true,"Selected choice is keyboard-focused");
-    // An opponent's adviser choice broadcasts another room revision. It must not
-    // reset Alice's keyboard focus, opened strategy detail or draft selection.
-    await phoneB.locator('[data-choice="2"]').click();
-    await phoneB.locator('[data-choice="3"]').click();
-    await phoneB.getByRole("button", {name: "SAVE TWO PICKS"}).click();
+    // A rival's submitted vote broadcasts a server revision. It must not
+    // reset Alice's keyboard focus, opened strategy detail or local draft.
+    await phoneB.locator('[data-plan="1"]').click();
+    await phoneB.locator("#player-actions select").last().selectOption("1");
+    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await phoneA.waitForFunction(rev=>
       Number(document.querySelector("#room-screen")?.dataset.revision)>rev,
       revisionBeforeOpposingDecision,{timeout:12000});
@@ -792,7 +859,7 @@ try {
       "Team updates do not collapse chosen strategy's tradeoffs");
     await phoneA.locator("#player-actions select").last().selectOption("0");
     await phoneA.getByRole("button", {name: "LOCK MY VOTE"}).click();
-    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===1,
+    await projected.waitForFunction(()=>document.querySelectorAll(".ticker-team.is-ready").length===2,
       null,{timeout:12000});
     await phoneA.waitForFunction(()=>document.querySelector("#timer-phase")?.textContent?.includes("TEAM CLOCK STOPPED"));
     await phoneA.locator(".aftershock-report").waitFor({state:"visible",timeout:12000});
@@ -803,11 +870,13 @@ try {
     assert.equal(await phoneA.locator(".chosen-adviser").count(),2,
       "Two chosen advisers remain after the ballot locks");
     assert.match(await phoneA.locator(".vote-finished").textContent(),/TEAM RESPONSE CONFIRMED/);
-    assert.match(await phoneA.locator(".aftershock-report").innerText(),/CONTAIN THE LEAK/);
+    assert.match(await phoneA.locator(".aftershock-report").innerText(),/DESIGN THE PROOF/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/£26,000/);
     assert.match(await phoneA.locator(".aftershock-report").innerText(),/\+10 pts/);
-    assert.equal(await phoneB.locator(".aftershock-report").count(),0,
-      "Rival team does not receive Alice's private consequence");
+    assert.equal(await phoneB.locator(".aftershock-report").count(),1,
+      "The rival receives its own consequence after voting");
+    assert.doesNotMatch(await phoneB.locator(".aftershock-report").innerText(),/VERIFY & SECURE/,
+      "The rival must not receive Alice's decision narrative");
     assert.equal(await hostUI.locator(".aftershock-report").count(),0);
     assert.equal(await projected.locator(".aftershock-report").count(),0);
     const frozen=await phoneA.locator("#timer").textContent();
@@ -817,7 +886,7 @@ try {
     // electorate, vote window or locked decisions. All connected roles get a
     // short named presence notification; projector still has no private votes.
     const lateUI=await browser.newPage({viewport:{width:390,height:820},reducedMotion:"reduce"});
-    lateUI.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(lateUI,"LATE PLAYER 390");
     await lateUI.goto(base+"/join?room="+uiCode,{waitUntil:"load"});
     await lateUI.locator("#join-form").waitFor({state:"visible",timeout:10000});
     assert.match(await lateUI.locator("#join-caption").textContent(),/GAME IN PROGRESS/);
@@ -836,15 +905,25 @@ try {
       null,{timeout:12000});
     const readyName=(await phoneA.locator(".team.mine strong").textContent()).trim();
     await phoneB.waitForFunction(name=>document.querySelector("#ready-notice")?.textContent?.includes(name),readyName);
-    await phoneB.locator('[data-plan="1"]').click();
-    await phoneB.locator("#player-actions select").last().selectOption("1");
-    await phoneB.getByRole("button", {name: "LOCK MY VOTE"}).click();
     await hostUI.waitForFunction(()=>document.querySelector("#ready-notice")?.textContent?.includes("ALL TEAMS READY"));
     assert.equal(await hostUI.locator("#host-share").isVisible(),true,"Host can invite late entrants");
     assert.equal(await projected.locator("#projector-invite").isVisible(),false,"Projector QR hidden after game starts");
     assert.equal(await hostUI.locator("#room-code").isVisible(),false,"Room code hidden after start");
-    // Network loss while a team is waiting must not lose its saved session.
+    // Network loss must not invalidate a player's token or reset a locked
+    // ballot. Verify Safari's actual visible offline-to-live transition.
+    const bobTokenBefore=await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode);
+    const bobRevisionBefore=Number(await phoneB.locator("#room-screen").getAttribute("data-revision"));
+    assert.match(bobTokenBefore,/^[a-f0-9]{64}$/);
+    assert.equal(await phoneB.locator(".vote-finished").count(),1,
+      "Bob's already-submitted vote remains locked before disconnection");
     await phoneB.context().setOffline(true);
+    await phoneB.waitForFunction(()=>
+      document.querySelector("#connection")?.textContent?.includes("OFFLINE"),
+      null,{timeout:8000});
+    assert.equal(await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode),bobTokenBefore,
+      "Offline transition must not clear the player's credentials");
     await hostUI.locator("#host-ready-dialog").waitFor({state:"visible",timeout:10000});
     assert.equal(await hostUI.locator("#ready-next").evaluate(el=>document.activeElement===el),true,
       "The host-ready modal must move keyboard focus onto the next-episode action");
@@ -857,33 +936,66 @@ try {
     await phoneA.evaluate(()=>scrollTo(0,document.body.scrollHeight));
     await hostUI.locator("#ready-next").click();
     await phoneB.context().setOffline(false);
-    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    await phoneB.waitForFunction(before=>
+      document.querySelector("#connection")?.textContent==="LIVE SYNC"&&
+      Number(document.querySelector("#room-screen")?.dataset.revision)>before,
+      bobRevisionBefore,{timeout:15000});
+    assert.equal(await phoneB.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode),bobTokenBefore,
+      "Reconnection must reuse the same saved player identity");
+    await phoneA.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     await phoneA.waitForFunction(()=>scrollY<=12,null,{timeout:8000});
     await lateUI.waitForFunction(()=>document.querySelector(".vote-finished")===null,
       null,{timeout:12000});
+    const strayLeaveLobbyRequests=[];
+    let intentionalLeaveStarted=false;
+    lateUI.on("request",request=>{
+      if(intentionalLeaveStarted&&request.method()==="GET" &&
+        new URL(request.url()).pathname==="/api/rooms/"+uiCode+"/lobby")
+        strayLeaveLobbyRequests.push(request.url());
+    });
     lateUI.once("dialog",dialog=>dialog.accept());
+    intentionalLeaveStarted=true;
     await lateUI.locator("#leave-room").click();
+    await lateUI.waitForURL(/\/join$/,{timeout:12000});
+    assert.equal(await lateUI.evaluate(code=>
+      sessionStorage.getItem("bc-preview-session-"+code),uiCode),null,
+      "Leaving a room must discard the private token before showing the join form");
+    assert.equal(await lateUI.locator("#room-screen").isVisible(),false,
+      "Leaving a room must not resurrect private episode details");
     await hostUI.waitForFunction(()=>
       document.querySelector("#presence-toast")?.textContent?.includes("Late Charlie LEFT"),
       null,{timeout:12000});
     assert.equal(await hostUI.locator("#host-roster").count(),0);
-    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+    assert.deepEqual(strayLeaveLobbyRequests,[],
+      "Leaving deliberately must not trigger a revoked-socket lobby fetch during Safari navigation");
+    await phoneB.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
     assert.equal(await phoneB.locator(".scene-art[data-scene='2'] > svg").count(),1,
       "Each episode uses the matching cinematic illustration");
     assert.deepEqual(await phoneB.locator(".scene-fact dd").allTextContents(),
-      ["40","2","AT RISK"],"The workforce incident only displays facts from its evidence");
-    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE FLOOR"),
+      ["600","1","NEW"],"The staff-capacity episode displays facts consistent with the story");
+    await projected.waitForFunction(()=>document.querySelector(".episode-panel h3")?.textContent?.includes("THE PEOPLE BEHIND THE PLAN"),
       null,{timeout:15000});
+    // Story continuity should be actual UI content, private to its team's player.
+    await phoneA.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
+    await phoneB.locator(".team-story-thread").waitFor({state:"visible",timeout:12000});
+    assert.match(await phoneA.locator(".team-story-thread").textContent(),/evidence-first proposal/i);
+    assert.match(await phoneB.locator(".team-story-thread").textContent(),/three-site vision/i);
+    assert.equal(await hostUI.locator(".team-story-thread").count(),0,
+      "Facilitator must not see individual team story bridges");
+    assert.equal(await projected.locator(".team-story-thread").count(),0,
+      "Public projector must not see private story bridges");
+
 
     await hostUI.waitForFunction(() => document.querySelector("#host-actions")?.textContent?.includes("EPISODE 2"));
     assert.match(await phoneA.locator("#round-recap").innerText(), /PREVIOUS EPISODE/);
     assert.equal(await phoneA.locator(".aftershock-report").evaluate(el=>el.open),false,
       "Previous consequence folds away so it does not delay the next timed vote");
-    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/CONTAIN THE LEAK/);
+    assert.match(await phoneA.locator(".aftershock-summary").innerText(),/DESIGN THE PROOF/);
     await phoneA.locator(".aftershock-summary").click();
-    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/client receives/i);
+    assert.match(await phoneA.locator(".aftershock-fallout").innerText(),/partner welcomes/i);
     await phoneA.locator(".recap-details summary").click();
     const publicAftershock=await phoneA.locator("#round-recap").innerText();
     assert.match(publicAftershock,/RESPONSE COST/);
@@ -896,7 +1008,7 @@ try {
     await projected.screenshot({path:path.join(root,screenshotDir,"07-projector-1280.png"),fullPage:true});
     // A complete room can render and export a stand-alone human-readable report.
     const reportHost=await browser.newPage({viewport:{width:1366,height:900},acceptDownloads:true});
-    reportHost.on("pageerror",err=>browserErrors.push(err.message));
+    observePage(reportHost,"REPORT HOST");
     await reportHost.addInitScript(({code,token})=>{
       sessionStorage.setItem("bc-preview-session-"+code,token);
     },{code:roomCode,token:hostToken});
@@ -920,14 +1032,29 @@ try {
       "The final board vote must fit on 720p without scroll: "+JSON.stringify(verdictFit));
     assert.match(await reportHost.locator(".report-head h2").textContent(),/BOARDROOM VERDICT/);
     assert.equal(await reportHost.locator(".report-team").count(),2);
+    assert.equal(await reportHost.locator(".report-numeric-breakdown").count(),2,
+      "Both teams should get a fully reconciled numeric score explanation");
+    assert.equal(await reportHost.locator(".report-learning-notes").count(),4,
+      "Both teams should get documented strengths and constructive next steps");
+
     assert.equal(await reportHost.locator(".report-epilogue").count(),1,
-      "Final report acknowledges that the sender is not identified");
-    assert.match(await reportHost.locator(".report-epilogue").innerText(),/not been identified/);
+      "Final report does not fabricate a partner award");
+    assert.match(await reportHost.locator(".report-epilogue").innerText(),/no pilot was awarded|do not claim that a pilot was awarded/i);
     assert.equal(await reportHost.locator(".cash-trajectory svg").count(),2,
       "Final report shows actual response fund trajectory for each team");
     assert.equal(await reportHost.locator(".facilitator-debrief").count(),1,
       "Host gets optional facilitator questions without adding default reading");
     assert.equal(await reportHost.locator(".report-episode").count(),12);
+    assert.equal(await reportHost.locator(".compare-round").nth(4)
+      .locator(".report-fallout").filter({hasText:"THE REALITY CHECK REVISITS YOUR EARLIER DECISIONS"}).count(),2,
+      "Each team's episode-five delivery payoff must refer to its actual earlier choices");
+    assert.equal(await finishedProjector.locator(".delivery-test").count(),0,
+      "Team-specific delivery fallout must not leak into the public projector");
+    assert.equal(await reportHost.locator(".compare-round").nth(3)
+      .locator(".report-fallout").filter({hasText:"EARLIER PROMISES UNDER THE SPOTLIGHT"}).count(),2,
+      "Each team's episode-four consequence is causally linked to its earlier choices");
+    assert.equal(await finishedProjector.locator(".spotlight-twist").count(),0,
+      "The projector never exposes a private episode-four prompt");
     assert.equal(await reportHost.locator(".decision-trail").evaluate(el=>el.open),false,
       "The teambuilding scoreboard starts with the outcome, not 12 paragraphs");
     assert.equal(await reportHost.locator(".compare-round").count(),6);
@@ -938,29 +1065,35 @@ try {
     assert.equal(await reportHost.locator(".report-advanced[open]").count(),0,
       "Long cash and risk details should be opt-in");
     assert.equal(await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).count(),1);
-    assert.equal(await reportHost.locator(".boardroom-award").count(),3);
-    assert.equal(await reportHost.locator(".boardroom-award-winner").count(),3);
+    assert.equal(await reportHost.locator(".boardroom-award").count(),4);
+    assert.equal(await reportHost.locator(".boardroom-award-winner").count(),4);
     assert.equal(await reportHost.locator(".verdict-ring").count(),2,
       "Two factually grounded pie-style graphics appear in the verdict");
     assert.match(await reportHost.locator(".verdict-surprise").textContent(),/MOST EXPENSIVE CHAPTER/);
     const downloadPromise=reportHost.waitForEvent("download");
     await reportHost.getByRole("button",{name:"DOWNLOAD RESULTS · PDF"}).click();
     const downloaded=await downloadPromise;
-    assert.equal(downloaded.suggestedFilename(),"business-crisis-boardroom-verdict.pdf",
+    assert.equal(downloaded.suggestedFilename(),"the-0917-challenge-team-results.pdf",
       "A direct download must provide a real PDF, not HTML");
     const pdfBytes=await (await import("node:fs/promises")).readFile(await downloaded.path());
     const pdfContent=pdfBytes.toString("latin1");
     assert.match(pdfContent,/^%PDF-1\.4/);
     assert.match(pdfContent,/THE BOARDROOM VERDICT/);
     assert.match(pdfContent,/FINAL TEAM RANKINGS/);
-    assert.match(pdfContent,/CRISIS SNAPSHOT/);
+    assert.match(pdfContent,/CHALLENGE SNAPSHOT/);
     assert.match(pdfContent,/WHAT EACH TEAM CHOSE/);
+    assert.match(pdfContent,/THE MATH BEHIND|WHAT THE MODEL MEASURED/,
+      "The PDF also contains a plain-language calculation section");
+    assert.match(pdfContent,/WHAT THIS TEAM PROTECTED/,
+      "The PDF has the positive learning debrief for each team");
+
     assert.match(pdfContent,/\/Count (?:[7-9]|[1-9][0-9])/);
     assert.doesNotMatch(pdfContent,/mailto:|emailjs|sendgrid|credentialHash/i);
     assert.doesNotMatch(pdfContent,new RegExp(hostToken));
     assert.doesNotMatch(pdfContent,new RegExp(roomCode));
     assert.ok(pdfBytes.length>10000,"PDF must contain actual graphical and textual content");
-    assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors");
+    assert.deepEqual(browserErrors, [], "Room preview browser JavaScript errors. " +
+      "Failed lobby requests by named tab: "+JSON.stringify(lobbyNetworkFailures));
   } finally { await browser.close(); }
   console.log(JSON.stringify({passed: true, runtime: "local wrangler workerd",
     qr: "SVG generated", websocketSync: "host and two players", responsiveUI: "Chromium 320px room join and round 2",
